@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Smart Display</string>
+    <string name="main_screen">main_screen</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="music">Music</string>
+    <string name="radio">Radio</string>
+    <string name="internet_radio">Internet radio</string>
+    <string name="video">Video</string>
+    <string name="timer">Timer</string>
+</resources>
