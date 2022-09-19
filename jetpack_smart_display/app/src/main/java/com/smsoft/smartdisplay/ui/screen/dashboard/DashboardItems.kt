@@ -1,6 +1,8 @@
-package com.smsoft.smartdisplay
+package com.smsoft.smartdisplay.ui.screen.dashboard
 
-enum class MainScreenItems(val textId: Int, val iconId: Int) {
+import com.smsoft.smartdisplay.R
+
+enum class DashboardItems(val textId: Int, val iconId: Int) {
     BLUETOOTH(R.string.bluetooth, R.drawable.ic_bluetooth_96),
     MUSIC(R.string.music, R.drawable.ic_music_96),
     RADIO(R.string.radio, R.drawable.ic_radio_96),

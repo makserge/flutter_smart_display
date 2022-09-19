@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay.ui
+package com.smsoft.smartdisplay.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
