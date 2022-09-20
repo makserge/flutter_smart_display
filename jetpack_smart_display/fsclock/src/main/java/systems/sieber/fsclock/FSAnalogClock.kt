@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 
 @Composable
-fun FSClock(
+fun FSAnalogClock(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .wrapContentSize(Alignment.Center),

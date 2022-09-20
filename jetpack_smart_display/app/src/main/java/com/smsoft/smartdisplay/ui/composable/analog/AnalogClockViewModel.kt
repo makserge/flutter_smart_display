@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay.ui.screen.clock.analog
+package com.smsoft.smartdisplay.ui.composable.analog
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel

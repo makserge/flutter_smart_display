@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import systems.sieber.fsclock.FSClock
+import com.firebirdberlin.nightdream.NightdreamAnalogClock
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -25,11 +25,19 @@ fun ClockScreen(
             viewModel.onStop()
         }
     }
-
-    FSClock(
+    /*
+    FSAnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
         millisecond = uiState.millisecond
+    )
+
+     */
+
+    NightdreamAnalogClock(
+        hour = uiState.hour,
+        minute = uiState.minute,
+        second = uiState.second
     )
 }

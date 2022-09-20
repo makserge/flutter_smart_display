@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay.ui.screen.clock.analog
+package com.smsoft.smartdisplay.ui.composable.analog
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
