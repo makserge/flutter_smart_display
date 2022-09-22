@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.firebirdberlin.nightdream.NightdreamAnalogClock
+import com.arbelkilani.clock.ClockView
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -15,8 +15,6 @@ fun ClockScreen(
     modifier: Modifier = Modifier,
     viewModel: ClockViewModel = hiltViewModel(),
 ) {
-    //AnalogClock()
-
     val uiState: ClockUiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     DisposableEffect(key1 = viewModel) {
@@ -26,6 +24,8 @@ fun ClockScreen(
         }
     }
     /*
+    //AnalogClock()
+
     FSAnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
@@ -33,9 +33,13 @@ fun ClockScreen(
         millisecond = uiState.millisecond
     )
 
-     */
-
     NightdreamAnalogClock(
+        hour = uiState.hour,
+        minute = uiState.minute,
+        second = uiState.second
+    )
+    */
+    ClockView(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second

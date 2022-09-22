@@ -1,19 +1,16 @@
-package com.firebirdberlin.nightdream
+package com.arbelkilani.clock
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun NightdreamAnalogClock(
+fun ClockView(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .wrapContentSize(Alignment.Center),
@@ -22,22 +19,23 @@ fun NightdreamAnalogClock(
     minute: Int,
     second: Int
 ) {
+   // val theme = AnalogicalThemeBuilder()
+        //.setShowBorder(true)
+        //        .setBorderColor(R.color.blue)
+     //   .setShowProgress(true)
+       // .build()
     AndroidView(
-        modifier = modifier
-            .widthIn(max = 500.dp)
-            .heightIn(max = 500.dp),
+        modifier = modifier,
         factory = { context ->
-            CustomAnalogClock(context).apply {
-                setStyle(
-                    style = AnalogClockConfig.Style.DEFAULT,
-                    allow_second_hand = true
-                )
-               // setPrimaryColor()
-               //setSecondaryColor()
+            Clock(context).apply {
+              //  clockType = ClockType.analogical
+         //       setAnalogicalTheme(theme)
+                setShowSecondsNeedle(true)
             }
         },
         update = { view ->
             view.setTime(
+                isAM = true,
                 hour = hour,
                 minute = minute,
                 second = second

@@ -237,53 +237,17 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
 
     enum class DigitStyle(val value: Int) {
         NONE(0), ARABIC(1), ROMAN(2);
-
-        companion object {
-            fun fromValue(i: Int): DigitStyle {
-                for (style in values()) {
-                    if (style.value == i) return style
-                }
-                return NONE
-            }
-        }
     }
 
     enum class TickStyle(val value: Int) {
         NONE(0), DASH(1), CIRCLE(2);
-
-        companion object {
-            fun fromValue(i: Int): TickStyle {
-                for (style in values()) {
-                    if (style.value == i) return style
-                }
-                return NONE
-            }
-        }
     }
 
     enum class Decoration(val value: Int) {
         NONE(0), MINUTE_HAND(1), LABELS(2), GOLD(3), COPPER(4), RUST(5);
-
-        companion object {
-            fun fromValue(i: Int): Decoration {
-                for (style in values()) {
-                    if (style.value == i) return style
-                }
-                return NONE
-            }
-        }
     }
 
     enum class HandShape(val value: Int) {
         BAR(0), TRIANGLE(1), ARC(2);
-
-        companion object {
-            fun fromValue(i: Int): HandShape {
-                for (style in values()) {
-                    if (style.value == i) return style
-                }
-                return BAR
-            }
-        }
     }
 }

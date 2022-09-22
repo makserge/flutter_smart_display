@@ -22,9 +22,9 @@ class CustomAnalogClock : View {
     private var centerX = 0F
     private var centerY = 0F
     private var radius = 0
-    private var hour = 0
-    private var min = 0
-    private var sec = 0
+    private var hour = 1
+    private var minute = 0
+    private var second = 0
     private lateinit var config: AnalogClockConfig
 
     constructor(context: Context) : super(context) {
@@ -63,10 +63,10 @@ class CustomAnalogClock : View {
         setStyle(style, true)
     }
 
-    fun setTime(hour: Int, min: Int, sec: Int) {
+    fun setTime(hour: Int, minute: Int, second: Int) {
         this.hour = hour
-        this.min = min
-        this.sec = sec
+        this.minute = minute
+        this.second = second
         invalidate()
     }
 
@@ -78,9 +78,9 @@ class CustomAnalogClock : View {
         paint.color = Color.WHITE
 
         val hourAngle = (hour.toDouble() / 6.0 * Math.PI - Math.PI / 2.0
-                + min.toDouble() / 60.0 * Math.PI / 6.0)
-        val minAngle = min.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
-        val secAngle = sec.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
+                + minute.toDouble() / 60.0 * Math.PI / 6.0)
+        val minAngle = minute.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
+        val secAngle = second.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
         paint.alpha = 255
         paint.color = Color.WHITE
         drawBackgroundArc(canvas, centerX, centerY, radius, minAngle)

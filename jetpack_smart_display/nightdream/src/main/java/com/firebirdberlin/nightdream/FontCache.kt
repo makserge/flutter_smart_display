@@ -5,7 +5,7 @@ import android.graphics.Typeface
 import java.util.*
 
 object FontCache {
-    private val ASSET_PATH = "file:///android_asset/"
+    private const val ASSET_PATH = "file:///android_asset/"
     private val fontCache = Hashtable<String, Typeface?>()
 
     operator fun get(context: Context, nameParam: String): Typeface? {

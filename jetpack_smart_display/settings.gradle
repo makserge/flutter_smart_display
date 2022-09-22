@@ -16,3 +16,4 @@ rootProject.name = "Smart Display"
 include ':app'
 include ':fsclock'
 include ':nightdream'
+include ':clockview'
