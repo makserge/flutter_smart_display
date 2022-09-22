@@ -4,6 +4,7 @@ Analog clock
 https://github.com/schorschii/FsClock-Android
 https://github.com/firebirdberlin/nightdream
 https://github.com/arbelkilani/Clock-view
+https://github.com/chenglei1986/ClockView
 
 Fonts from
 https://github.com/keshikan/DSEG

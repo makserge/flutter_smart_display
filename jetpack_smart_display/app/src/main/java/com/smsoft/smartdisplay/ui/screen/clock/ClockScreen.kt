@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.arbelkilani.clock.ClockView
+import com.github.chenglei1986.clock.ClockView2
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -39,9 +39,18 @@ fun ClockScreen(
         second = uiState.second
     )
     */
+    /*
     ClockView(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second
+    )
+
+     */
+    ClockView2(
+        hour = uiState.hour,
+        minute = uiState.minute,
+        second = uiState.second,
+        millisecond = uiState.millisecond
     )
 }

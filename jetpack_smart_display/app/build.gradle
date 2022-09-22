@@ -68,6 +68,7 @@ dependencies {
     implementation project(path: ':fsclock')
     implementation project(path: ':nightdream')
     implementation project(path: ':clockview')
+    implementation project(path: ':clockview2')
 
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.3"
