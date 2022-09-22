@@ -7,10 +7,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.text.TextPaint
-import android.text.TextUtils
 import android.util.TypedValue
 import android.view.View
-import java.util.*
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -64,21 +62,13 @@ class Clock (context: Context) : View(context) {
     private val minuteHandPaint = Paint()
     private val sweepHandPaint = Paint()
     private val centerCirclePaint = Paint()
-    private var timeZone: TimeZone? = null
-    private var timeZoneId: String? = null
 
     private enum class NumberType {
         ARABIC, ROMAN
     }
 
     init {
-        initTimeZone()
         initPaint()
-    }
-
-    fun setTimeZone(timeZoneId: String) {
-        this.timeZoneId = timeZoneId
-        initTimeZone()
     }
 
     fun setTime(hour: Int, minute: Int, second: Int, milliSecond: Int) {
@@ -87,14 +77,6 @@ class Clock (context: Context) : View(context) {
         this.second = second
         this.milliSecond = 1000 * second + milliSecond
         invalidate()
-    }
-
-    private fun initTimeZone() {
-        timeZone = if (!TextUtils.isEmpty(timeZoneId)) {
-            TimeZone.getTimeZone(timeZoneId)
-        } else {
-            TimeZone.getDefault()
-        }
     }
 
     private fun initPaint() {

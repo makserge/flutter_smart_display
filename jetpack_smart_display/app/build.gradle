@@ -69,6 +69,7 @@ dependencies {
     implementation project(path: ':nightdream')
     implementation project(path: ':clockview')
     implementation project(path: ':clockview2')
+    implementation project(path: ':jetalarm')
 
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.3"
