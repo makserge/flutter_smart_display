@@ -28,7 +28,7 @@ class ClockViewModel @Inject constructor() : ViewModel() {
             val cal = Calendar.getInstance()
             uiStatePrivate.update {
                 it.copy(
-                    hour = cal.get(Calendar.HOUR),
+                    hour = cal.get(Calendar.HOUR_OF_DAY),
                     minute = cal.get(Calendar.MINUTE),
                     second = cal.get(Calendar.SECOND),
                     millisecond = cal.get(Calendar.MILLISECOND)
@@ -48,7 +48,7 @@ class ClockViewModel @Inject constructor() : ViewModel() {
     private fun getTime(): ClockUiState {
         val cal = Calendar.getInstance()
         return ClockUiState(
-            hour = cal.get(Calendar.HOUR),
+            hour = cal.get(Calendar.HOUR_OF_DAY),
             minute = cal.get(Calendar.MINUTE),
             second = cal.get(Calendar.SECOND),
             millisecond = cal.get(Calendar.MILLISECOND)
