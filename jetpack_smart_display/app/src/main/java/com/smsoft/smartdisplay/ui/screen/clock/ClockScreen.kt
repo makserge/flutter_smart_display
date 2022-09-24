@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.escapeindustries.dotmatrix.MatrixDisplay
+import com.example.damian.digitalclock.DigitalClock
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -57,9 +57,19 @@ fun ClockScreen(
         millisecond = uiState.millisecond
     )
 
-     */
 
     MatrixDisplay(
+        hour = uiState.hour,
+        minute = uiState.minute,
+        second = uiState.second
+    )
+
+     */
+    DigitalClock(
+        year = uiState.year,
+        month = uiState.month,
+        day = uiState.day,
+        dayOfWeek = uiState.dayOfWeek,
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second

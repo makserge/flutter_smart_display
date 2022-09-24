@@ -71,6 +71,7 @@ dependencies {
     implementation project(path: ':clockview2')
     implementation project(path: ':jetalarm')
     implementation project(path: ':matrixdisplay')
+    implementation project(path: ':digitalclock')
 
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.3"
