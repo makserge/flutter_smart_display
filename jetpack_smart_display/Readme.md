@@ -10,7 +10,7 @@ https://github.com/akshay2211/JetAlarm
 Digital clock
 https://github.com/EscapeIndustries/DotMatrixView
 https://github.com/dbore/Android-Digital-Clock
-
+https://github.com/SinoReimu/DigitalNumber-android
 
 Fonts from
 https://github.com/keshikan/DSEG
