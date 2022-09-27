@@ -84,7 +84,6 @@ class CustomAnalogClock : View {
         paint.alpha = 255
         paint.color = Color.WHITE
         drawBackgroundArc(canvas, centerX, centerY, radius, minAngle)
-        applyGoldShader(paint, centerX, centerY, radius)
         applyShader(paint, centerX, centerY, radius)
         drawOuterCircle(canvas)
         drawTicks(canvas, centerX, centerY, radius)
@@ -96,9 +95,6 @@ class CustomAnalogClock : View {
         canvas: Canvas, centerX: Float, centerY: Float, radius: Int,
         hourAngle: Double, min_angle: Double, sec_angle: Double
     ) {
-        if (isTextureDecoration) {
-            applyPureTexture(paint)
-        }
         paint.style = Paint.Style.FILL
         if (!isTextureDecoration) {
             paint.shader = null
@@ -287,45 +283,7 @@ class CustomAnalogClock : View {
         paint.shader = LinearGradient(x1, y1, centerX, centerY, colors, positions, Shader.TileMode.MIRROR)
     }
 
-    private val isTextureDecoration: Boolean
-        get() = config.decoration === AnalogClockConfig.Decoration.GOLD || config.decoration === AnalogClockConfig.Decoration.COPPER || config.decoration === AnalogClockConfig.Decoration.RUST
-
-    private fun applyGoldShader(paint: Paint, centerX: Float, centerY: Float, radius: Int) {
-        if (!isTextureDecoration) return
-        var resID = R.drawable.gold
-        when (config.decoration) {
-            AnalogClockConfig.Decoration.GOLD -> resID = R.drawable.gold
-            AnalogClockConfig.Decoration.COPPER -> resID = R.drawable.copper
-            AnalogClockConfig.Decoration.RUST -> resID = R.drawable.rust
-            else -> {}
-        }
-        val bitmap = BitmapFactory.decodeResource(resources, resID)
-        val shader = BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
-        val light = Color.parseColor("#FFFFFF")
-        val dark = Color.parseColor("#BBBBBB")
-        val colors = intArrayOf(light, dark, light, dark, light)
-        val positions = floatArrayOf(0.15F, 0.25F, 0.55F, 0.65F, 0.9F)
-        val x1 = centerX - radius
-        val y1 = centerY - radius
-        val x2 = centerX + radius
-        val y2 = centerY + radius
-        val shader2 = LinearGradient(x1, y1, x2, y2, colors, positions, Shader.TileMode.MIRROR)
-        paint.shader = ComposeShader(shader, shader2, PorterDuff.Mode.MULTIPLY)
-    }
-
-    private fun applyPureTexture(paint: Paint) {
-        if (!isTextureDecoration) return
-        var resID = R.drawable.gold
-        when (config.decoration) {
-            AnalogClockConfig.Decoration.GOLD -> resID = R.drawable.gold
-            AnalogClockConfig.Decoration.COPPER -> resID = R.drawable.copper
-            AnalogClockConfig.Decoration.RUST -> resID = R.drawable.rust
-            else -> {}
-        }
-        val bitmap = BitmapFactory.decodeResource(resources, resID)
-        val shader = BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
-        paint.shader = shader
-    }
+    private val isTextureDecoration = config.decoration === AnalogClockConfig.Decoration.GOLD || config.decoration === AnalogClockConfig.Decoration.COPPER || config.decoration === AnalogClockConfig.Decoration.RUST
 
     private fun drawOuterCircle(canvas: Canvas) {
         if (config.outerCircleWidth == 0.00F) return

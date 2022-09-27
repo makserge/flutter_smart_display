@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cn.tecotaku.cn.digital_clock.DigitalClock2
+import com.firebirdberlin.nightdream.NightdreamFlipDigitalClock
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -74,11 +74,16 @@ fun ClockScreen(
         minute = uiState.minute,
         second = uiState.second
     )
-*/
+
     DigitalClock2(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
         millisecond = uiState.millisecond
+    )
+*/
+    NightdreamFlipDigitalClock(
+        hour = uiState.hour,
+        minute = uiState.minute
     )
 }

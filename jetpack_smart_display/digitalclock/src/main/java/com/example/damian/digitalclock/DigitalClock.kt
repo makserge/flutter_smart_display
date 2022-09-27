@@ -29,7 +29,8 @@ fun DigitalClock(
     second: Int
 ) {
     val digitalFont = FontFamily(
-        Font(R.font.dseg14classic_regular, weight = FontWeight.Normal),
+        Font(R.font.dseg14classic, weight = FontWeight.Normal),
+        //Font(R.font.digital, weight = FontWeight.Normal),
     )
 
     val time = addLeadingZeros(

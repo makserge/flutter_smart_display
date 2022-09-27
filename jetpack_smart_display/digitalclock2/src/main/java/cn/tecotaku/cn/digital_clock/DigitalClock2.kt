@@ -61,7 +61,6 @@ fun OnDraw(
 ) {
     Canvas(
         modifier = modifier,
-
     ) {
         millisecond
         for (i in nums.indices) {
@@ -95,7 +94,6 @@ private fun setTime(
     minute: Int,
     second: Int
 ) {
-
     if (nums.isEmpty()) {
         val length = if (isShowSeconds) (width / 9) else (width / 6)  // Digits height
         val textMargin = width / 35 //total 7 margin 0.2 width

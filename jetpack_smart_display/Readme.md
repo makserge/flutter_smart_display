@@ -11,6 +11,7 @@ Digital clock
 https://github.com/EscapeIndustries/DotMatrixView
 https://github.com/dbore/Android-Digital-Clock
 https://github.com/SinoReimu/DigitalNumber-android
+https://github.com/xenione/tab-digit
 
 Fonts from
 https://github.com/keshikan/DSEG
