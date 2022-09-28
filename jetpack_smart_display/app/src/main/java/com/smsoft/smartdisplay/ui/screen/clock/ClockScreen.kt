@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.firebirdberlin.nightdream.NightdreamFlipDigitalClock
+import com.smsoft.smartdisplay.ui.composable.analog.AnalogClock
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -23,16 +23,20 @@ fun ClockScreen(
             viewModel.onStop()
         }
     }
-    /*
-    //AnalogClock()
 
+    AnalogClock(
+        hour = uiState.hour,
+        minute = uiState.minute,
+        second = uiState.second,
+        millisecond = uiState.millisecond
+    )
+/*
     FSAnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
         millisecond = uiState.millisecond
     )
-
     NightdreamAnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
@@ -43,6 +47,7 @@ fun ClockScreen(
         minute = uiState.minute,
         second = uiState.second
     )
+
     ClockView2(
         hour = uiState.hour,
         minute = uiState.minute,
@@ -81,9 +86,9 @@ fun ClockScreen(
         second = uiState.second,
         millisecond = uiState.millisecond
     )
-*/
+
     NightdreamFlipDigitalClock(
         hour = uiState.hour,
         minute = uiState.minute
-    )
+    )*/
 }

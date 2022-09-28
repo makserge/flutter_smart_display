@@ -25,7 +25,7 @@ class CustomAnalogClock : View {
     private var hour = 1
     private var minute = 0
     private var second = 0
-    private lateinit var config: AnalogClockConfig
+    private var config: AnalogClockConfig? = null
 
     constructor(context: Context) : super(context) {
         init()
@@ -54,8 +54,8 @@ class CustomAnalogClock : View {
 
     fun setStyle(style: AnalogClockConfig.Style, allow_second_hand: Boolean) {
         config = AnalogClockConfig(context, style)
-        config.showSecondHand = allow_second_hand && config.showSecondHand
-        typeface = FontCache[context, config.fontUri]
+        config!!.showSecondHand = allow_second_hand && config!!.showSecondHand
+        typeface = FontCache[context, config!!.fontUri]
         boldTypeface = Typeface.create(typeface, Typeface.BOLD)
     }
 
@@ -96,12 +96,10 @@ class CustomAnalogClock : View {
         hourAngle: Double, min_angle: Double, sec_angle: Double
     ) {
         paint.style = Paint.Style.FILL
-        if (!isTextureDecoration) {
-            paint.shader = null
-        }
+        paint.shader = null
         // minute hand
         canvas.save()
-        if (!isTextureDecoration || config.handShape == HandShape.ARC) {
+        if (config!!.handShape == HandShape.ARC) {
             paint.colorFilter = customColorFilter
         }
         canvas.rotate(radiansToDegrees(min_angle).toFloat(), centerX, centerY)
@@ -110,15 +108,15 @@ class CustomAnalogClock : View {
             paint,
             centerX,
             centerY,
-            (config.handLengthMinutes * radius).toInt(),
-            (config.handWidthMinutes * radius).toInt()
+            (config!!.handLengthMinutes * radius).toInt(),
+            (config!!.handWidthMinutes * radius).toInt()
         )
         canvas.restore()
 
         // second hand
-        if (config.showSecondHand) {
+        if (config!!.showSecondHand) {
             canvas.save()
-            if (!isTextureDecoration || config.handShape == HandShape.ARC) {
+            if (config!!.handShape == HandShape.ARC) {
                 paint.colorFilter = secondaryColorFilter
             }
             canvas.rotate(radiansToDegrees(sec_angle).toFloat(), centerX, centerY)
@@ -127,14 +125,14 @@ class CustomAnalogClock : View {
                 paint,
                 centerX,
                 centerY,
-                (config.handLengthMinutes * radius).toInt(),
-                (config.handWidthMinutes / 3 * radius).toInt()
+                (config!!.handLengthMinutes * radius).toInt(),
+                (config!!.handWidthMinutes / 3 * radius).toInt()
             )
             canvas.restore()
         }
         // hour hand
         canvas.save()
-        if (!isTextureDecoration || config.handShape == HandShape.ARC) {
+        if (config!!.handShape == HandShape.ARC) {
             paint.colorFilter = secondaryColorFilter
         }
         canvas.rotate(radiansToDegrees(hourAngle).toFloat(), centerX, centerY)
@@ -143,8 +141,8 @@ class CustomAnalogClock : View {
             paint,
             centerX,
             centerY,
-            (config.handLengthHours * radius).toInt(),
-            (config.handWidthHours * radius).toInt()
+            (config!!.handLengthHours * radius).toInt(),
+            (config!!.handWidthHours * radius).toInt()
         )
         canvas.restore()
         drawInnerCircle(canvas)
@@ -158,7 +156,7 @@ class CustomAnalogClock : View {
         height: Int,
         width: Int
     ) {
-        when (config.handShape) {
+        when (config!!.handShape) {
             HandShape.ARC -> drawHandArc(canvas, height, width)
             HandShape.BAR -> drawHandBar(canvas, paint, baseX, baseY, height, width)
             HandShape.TRIANGLE -> drawHandTriangle(canvas, paint, baseX, baseY, height, width)
@@ -210,11 +208,11 @@ class CustomAnalogClock : View {
     }
 
     private fun drawInnerCircle(canvas: Canvas) {
-        if (config.handShape === HandShape.ARC) return
+        if (config!!.handShape === HandShape.ARC) return
         paint.apply {
             colorFilter = secondaryColorFilter
             alpha = 255
-            canvas.drawCircle(centerX, centerY, config.innerCircleRadius * radius, this)
+            canvas.drawCircle(centerX, centerY, config!!.innerCircleRadius * radius, this)
             colorFilter = null
             color = Color.BLACK
             strokeWidth = 2F
@@ -222,7 +220,7 @@ class CustomAnalogClock : View {
             style = Paint.Style.STROKE
             color = Color.WHITE
         }
-        canvas.drawCircle(centerX, centerY, config.innerCircleRadius * radius, paint)
+        canvas.drawCircle(centerX, centerY, config!!.innerCircleRadius * radius, paint)
 
     }
 
@@ -251,7 +249,8 @@ class CustomAnalogClock : View {
         radius: Int,
         angle: Double
     ) {
-        if (config.decoration !== AnalogClockConfig.Decoration.MINUTE_HAND) return
+        return
+        /*
         canvas.save()
         paint.alpha = 70
         paint.colorFilter = customColorFilter
@@ -264,13 +263,14 @@ class CustomAnalogClock : View {
         gradient.setLocalMatrix(gradientMatrix)
         paint.shader = gradient
         paint.style = Paint.Style.FILL_AND_STROKE
-        canvas.drawCircle(centerX, centerY, config.handLengthMinutes * radius, paint)
+        canvas.drawCircle(centerX, centerY, config!!.handLengthMinutes * radius, paint)
         paint.shader = null
         canvas.restore()
+         */
     }
 
     private fun applyShader(paint: Paint, centerX: Float, centerY: Float, radius: Int) {
-        if (config.decoration !== AnalogClockConfig.Decoration.LABELS) return
+        /*
         val x1 = centerX - radius
         val y1 = centerY - radius
         val hsv = FloatArray(3)
@@ -281,20 +281,20 @@ class CustomAnalogClock : View {
         val colors = intArrayOf(Color.WHITE, accent)
         val positions = floatArrayOf(0.4F, 1F)
         paint.shader = LinearGradient(x1, y1, centerX, centerY, colors, positions, Shader.TileMode.MIRROR)
+
+         */
     }
 
-    private val isTextureDecoration = config.decoration === AnalogClockConfig.Decoration.GOLD || config.decoration === AnalogClockConfig.Decoration.COPPER || config.decoration === AnalogClockConfig.Decoration.RUST
-
     private fun drawOuterCircle(canvas: Canvas) {
-        if (config.outerCircleWidth == 0.00F) return
+        if (config!!.outerCircleWidth == 0.00F) return
         paint.apply {
             alpha = 255
             color = Color.WHITE
             colorFilter = secondaryColorFilter
             style = Paint.Style.STROKE
-            strokeWidth = config.outerCircleWidth * radius
+            strokeWidth = config!!.outerCircleWidth * radius
         }
-        canvas.drawCircle(centerX, centerY, config.outerCircleRadius * radius, paint)
+        canvas.drawCircle(centerX, centerY, config!!.outerCircleRadius * radius, paint)
     }
 
     private fun drawTicks(canvas: Canvas, centerX: Float, centerY: Float, radius: Int) {
@@ -304,12 +304,12 @@ class CustomAnalogClock : View {
         paint.style = Paint.Style.FILL //filled circle for every hour
         for (minuteCounter in 0..59) {
             val isHourTick = minuteCounter % 5 == 0
-            val tickStyle = if (isHourTick) config.tickStyleHours else config.tickStyleMinutes
-            val tickStart = if (isHourTick) config.tickStartHours else config.tickStartMinutes
+            val tickStyle = if (isHourTick) config!!.tickStyleHours else config!!.tickStyleMinutes
+            val tickStart = if (isHourTick) config!!.tickStartHours else config!!.tickStartMinutes
             val tickLength =
-                if (isHourTick) config.tickLengthHours else config.tickLengthMinutes
+                if (isHourTick) config!!.tickLengthHours else config!!.tickLengthMinutes
             val width =
-                (if (isHourTick) config.tickWidthHours * radius else config.tickWidthMinutes * radius).toInt()
+                (if (isHourTick) config!!.tickWidthHours * radius else config!!.tickWidthMinutes * radius).toInt()
             paint.strokeWidth = width.toFloat()
             val tickStartX =
                 (centerX + tickStart * radius * MINUTE_ANGLES_COSINE[minuteCounter]).toFloat()
@@ -321,7 +321,7 @@ class CustomAnalogClock : View {
                 (centerY + (tickStart + tickLength) * radius * MINUTE_ANGLES_SINE[minuteCounter]).toFloat()
             when (tickStyle) {
                 TickStyle.NONE -> {}
-                TickStyle.CIRCLE -> if (isHourTick && config.emphasizeHour12 && minuteCounter == 45) {
+                TickStyle.CIRCLE -> if (isHourTick && config!!.emphasizeHour12 && minuteCounter == 45) {
                     // for "12" digit draw a special marker
                     val triangleHeight = tickLength * radius * 1.2F
                     val triangleWidth = triangleHeight * 1.2F
@@ -347,20 +347,20 @@ class CustomAnalogClock : View {
     }
 
     private fun drawHourDigits(canvas: Canvas, centerX: Float, centerY: Float, radius: Int) {
-        if (config.digitStyle === AnalogClockConfig.DigitStyle.NONE) return
+        if (config!!.digitStyle === AnalogClockConfig.DigitStyle.NONE) return
         paint.typeface = typeface
-        val fontSizeBig = config.fontSize * radius
-        val fontSizeSmall = 0.75F * config.fontSize * radius
+        val fontSizeBig = config!!.fontSize * radius
+        val fontSizeSmall = 0.75F * config!!.fontSize * radius
         val textSizeBig = fontSizeForWidth("5", fontSizeBig, paint)
         val textSizeSmall = fontSizeForWidth("5", fontSizeSmall, paint)
-        val minTickStart = config.tickStartHours - config.tickLengthHours * 0.5F
-        val maxTickStart = config.tickStartHours + config.tickLengthHours * 1.5F
-        val defaultDigitPosition = config.digitPosition * radius
+        val minTickStart = config!!.tickStartHours - config!!.tickLengthHours * 0.5F
+        val maxTickStart = config!!.tickStartHours + config!!.tickLengthHours * 1.5F
+        val defaultDigitPosition = config!!.digitPosition * radius
         val maxDigitPosition = minTickStart * radius
         val minDigitPosition = maxTickStart * radius
         for (digitCounter in 0..11) {
             val currentHour = (digitCounter + 2) % 12 + 1
-            if (config.highlightQuarterOfHour && currentHour % 3 == 0) {
+            if (config!!.highlightQuarterOfHour && currentHour % 3 == 0) {
                 // 3,6,9,12
                 paint.colorFilter = customColorFilter
                 paint.textSize = textSizeBig
@@ -381,11 +381,11 @@ class CustomAnalogClock : View {
             val distanceDigitCenterToBorder =
                 distanceHourTextBoundsCenterToBorder(currentHour, textWidth, textHeight)
             var correctedAbsoluteDigitPosition = defaultDigitPosition
-            if (config.digitPosition < config.tickStartHours) {
+            if (config!!.digitPosition < config!!.tickStartHours) {
                 if (defaultDigitPosition + distanceDigitCenterToBorder > maxDigitPosition) {
                     correctedAbsoluteDigitPosition = maxDigitPosition - distanceDigitCenterToBorder
                 }
-            } else if (config.digitPosition >= config.tickStartHours) {
+            } else if (config!!.digitPosition >= config!!.tickStartHours) {
                 if (defaultDigitPosition - distanceDigitCenterToBorder < minDigitPosition) {
                     correctedAbsoluteDigitPosition = minDigitPosition + distanceDigitCenterToBorder
                 }
@@ -416,7 +416,7 @@ class CustomAnalogClock : View {
     }
 
     private fun getHourTextOfDigitStyle(currentHour: Int): String {
-        return if (config.digitStyle === AnalogClockConfig.DigitStyle.ARABIC) currentHour.toString() else ROMAN_DIGITS[currentHour - 1]
+        return if (config!!.digitStyle === AnalogClockConfig.DigitStyle.ARABIC) currentHour.toString() else ROMAN_DIGITS[currentHour - 1]
     }
 
     private fun radiansToDegrees(rad: Double): Double {

@@ -3,7 +3,6 @@ package com.firebirdberlin.nightdream
 import android.content.Context
 
 class AnalogClockConfig(private var context: Context, private var style: Style) {
-    var decoration = Decoration.NONE
     var digitPosition = 0.85f
     var digitStyle = DigitStyle.ARABIC
     var emphasizeHour12 = true
@@ -66,8 +65,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
         val digitStyleString = settings.getString("digitStyle", DigitStyle.NONE.name)
         digitStyle = DigitStyle.valueOf(digitStyleString!!)
         digitPosition = settings.getFloat("digitPosition", 0.85F)
-        val decorationString = settings.getString("decoration", Decoration.NONE.name)
-        decoration = Decoration.valueOf(decorationString!!)
         emphasizeHour12 = settings.getBoolean("emphasizeHour12", true)
         showSecondHand = settings.getBoolean("showSecondHand", true)
         val handShapeString = settings.getString("handShape", HandShape.TRIANGLE.name)
@@ -115,7 +112,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
             putFloat("tickStartMinutes", tickStartMinutes)
             putFloat("tickWidthHours", tickWidthHours)
             putFloat("tickWidthMinutes", tickWidthMinutes)
-            putString("decoration", decoration.name)
             putString("digitStyle", digitStyle.name)
             putString("fontUri", fontUri)
             putString("handShape", handShape.name)
@@ -128,7 +124,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
     private fun initStyle(style: Style?) {
         when (style) {
             Style.DEFAULT -> {
-                decoration = Decoration.NONE
                 digitPosition = 0.85F
                 digitStyle = DigitStyle.ARABIC
                 emphasizeHour12 = true
@@ -153,7 +148,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
                 tickWidthMinutes = 0.01F
             }
             Style.SIMPLE -> {
-                decoration = Decoration.MINUTE_HAND
                 digitPosition = 0.85F
                 digitStyle = DigitStyle.NONE
                 emphasizeHour12 = true
@@ -178,7 +172,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
                 tickWidthMinutes = 0.01F
             }
             Style.ARC -> {
-                decoration = Decoration.NONE
                 digitPosition = 0.85F
                 digitStyle = DigitStyle.NONE
                 emphasizeHour12 = true
@@ -203,7 +196,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
                 tickWidthMinutes = 0.01F
             }
             Style.MINIMALISTIC -> {
-                decoration = Decoration.NONE
                 digitPosition = 0.7F
                 digitStyle = DigitStyle.NONE
                 emphasizeHour12 = true
@@ -241,10 +233,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
 
     enum class TickStyle(val value: Int) {
         NONE(0), DASH(1), CIRCLE(2);
-    }
-
-    enum class Decoration(val value: Int) {
-        NONE(0), MINUTE_HAND(1), LABELS(2), GOLD(3), COPPER(4), RUST(5);
     }
 
     enum class HandShape(val value: Int) {
