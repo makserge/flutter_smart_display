@@ -53,8 +53,7 @@ internal abstract class Glyph {
     }
 
     /**
-     * Convenience method for setting a dot on or off using a one dimensional
-     * index as used as a shape definition by [DigitDefinition].
+     * Convenience method for setting a dot on or off.
      *
      * @param index
      * One-dimensional zero-based index to the dot. For example, if
@@ -63,7 +62,7 @@ internal abstract class Glyph {
      * @param on
      * The new state of the dot.
      */
-    fun changeDot(index: Int, on: Boolean) {
+    protected fun changeDot(index: Int, on: Boolean) {
         // index is relative to topRow and leftMostColumn.
         val x = leftMostColumn + index % width
         val y = index / width + topRow

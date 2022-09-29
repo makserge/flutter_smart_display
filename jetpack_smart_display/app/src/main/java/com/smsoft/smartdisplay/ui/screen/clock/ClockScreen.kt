@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.smsoft.smartdisplay.ui.composable.analog.AnalogClock
+import com.escapeindustries.dotmatrix.MatrixDisplay
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -23,14 +23,14 @@ fun ClockScreen(
             viewModel.onStop()
         }
     }
-
+/*
     AnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
         millisecond = uiState.millisecond
     )
-/*
+
     FSAnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
@@ -62,14 +62,14 @@ fun ClockScreen(
         millisecond = uiState.millisecond
     )
 
-
+*/
     MatrixDisplay(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second
     )
 
-
+/*
     DigitalClock(
         year = uiState.year,
         month = uiState.month,
