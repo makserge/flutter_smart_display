@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.escapeindustries.dotmatrix.MatrixDisplay
+import com.arbelkilani.clock.ClockView
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -42,12 +42,14 @@ fun ClockScreen(
         minute = uiState.minute,
         second = uiState.second
     )
+    */
     ClockView(
+        modifier = modifier,
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second
     )
-
+/*
     ClockView2(
         hour = uiState.hour,
         minute = uiState.minute,
@@ -62,14 +64,11 @@ fun ClockScreen(
         millisecond = uiState.millisecond
     )
 
-*/
     MatrixDisplay(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second
     )
-
-/*
     DigitalClock(
         year = uiState.year,
         month = uiState.month,
