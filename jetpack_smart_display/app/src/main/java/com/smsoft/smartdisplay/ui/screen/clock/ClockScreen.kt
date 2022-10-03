@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.github.chenglei1986.clock.ClockView2
+import io.ak1.jetalarm.JetAlarm
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -49,21 +49,20 @@ fun ClockScreen(
         minute = uiState.minute,
         second = uiState.second
     )
-*/
     ClockView2(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
         milliSecond = uiState.milliSecond
     )
-/*
+    */
     JetAlarm(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
-        millisecond = uiState.millisecond
+        milliSecond = uiState.milliSecond
     )
-
+/*
     MatrixDisplay(
         hour = uiState.hour,
         minute = uiState.minute,
