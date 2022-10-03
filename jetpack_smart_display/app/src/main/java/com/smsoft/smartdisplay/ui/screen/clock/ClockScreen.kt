@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.ak1.jetalarm.JetAlarm
+import com.firebirdberlin.nightdream.NightdreamAnalogClock
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -37,12 +37,13 @@ fun ClockScreen(
         second = uiState.second,
         millisecond = uiState.millisecond
     )
+    */
     NightdreamAnalogClock(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second
     )
-
+/*
     ClockView(
         modifier = modifier,
         hour = uiState.hour,
@@ -55,14 +56,13 @@ fun ClockScreen(
         second = uiState.second,
         milliSecond = uiState.milliSecond
     )
-    */
+
     JetAlarm(
         hour = uiState.hour,
         minute = uiState.minute,
         second = uiState.second,
         milliSecond = uiState.milliSecond
     )
-/*
     MatrixDisplay(
         hour = uiState.hour,
         minute = uiState.minute,

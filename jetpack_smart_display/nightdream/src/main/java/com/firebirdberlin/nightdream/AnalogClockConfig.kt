@@ -35,22 +35,6 @@ class AnalogClockConfig(private var context: Context, private var style: Style) 
         }
     }
 
-    /*
-    public static Style toClockStyle(int layoutId) {
-        switch (layoutId) {
-            case ClockLayout.LAYOUT_ID_ANALOG:
-                return Style.MINIMALISTIC;
-            case ClockLayout.LAYOUT_ID_ANALOG2:
-                return Style.SIMPLE;
-            case ClockLayout.LAYOUT_ID_ANALOG3:
-                return Style.ARC;
-            case ClockLayout.LAYOUT_ID_ANALOG4:
-                return Style.DEFAULT;
-            default:
-                return Style.MINIMALISTIC;
-        }
-    }
-*/
     private fun reset() {
         initStyle(style)
         save()

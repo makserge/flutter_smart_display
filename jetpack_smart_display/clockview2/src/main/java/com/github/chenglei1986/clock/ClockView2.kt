@@ -85,26 +85,6 @@ fun ClockView2(
             milliSecond = milliSecond
         )
     }
-    /*
-    AndroidView(
-        modifier = modifier
-            .fillMaxSize(),
-        factory = { context ->
-            Clock(context).apply {
-                //setTimeZone("GMT")
-            }
-        },
-        update = { view ->
-            view.setTime(
-                hour = hour,
-                minute = minute,
-                second = second,
-                milliSecond = millisecond
-            )
-        }
-    )
-
-     */
 }
 
 @Composable
