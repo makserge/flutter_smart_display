@@ -35,7 +35,7 @@ class ClockViewModel @Inject constructor() : ViewModel() {
                     hour = cal.get(Calendar.HOUR_OF_DAY),
                     minute = cal.get(Calendar.MINUTE),
                     second = cal.get(Calendar.SECOND),
-                    millisecond = cal.get(Calendar.MILLISECOND)
+                    milliSecond = cal.get(Calendar.MILLISECOND)
                 )
             }
 
@@ -59,7 +59,7 @@ class ClockViewModel @Inject constructor() : ViewModel() {
             hour = cal.get(Calendar.HOUR_OF_DAY),
             minute = cal.get(Calendar.MINUTE),
             second = cal.get(Calendar.SECOND),
-            millisecond = cal.get(Calendar.MILLISECOND)
+            milliSecond = cal.get(Calendar.MILLISECOND)
         )
     }
 }
@@ -72,5 +72,5 @@ data class ClockUiState(
     val hour: Int,
     val minute: Int,
     val second: Int,
-    val millisecond: Int
+    val milliSecond: Int
 )

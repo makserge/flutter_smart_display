@@ -8,10 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.NativeCanvas
@@ -31,7 +29,7 @@ import kotlin.math.sin
 fun ClockView(
     modifier: Modifier = Modifier
         .fillMaxSize()
-        .wrapContentSize(Alignment.Center),
+        .background(MaterialTheme.colors.background),
     color: ColorFilter = ColorFilter.tint(color = MaterialTheme.colors.primary),
     hour: Int,
     minute: Int,
@@ -39,30 +37,25 @@ fun ClockView(
 ) {
     val clockColor = Color.WHITE
 
-    val configuration = LocalConfiguration.current
+    initRomanDigits()
 
-    val width = with(LocalDensity.current) {
-        configuration.screenWidthDp.dp.toPx()
-    }.toInt()
-    val height = with(LocalDensity.current) {
-        configuration.screenHeightDp.dp.toPx()
-    }.toInt()
+    val configuration = LocalConfiguration.current
     val context = LocalContext.current
     
-    initRomanDigits()
-    
+    onPreDraw(
+        width = with(LocalDensity.current) { configuration.screenWidthDp.dp.toPx() }.toInt(),
+        height = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }.toInt()
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colors.background)
     ) {
         OnDraw(
             modifier = modifier
                 .padding(
                     start = 200.dp
                 ),
-            width = width,
-            height = height,
             clockType = ClockType.ANALOG,
             showBorder = true,
             borderColor = clockColor,
@@ -99,8 +92,6 @@ fun ClockView(
 @Composable
 fun OnDraw(
     modifier: Modifier,
-    width: Int,
-    height: Int,
     clockType: ClockType,
     showBorder: Boolean,
     borderColor: Int,
@@ -131,10 +122,6 @@ fun OnDraw(
     hour: Int,
     minute: Int
 ) {
-    onPreDraw(
-        width = width,
-        height = height
-    )
     Canvas(
         modifier = modifier,
     ) {
