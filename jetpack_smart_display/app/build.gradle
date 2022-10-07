@@ -65,6 +65,12 @@ dependencies {
     implementation "androidx.media3:media3-ui:$exoplayer_media3_version"
     implementation "androidx.media3:media3-exoplayer-rtsp:$exoplayer_media3_version"
 
+    implementation "com.github.JamalMulla:ComposePrefs:1.0.5"
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
+
+    implementation 'com.godaddy.android.colorpicker:compose-color-picker:0.5.1'
+    implementation 'com.godaddy.android.colorpicker:compose-color-picker-android:0.5.1'
+
     implementation project(path: ':fsclock')
     implementation project(path: ':nightdream')
     implementation project(path: ':clockview')

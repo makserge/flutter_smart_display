@@ -1,225 +1,311 @@
 package com.firebirdberlin.nightdream
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.map
 
-class AnalogClockConfig(private var context: Context, private var style: Style) {
-    var digitPosition = 0.85f
-    var digitStyle = DigitStyle.ARABIC
-    var emphasizeHour12 = true
-    var showSecondHand = true
-    var handShape = HandShape.TRIANGLE
-    var handLengthHours = 0.8F
-    var handLengthMinutes = 0.95F
-    var handWidthHours = 0.04F
-    var handWidthMinutes = 0.04F
-    var highlightQuarterOfHour = true
-    var innerCircleRadius = 0.045F
-    var tickStartMinutes = 0.95F
-    var tickStyleMinutes = TickStyle.DASH
-    var tickLengthMinutes = 0.04F
-    var tickStartHours = 0.95F
-    var tickWidthHours = 0.01F
-    var tickWidthMinutes = 0.01F
-    var tickStyleHours = TickStyle.CIRCLE
-    var tickLengthHours = 0.04F
-    var outerCircleRadius = 1F
-    var outerCircleWidth = 0F
-    var fontSize = 0.08F
-    var fontUri = "file:///android_asset/fonts/dancingscript_regular.ttf"
+data class AnalogClockConfig(
+    var digitStyle: DigitStyle = DigitStyle.getDefault(),
+    var digitPosition: Float = DEFAULT_DIGIT_POSITION,
+    var highlightQuarterOfHour: Boolean = DEFAULT_DIGIT_EMP_QUARTERS,
+    var fontUri: String = "file:///android_asset/fonts/" + Font.getDefault(),
+    var fontSize: Float = DEFAULT_DIGIT_FONT_SIZE / 100,
+    var handStyle: HandStyle = HandStyle.getDefault(),
+    var handLengthMinutes: Float = DEFAULT_HAND_LEN_MIN,
+    var handLengthHours: Float = DEFAULT_HAND_LEN_HOURS,
+    var handWidthMinutes: Float = DEFAULT_HAND_WIDTH_MIN / 100,
+    var handWidthHours: Float = DEFAULT_HAND_WIDTH_HOURS / 100,
+    var showSecondHand: Boolean = DEFAULT_SHOW_SECOND_HAND,
+    var tickStyleMinutes: TickStyle = TickStyle.getDefault(),
+    var tickStartMinutes: Float = DEFAULT_TICK_START_MINUTES,
+    var tickLengthMinutes: Float = DEFAULT_TICK_LEN_MINUTES / 100,
+    var tickStyleHours: TickStyle = TickStyle.CIRCLE,
+    var tickStartHours: Float = DEFAULT_TICK_START_HOURS,
+    var tickLengthHours: Float = DEFAULT_TICK_LEN_HOURS / 100,
+    var emphasizeHour12: Boolean = true,
+    var tickWidthHours: Float = 0.01F,
+    var tickWidthMinutes: Float = 0.01F,
+    var innerCircleRadius: Float = DEFAULT_INNER_CIRCLE_RADIUS / 10,
+    var primaryColor: Int? = null,
+    var secondaryColor: Int? = null,
+) {
+    @Composable
+    fun InitDataStore(
+        dataStore: DataStore<Preferences>
+    ) {
+        digitStyle = getParam(
+            dataStore = dataStore,
+            defaultValue = DigitStyle.getDefault()
+        ) { preferences -> DigitStyle.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_STYLE.key)] ?: DigitStyle.getDefaultId()) }
+        as DigitStyle
 
-    init {
-        if (!storedPreferencesExists()) {
-            reset()
-        } else {
-            load()
+        digitPosition = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_DIGIT_POSITION
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_POSITION.key)] }
+        as Float
+
+        highlightQuarterOfHour = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_DIGIT_EMP_QUARTERS
+        ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_EMP_QUARTERS.key)] }
+        as Boolean
+
+        fontUri = "file:///android_asset/fonts/" + getParam(
+            dataStore = dataStore,
+            defaultValue = Font.getDefault()
+        ) { preferences ->
+            Font.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT.key)] ?: Font.getDefault()).font
+        }
+
+        fontSize = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_DIGIT_FONT_SIZE
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_FONT_SIZE.key)] }
+        as Float / 100
+
+        handStyle = getParam(
+            dataStore = dataStore,
+            defaultValue = HandStyle.getDefault()
+        ) { preferences -> HandStyle.getById(preferences[stringPreferencesKey(PreferenceKey.HAND_STYLE.key)] ?: HandStyle.getDefaultStyle()) }
+        as HandStyle
+
+        handLengthMinutes = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_HAND_LEN_MIN
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_MINUTES.key)] }
+        as Float
+
+        handLengthHours = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_HAND_LEN_HOURS
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_HOURS.key)] }
+        as Float
+
+        handWidthMinutes = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_HAND_WIDTH_MIN
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_MINUTES.key)] }
+        as Float / 100
+
+        handWidthHours = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_HAND_WIDTH_HOURS
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_HOURS.key)] }
+        as Float / 100
+
+        showSecondHand = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_SHOW_SECOND_HAND
+        ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.HAND_SHOW_SECOND_HAND.key)] }
+        as Boolean
+
+        tickStyleMinutes = getParam(
+            dataStore = dataStore,
+            defaultValue = TickStyle.getDefault()
+        ) { preferences -> TickStyle.getById(preferences[stringPreferencesKey(PreferenceKey.TICK_STYLE_MINUTES.key)] ?: TickStyle.getDefaultStyle()) }
+        as TickStyle
+
+        tickStartMinutes = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_TICK_START_MINUTES
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_START_MINUTES.key)] }
+        as Float
+
+        tickLengthMinutes = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_TICK_LEN_MINUTES
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_LEN_MINUTES.key)] }
+        as Float / 100
+
+        tickStyleHours = getParam(
+            dataStore = dataStore,
+            defaultValue = TickStyle.CIRCLE
+        ) { preferences -> TickStyle.getById(preferences[stringPreferencesKey(PreferenceKey.TICK_STYLE_HOURS.key)] ?: TickStyle.CIRCLE.style) }
+        as TickStyle
+
+        tickStartHours = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_TICK_START_HOURS
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_START_HOURS.key)] }
+        as Float
+
+        tickLengthHours = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_TICK_LEN_HOURS
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_LEN_HOURS.key)] }
+        as Float / 100
+
+        innerCircleRadius = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_INNER_CIRCLE_RADIUS
+        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.INNER_CIRCLE_RADIUS.key)] }
+        as Float / 10
+
+        val primaryColorStr = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_PRIMARY_COLOR
+        ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PRIMARY_COLOR.key)] }
+        as String?
+        primaryColorStr?.let {
+            primaryColor = Color.parseColor(it)
+        }
+
+        val secondaryColorStr = getParam(
+            dataStore = dataStore,
+            defaultValue = DEFAULT_SECONDARY_COLOR
+        ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.SECONDARY_COLOR.key)] }
+        as String?
+        secondaryColorStr?.let {
+            secondaryColor = Color.parseColor(it)
         }
     }
 
-    private fun reset() {
-        initStyle(style)
-        save()
+    @SuppressLint("FlowOperatorInvokedInComposition")
+    @Composable
+    private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
+        return dataStore.data.map {
+            getter(it) ?: defaultValue
+        }.collectAsState(initial = defaultValue).value
     }
 
-    private fun storedPreferencesExists(): Boolean {
-        return context.getSharedPreferences(style.name, 0).contains("digitStyle")
-    }
+    enum class DigitStyle(val id: Int, val titleId: Int) {
+        NONE(0, R.string.none), ARABIC(1, R.string.arabic), ROMAN(2, R.string.roman);
 
-    private fun load() {
-        val settings = context.getSharedPreferences(style.name, 0)
-        val digitStyleString = settings.getString("digitStyle", DigitStyle.NONE.name)
-        digitStyle = DigitStyle.valueOf(digitStyleString!!)
-        digitPosition = settings.getFloat("digitPosition", 0.85F)
-        emphasizeHour12 = settings.getBoolean("emphasizeHour12", true)
-        showSecondHand = settings.getBoolean("showSecondHand", true)
-        val handShapeString = settings.getString("handShape", HandShape.TRIANGLE.name)
-        handShape = HandShape.valueOf(handShapeString!!)
-        handLengthHours = settings.getFloat("handLengthHours", 0.8F)
-        handLengthMinutes = settings.getFloat("handLengthMinutes", 0.95F)
-        handWidthHours = settings.getFloat("handWidthHours", 0.04F)
-        handWidthMinutes = settings.getFloat("handWidthMinutes", 0.04F)
-        highlightQuarterOfHour = settings.getBoolean("highlightQuarterOfHour", true)
-        innerCircleRadius = settings.getFloat("innerCircleRadius", 0.045F)
-        tickLengthMinutes = settings.getFloat("tickLengthMinutes", 0.04F)
-        tickLengthHours = settings.getFloat("tickLengthHours", 0.04F)
-        tickStartMinutes = settings.getFloat("tickStartMinutes", 0.95F)
-        tickStartHours = settings.getFloat("tickStartHours", 0.95F)
-        val tickStyleMinutesString = settings.getString("tickStyleMinutes", TickStyle.DASH.name)
-        tickStyleMinutes = TickStyle.valueOf(tickStyleMinutesString!!)
-        val tickStyleHoursString = settings.getString("tickStyleHours", TickStyle.CIRCLE.name)
-        tickStyleHours = TickStyle.valueOf(tickStyleHoursString!!)
-        tickWidthHours = settings.getFloat("tickWidthHours", 0.01F)
-        tickWidthMinutes = settings.getFloat("tickWidthMinutes", 0.01F)
-        outerCircleRadius = settings.getFloat("outerCircleRadius", 1F)
-        outerCircleWidth = settings.getFloat("outerCircleWidth", 0F)
-        fontSize = settings.getFloat("fontSize", 0.08F)
-        fontUri = settings.getString("fontUri", "file:///android_asset/fonts/dancingscript_regular.ttf")!!
-    }
+        companion object {
+            fun toMap(context: Context): Map<String, String> {
+                return values().associate {
+                    it.id.toString() to context.getString(it.titleId)
+                }
+            }
 
-    private fun save() {
-        val settings = context.getSharedPreferences(style.name, 0)
-        settings.edit().apply {
-            putBoolean("emphasizeHour12", emphasizeHour12)
-            putBoolean("highlightQuarterOfHour", highlightQuarterOfHour)
-            putBoolean("showSecondHand", showSecondHand)
-            putFloat("digitPosition", digitPosition)
-            putFloat("fontSize", fontSize)
-            putFloat("handLengthHours", handLengthHours)
-            putFloat("handLengthMinutes", handLengthMinutes)
-            putFloat("handWidthHours", handWidthHours)
-            putFloat("handWidthMinutes", handWidthMinutes)
-            putFloat("innerCircleRadius", innerCircleRadius)
-            putFloat("outerCircleRadius", outerCircleRadius)
-            putFloat("outerCircleWidth", outerCircleWidth)
-            putFloat("tickLengthHours", tickLengthHours)
-            putFloat("tickLengthMinutes", tickLengthMinutes)
-            putFloat("tickStartHours", tickStartHours)
-            putFloat("tickStartMinutes", tickStartMinutes)
-            putFloat("tickWidthHours", tickWidthHours)
-            putFloat("tickWidthMinutes", tickWidthMinutes)
-            putString("digitStyle", digitStyle.name)
-            putString("fontUri", fontUri)
-            putString("handShape", handShape.name)
-            putString("tickStyleHours", tickStyleHours.name)
-            putString("tickStyleMinutes", tickStyleMinutes.name)
-            apply()
+            fun getDefault(): DigitStyle {
+                return ARABIC
+            }
+
+            fun getDefaultId(): String {
+                return getDefault().id.toString()
+            }
+
+            fun getById(id: String): DigitStyle {
+                val item = values().filter {
+                    it.id.toString() == id
+                }
+                return item[0]
+            }
         }
     }
 
-    private fun initStyle(style: Style?) {
-        when (style) {
-            Style.DEFAULT -> {
-                digitPosition = 0.85F
-                digitStyle = DigitStyle.ARABIC
-                emphasizeHour12 = true
-                fontSize = 0.08F
-                handLengthHours = 0.8F
-                handLengthMinutes = 0.95F
-                handShape = HandShape.TRIANGLE
-                handWidthHours = 0.04F
-                handWidthMinutes = 0.04F
-                highlightQuarterOfHour = true
-                innerCircleRadius = 0.045F
-                outerCircleRadius = 1F
-                outerCircleWidth = 0F
-                showSecondHand = true
-                tickLengthHours = 0.04F
-                tickLengthMinutes = 0.04F
-                tickStartHours = 0.95F
-                tickStartMinutes = 0.95F
-                tickStyleHours = TickStyle.CIRCLE
-                tickStyleMinutes = TickStyle.DASH
-                tickWidthHours = 0.01F
-                tickWidthMinutes = 0.01F
+    enum class Font(val font: String, val titleId: Int) {
+        ROBOTO_REGULAR("roboto_regular.ttf", R.string.digit_font_roboto_regular),
+        ROBOTO_LIGHT("roboto_light.ttf", R.string.digit_font_roboto_light),
+        ROBOTO_THIN("roboto_thin.ttf", R.string.digit_font_roboto_thin),
+        SEVEN_SEGMENT_DIGITAL("7_segment_digital.ttf", R.string.digit_font_seven_segment_digital),
+        DSEG14_CLASSIC("dseg14classic.ttf", R.string.digit_font_dseg14_classic);
+
+        companion object {
+            fun toMap(context: Context): Map<String, String> {
+                return values().associate {
+                    it.font to context.getString(it.titleId)
+                }
             }
-            Style.SIMPLE -> {
-                digitPosition = 0.85F
-                digitStyle = DigitStyle.NONE
-                emphasizeHour12 = true
-                fontSize = 0.08F
-                handLengthHours = 0.6F
-                handLengthMinutes = 0.9F
-                handShape = HandShape.TRIANGLE
-                handWidthHours = 0.04F
-                handWidthMinutes = 0.04F
-                highlightQuarterOfHour = false
-                innerCircleRadius = 0.045F
-                outerCircleRadius = 1F
-                outerCircleWidth = 0F
-                showSecondHand = true
-                tickLengthHours = 0.06F
-                tickLengthMinutes = 0.06F
-                tickStartHours = 0.87F
-                tickStartMinutes = 0.87F
-                tickStyleHours = TickStyle.DASH
-                tickStyleMinutes = TickStyle.NONE
-                tickWidthHours = 0.01F
-                tickWidthMinutes = 0.01F
+
+            fun getDefault(): String {
+                return ROBOTO_REGULAR.font
             }
-            Style.ARC -> {
-                digitPosition = 0.85F
-                digitStyle = DigitStyle.NONE
-                emphasizeHour12 = true
-                fontSize = 0.08F
-                handLengthHours = 0.80F
-                handLengthMinutes = 0.90F
-                handShape = HandShape.ARC
-                handWidthHours = 0.06F
-                handWidthMinutes = 0.06F
-                highlightQuarterOfHour = false
-                innerCircleRadius = 0.045F
-                outerCircleRadius = 1F
-                outerCircleWidth = 0F
-                showSecondHand = true
-                tickLengthHours = 0.06F
-                tickLengthMinutes = 0.06F
-                tickStartHours = 0.87F
-                tickStartMinutes = 0.87F
-                tickStyleHours = TickStyle.DASH
-                tickStyleMinutes = TickStyle.NONE
-                tickWidthHours = 0.01F
-                tickWidthMinutes = 0.01F
+
+            fun getById(id: String): Font {
+                val item = values().filter {
+                    it.font == id
+                }
+                return item[0]
             }
-            Style.MINIMALISTIC -> {
-                digitPosition = 0.7F
-                digitStyle = DigitStyle.NONE
-                emphasizeHour12 = true
-                fontSize = 0.08F
-                handLengthHours = 0.6F
-                handLengthMinutes = 0.8F
-                handShape = HandShape.BAR
-                handWidthHours = 0.02F
-                handWidthMinutes = 0.02F
-                highlightQuarterOfHour = false
-                innerCircleRadius = 0.0F
-                outerCircleRadius = 1F
-                outerCircleWidth = 0.01F
-                showSecondHand = true
-                tickLengthHours = 0.1F
-                tickLengthMinutes = 0.06F
-                tickStartHours = 0.84F
-                tickStartMinutes = 0.87F
-                tickStyleHours = TickStyle.DASH
-                tickStyleMinutes = TickStyle.NONE
-                tickWidthHours = 0.025F
-                tickWidthMinutes = 0.025F
-            }
-            null -> TODO()
         }
     }
 
-    enum class Style {
-        DEFAULT, SIMPLE, ARC, MINIMALISTIC
+    enum class TickStyle(val style: String, val titleId: Int) {
+        NONE("none", R.string.tick_style_none),
+        DASH("dash", R.string.tick_style_dash),
+        CIRCLE("circle", R.string.tick_style_circle);
+
+        companion object {
+            fun toMap(context: Context): Map<String, String> {
+                return values().associate {
+                    it.style to context.getString(it.titleId)
+                }
+            }
+
+            fun getDefault(): TickStyle {
+                return DASH
+            }
+
+            fun getDefaultStyle(): String {
+                return getDefault().style
+            }
+
+            fun getById(id: String): TickStyle {
+                val item = values().filter {
+                    it.style == id
+                }
+                return item[0]
+            }
+        }
     }
 
-    enum class DigitStyle(val value: Int) {
-        NONE(0), ARABIC(1), ROMAN(2);
+    enum class HandStyle(val style: String, val titleId: Int) {
+        TRIANGLE("triangle", R.string.hand_style_triangle),
+        BAR("bar", R.string.hand_style_bar);
+
+        companion object {
+            fun toMap(context: Context): Map<String, String> {
+                return values().associate {
+                    it.style to context.getString(it.titleId)
+                }
+            }
+
+            fun getDefault(): HandStyle {
+                return TRIANGLE
+            }
+
+            fun getDefaultStyle(): String {
+                return getDefault().style
+            }
+
+            fun getById(id: String): HandStyle {
+                val item = values().filter {
+                    it.style == id
+                }
+                return item[0]
+            }
+        }
     }
 
-    enum class TickStyle(val value: Int) {
-        NONE(0), DASH(1), CIRCLE(2);
-    }
-
-    enum class HandShape(val value: Int) {
-        BAR(0), TRIANGLE(1), ARC(2);
+    companion object {
+        const val DEFAULT_DIGIT_POSITION = 0.85F
+        const val DEFAULT_DIGIT_EMP_QUARTERS = true
+        const val DEFAULT_DIGIT_FONT_SIZE = 8F
+        val DEFAULT_HAND_STYLE = HandStyle.getDefaultStyle()
+        const val DEFAULT_HAND_LEN_MIN = 0.9F
+        const val DEFAULT_HAND_LEN_HOURS = 0.7F
+        const val DEFAULT_HAND_WIDTH_MIN = 4F
+        const val DEFAULT_HAND_WIDTH_HOURS = 4F
+        const val DEFAULT_SHOW_SECOND_HAND = true
+        val DEFAULT_TICK_STYLE_MINUTES = TickStyle.getDefaultStyle()
+        val DEFAULT_TICK_STYLE_HOURS = TickStyle.CIRCLE.style
+        const val DEFAULT_TICK_START_MINUTES = 0.9F
+        const val DEFAULT_TICK_LEN_MINUTES = 4F
+        const val DEFAULT_TICK_START_HOURS = 0.9F
+        const val DEFAULT_TICK_LEN_HOURS = 4F
+        const val DEFAULT_INNER_CIRCLE_RADIUS = 0.45F
+        const val DEFAULT_PRIMARY_COLOR = "#FFFFFF"
+        const val DEFAULT_SECONDARY_COLOR = "#FF03DAC5"
     }
 }

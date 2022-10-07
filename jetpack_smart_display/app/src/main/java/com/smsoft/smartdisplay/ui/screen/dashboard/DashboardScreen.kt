@@ -13,6 +13,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.DashboardItems
 
 @Composable
 fun DashboardScreen(

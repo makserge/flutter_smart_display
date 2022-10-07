@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay.ui.screen.dashboard
+package com.smsoft.smartdisplay.data
 
 import com.smsoft.smartdisplay.R
 

@@ -3,56 +3,52 @@ package com.firebirdberlin.nightdream
 import android.content.Context
 import android.graphics.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
 fun NightdreamAnalogClock(
-    modifier: Modifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colors.background),
-    color: ColorFilter = ColorFilter.tint(color = MaterialTheme.colors.primary),
+    modifier: Modifier = Modifier,
+    width: Int? = null,
+    height: Int? = null,
     hour: Int,
     minute: Int,
-    second: Int
+    second: Int,
+    dataStore: DataStore<Preferences>
 ) {
-    init(
+    LaunchedEffect(Unit) {
+        initCounter()
+    }
+    Init(
         context = LocalContext.current,
-        style = AnalogClockConfig.Style.DEFAULT,
-        allowSecondHand = true
+        dataStore = dataStore
     )
 
     val configuration = LocalConfiguration.current
 
-    val width = with(LocalDensity.current) { configuration.screenWidthDp.dp.toPx() }.toInt()
-    val height = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }.toInt()
+    val clockWidth = width ?: with(LocalDensity.current) { configuration.screenWidthDp.dp.toPx() }.toInt()
+    val clockHeight = height ?: with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }.toInt()
 
-    Column(
-        modifier = modifier
-    ) {
-        OnDraw(
-            modifier = modifier,
-            width = width,
-            height = height,
-            hour = hour,
-            minute = minute,
-            second = second
-        )
-    }
+    OnDraw(
+        modifier = modifier,
+        width = clockWidth,
+        height = clockHeight,
+        hour = hour,
+        minute = minute,
+        second = second
+    )
 }
 
 @Composable
@@ -81,9 +77,6 @@ fun OnDraw(
             val secAngle = second.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
             paint.alpha = 255
             paint.color = Color.WHITE
-            drawOuterCircle(
-                canvas = canvas
-            )
             drawTicks(
                 canvas = canvas,
                 centerX = centerX,
@@ -127,10 +120,10 @@ private fun drawTicks(
         val tickLength = if (isHourTick) config.tickLengthHours else config.tickLengthMinutes
         val width = (if (isHourTick) config.tickWidthHours * radius else config.tickWidthMinutes * radius).toInt()
         paint.strokeWidth = width.toFloat()
-        val tickStartX = (centerX + tickStart * radius * MINUTE_ANGLES_COSINE[minuteCounter]).toFloat()
-        val tickStartY = (centerY + tickStart * radius * MINUTE_ANGLES_SINE[minuteCounter]).toFloat()
-        val tickEndX = (centerX + (tickStart + tickLength) * radius * MINUTE_ANGLES_COSINE[minuteCounter]).toFloat()
-        val tickEndY = (centerY + (tickStart + tickLength) * radius * MINUTE_ANGLES_SINE[minuteCounter]).toFloat()
+        val tickStartX = (centerX + tickStart * radius * MINUTE_ANGLES_COS[minuteCounter]).toFloat()
+        val tickStartY = (centerY + tickStart * radius * MINUTE_ANGLES_SIN[minuteCounter]).toFloat()
+        val tickEndX = (centerX + (tickStart + tickLength) * radius * MINUTE_ANGLES_COS[minuteCounter]).toFloat()
+        val tickEndY = (centerY + (tickStart + tickLength) * radius * MINUTE_ANGLES_SIN[minuteCounter]).toFloat()
         when (tickStyle) {
             AnalogClockConfig.TickStyle.NONE -> {}
             AnalogClockConfig.TickStyle.CIRCLE ->
@@ -147,8 +140,8 @@ private fun drawTicks(
                     )
                 } else {
                     val roundTickRadius = tickLength * .5F * radius
-                    val roundTickCenterX = centerX + (tickStart + tickLength * .5F) * radius.toFloat() * MINUTE_ANGLES_COSINE[minuteCounter].toFloat()
-                    val roundTickCenterY = centerY + (tickStart + tickLength * .5F) * radius.toFloat() * MINUTE_ANGLES_SINE[minuteCounter].toFloat()
+                    val roundTickCenterX = centerX + (tickStart + tickLength * .5F) * radius.toFloat() * MINUTE_ANGLES_COS[minuteCounter].toFloat()
+                    val roundTickCenterY = centerY + (tickStart + tickLength * .5F) * radius.toFloat() * MINUTE_ANGLES_SIN[minuteCounter].toFloat()
                     canvas.drawCircle(
                         roundTickCenterX,
                         roundTickCenterY,
@@ -239,8 +232,8 @@ private fun drawHourDigits(
                 correctedAbsoluteDigitPosition = minDigitPosition + distanceDigitCenterToBorder
             }
         }
-        var x = (centerX + correctedAbsoluteDigitPosition * HOUR_ANGLES_COSINE[digitCounter]).toFloat()
-        var y = (centerY + correctedAbsoluteDigitPosition * HOUR_ANGLES_SINE[digitCounter]).toFloat()
+        var x = (centerX + correctedAbsoluteDigitPosition * HOUR_ANGLES_COS[digitCounter]).toFloat()
+        var y = (centerY + correctedAbsoluteDigitPosition * HOUR_ANGLES_SIN[digitCounter]).toFloat()
 
         x -= (textWidth / 2.0).toFloat()
         y -= textHeight / 2F + 1F
@@ -266,9 +259,6 @@ private fun drawHands(
     paint.shader = null
     // minute hand
     canvas.save()
-    if (config.handShape == AnalogClockConfig.HandShape.ARC) {
-        paint.colorFilter = customColorFilter
-    }
     canvas.rotate(
         radiansToDegrees(minAngle),
         centerX,
@@ -287,9 +277,6 @@ private fun drawHands(
     // second hand
     if (config.showSecondHand) {
         canvas.save()
-        if (config.handShape == AnalogClockConfig.HandShape.ARC) {
-            paint.colorFilter = secondaryColorFilter
-        }
         canvas.rotate(
             radiansToDegrees(secAngle),
             centerX,
@@ -307,9 +294,6 @@ private fun drawHands(
     }
     // hour hand
     canvas.save()
-    if (config.handShape == AnalogClockConfig.HandShape.ARC) {
-        paint.colorFilter = secondaryColorFilter
-    }
     canvas.rotate(
         radiansToDegrees(hourAngle),
         centerX,
@@ -337,13 +321,8 @@ private fun drawHand(
     height: Int,
     width: Int
 ) {
-    when (config.handShape) {
-        AnalogClockConfig.HandShape.ARC -> drawHandArc(
-            canvas = canvas,
-            length = height,
-            width = width
-        )
-        AnalogClockConfig.HandShape.BAR -> drawHandBar(
+    when (config.handStyle) {
+        AnalogClockConfig.HandStyle.BAR -> drawHandBar(
             canvas = canvas,
             paint = paint,
             centerX = baseX,
@@ -351,7 +330,7 @@ private fun drawHand(
             length = height,
             width = width
         )
-        AnalogClockConfig.HandShape.TRIANGLE -> drawHandTriangle(
+        AnalogClockConfig.HandStyle.TRIANGLE -> drawHandTriangle(
             canvas = canvas,
             paint = paint,
             centerX = baseX,
@@ -389,7 +368,7 @@ private fun drawHandTriangle(
     width: Int
 ) {
     val halfWidth = width / 2
-    val path = Path().apply{
+    val path = Path().apply {
         moveTo(centerX, centerY - halfWidth)
         lineTo(centerX + length, centerY)
         lineTo(centerX, centerY + halfWidth)
@@ -405,8 +384,6 @@ private fun drawHandTriangle(
 private fun drawInnerCircle(
     canvas: Canvas
 ) {
-    if (config.handShape === AnalogClockConfig.HandShape.ARC) return
-
     paint.apply {
         colorFilter = secondaryColorFilter
         alpha = 255
@@ -456,37 +433,11 @@ private fun drawTriangle(
     )
 }
 
-private fun drawHandArc(
-    canvas: Canvas,
-    length: Int,
-    width: Int
-) {
-    canvas.save()
-    paint.style = Paint.Style.STROKE
-    paint.strokeWidth = width.toFloat()
-    val colors = intArrayOf(Color.TRANSPARENT, Color.WHITE)
-    val positions = floatArrayOf(0.2F, 1F)
-    val gradient = SweepGradient(
-        centerX,
-        centerY,
-        colors,
-        positions
-    )
-    paint.shader = gradient
-    canvas.drawCircle(
-        centerX,
-        centerY,
-        length.toFloat(),
-        paint
-    )
-    paint.shader = null
-    canvas.restore()
-}
-
 private fun radiansToDegrees(rad: Double): Float {
     return (rad * 180.0 / Math.PI).toFloat()
 }
 
+@Suppress("SameParameterValue")
 private fun fontSizeForWidth(
     dummyText: String,
     destWidth: Float,
@@ -518,58 +469,51 @@ private fun distanceHourTextBoundsCenterToBorder(
     return when (currentHour) {
         6, 12 -> textHeight / 2F
         3, 9 -> textWidth / 2F
-        2, 4, 8, 10 -> abs(textWidth / 2F / COSINE_OF_30_DEGREE)
-        else -> abs(textHeight / 2F / COSINE_OF_30_DEGREE)
+        2, 4, 8, 10 -> abs(textWidth / 2F / COS_OF_30_DEGREE)
+        else -> abs(textHeight / 2F / COS_OF_30_DEGREE)
     }
 }
 
-private fun drawOuterCircle(
-    canvas: Canvas
-) {
-    if (config.outerCircleWidth == 0.00F) return
-    paint.apply {
-        alpha = 255
-        color = Color.WHITE
-        colorFilter = secondaryColorFilter
-        style = Paint.Style.STROKE
-        strokeWidth = config.outerCircleWidth * radius
-    }
-    canvas.drawCircle(
-        centerX,
-        centerY,
-        config.outerCircleRadius * radius,
-        paint
-    )
-}
-
-private fun init(
-    context: Context,
-    style: AnalogClockConfig.Style,
-    allowSecondHand: Boolean
-) {
+private fun initCounter() {
     for (minuteCounter in 0..59) {
         val angle = minuteCounter.toDouble() * (Math.PI / 30.0)
-        MINUTE_ANGLES_SINE[minuteCounter] = sin(angle)
-        MINUTE_ANGLES_COSINE[minuteCounter] = cos(angle)
+        MINUTE_ANGLES_SIN[minuteCounter] = sin(angle)
+        MINUTE_ANGLES_COS[minuteCounter] = cos(angle)
     }
     for (hourCounter in 0..11) {
         val angle = hourCounter.toDouble() * (Math.PI / 6.0)
-        HOUR_ANGLES_SINE[hourCounter] = sin(angle)
-        HOUR_ANGLES_COSINE[hourCounter] = cos(angle)
+        HOUR_ANGLES_SIN[hourCounter] = sin(angle)
+        HOUR_ANGLES_COS[hourCounter] = cos(angle)
     }
+}
 
-    config = AnalogClockConfig(context, style)
-    config.showSecondHand = allowSecondHand && config.showSecondHand
-    typeface = FontCache[context, config.fontUri]
-    boldTypeface = Typeface.create(typeface, Typeface.BOLD)
+@Composable
+private fun Init(
+    context: Context,
+    dataStore: DataStore<Preferences>
+) {
+    config = AnalogClockConfig()
+    config.InitDataStore(dataStore)
+
+    config.apply{
+        showSecondHand = config.showSecondHand
+        typeface = FontCache[context, fontUri]
+        boldTypeface = Typeface.create(typeface, Typeface.BOLD)
+        primaryColor?.let {
+            customColorFilter = LightingColorFilter(it, 1)
+        }
+        secondaryColor?.let {
+            secondaryColorFilter = LightingColorFilter(it, 1)
+        }
+    }
 }
 
 private val ROMAN_DIGITS = arrayOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
-private val COSINE_OF_30_DEGREE = cos(Math.PI / 6.0).toFloat()
-private val MINUTE_ANGLES_SINE = DoubleArray(60)
-private val MINUTE_ANGLES_COSINE = DoubleArray(60)
-private val HOUR_ANGLES_SINE = DoubleArray(12)
-private val HOUR_ANGLES_COSINE = DoubleArray(12)
+private val COS_OF_30_DEGREE = cos(Math.PI / 6.0).toFloat()
+private val MINUTE_ANGLES_SIN = DoubleArray(60)
+private val MINUTE_ANGLES_COS = DoubleArray(60)
+private val HOUR_ANGLES_SIN = DoubleArray(12)
+private val HOUR_ANGLES_COS = DoubleArray(12)
 
 private var centerX = 0F
 private var centerY = 0F

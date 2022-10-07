@@ -1,29 +1,45 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
+import com.smsoft.smartdisplay.data.ClockType
+import com.smsoft.smartdisplay.data.PreferenceKey
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import java.util.*
 import javax.inject.Inject
 import kotlin.concurrent.fixedRateTimer
 
 @HiltViewModel
-class ClockViewModel @Inject constructor() : ViewModel() {
+class ClockViewModel @Inject constructor(
+    userPreferencesRepository: UserPreferencesRepository
+) : ViewModel() {
     private val TIMER_INTERVAL = 100L //100ms
 
     private val uiStatePrivate = MutableStateFlow(getTime())
+    val uiState = uiStatePrivate.asStateFlow()
 
     private var isTimerStarted = true
-    val uiState = uiStatePrivate.asStateFlow()
+    val dataStore = userPreferencesRepository.dataStore
+
+    class UserPreferencesRepository @Inject constructor(
+        val dataStore: DataStore<Preferences>
+    )
+
+    val clockType: Flow<ClockType> = dataStore.data
+        .map { preferences ->
+            ClockType.getById(preferences[stringPreferencesKey(PreferenceKey.CLOCK_TYPE.key)] ?: ClockType.getDefault().id)
+        }
 
     fun onStart() {
         fixedRateTimer(
             name= "default",
             daemon = false,
             initialDelay = 0L,
-            period = TIMER_INTERVAL) {
+            period = TIMER_INTERVAL
+        ) {
 
             val cal = Calendar.getInstance()
             uiStatePrivate.update {
