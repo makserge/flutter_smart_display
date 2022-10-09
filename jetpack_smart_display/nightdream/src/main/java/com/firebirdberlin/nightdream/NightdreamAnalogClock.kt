@@ -1,17 +1,17 @@
 package com.firebirdberlin.nightdream
 
-import android.content.Context
 import android.graphics.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import kotlin.math.abs
@@ -21,34 +21,44 @@ import kotlin.math.sin
 @Composable
 fun NightdreamAnalogClock(
     modifier: Modifier = Modifier,
-    width: Int? = null,
-    height: Int? = null,
     hour: Int,
     minute: Int,
     second: Int,
     dataStore: DataStore<Preferences>
 ) {
+    val config by remember { mutableStateOf(AnalogClockConfig()) }
+    LocalConfig = staticCompositionLocalOf { config }
+
+    var parentSize by remember { mutableStateOf(Size.Zero) }
+
     LaunchedEffect(Unit) {
         initCounter()
     }
+
     Init(
-        context = LocalContext.current,
         dataStore = dataStore
     )
 
-    val configuration = LocalConfiguration.current
-
-    val clockWidth = width ?: with(LocalDensity.current) { configuration.screenWidthDp.dp.toPx() }.toInt()
-    val clockHeight = height ?: with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }.toInt()
-
-    OnDraw(
-        modifier = modifier,
-        width = clockWidth,
-        height = clockHeight,
-        hour = hour,
-        minute = minute,
-        second = second
-    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned {
+                parentSize = it.parentLayoutCoordinates?.size?.toSize()?: Size.Zero
+            }
+    ) {
+        CompositionLocalProvider(
+            LocalConfig provides config
+        ) {
+            OnDraw(
+                modifier = modifier,
+                width = parentSize.width.toInt(),
+                height = parentSize.height.toInt(),
+                hour = hour,
+                minute = minute,
+                second = second
+            )
+        }
+    }
 }
 
 @Composable
@@ -60,6 +70,8 @@ fun OnDraw(
     minute: Int,
     second: Int
 ) {
+    val config = LocalConfig.current
+
     Canvas(
         modifier = modifier,
     ) {
@@ -81,13 +93,15 @@ fun OnDraw(
                 canvas = canvas,
                 centerX = centerX,
                 centerY = centerY,
-                radius = radius
+                radius = radius,
+                config = config
             )
             drawHourDigits(
                 canvas = canvas,
                 centerX = centerX,
                 centerY = centerY,
-                radius = radius
+                radius = radius,
+                config = config
             )
             drawHands(
                 canvas = canvas,
@@ -96,7 +110,8 @@ fun OnDraw(
                 radius = radius,
                 hourAngle = hourAngle,
                 minAngle = minAngle,
-                secAngle = secAngle
+                secAngle = secAngle,
+                config = config
             )
         }
     }
@@ -106,7 +121,8 @@ private fun drawTicks(
     canvas: Canvas,
     centerX: Float,
     centerY: Float,
-    radius: Int
+    radius: Int,
+    config: AnalogClockConfig
 ) {
     paint.apply {
         alpha = 255
@@ -163,7 +179,8 @@ private fun drawHourDigits(
     canvas: Canvas,
     centerX: Float,
     centerY: Float,
-    radius: Int
+    radius: Int,
+    config: AnalogClockConfig
 ) {
     if (config.digitStyle === AnalogClockConfig.DigitStyle.NONE) return
 
@@ -200,7 +217,8 @@ private fun drawHourDigits(
             }
         }
         val currentHourText = getHourTextOfDigitStyle(
-            currentHour = currentHour
+            currentHour = currentHour,
+            digitStyle = config.digitStyle
         )
 
         val bounds = Rect()
@@ -253,7 +271,8 @@ private fun drawHands(
     radius: Int,
     hourAngle: Double,
     minAngle: Double,
-    secAngle: Double
+    secAngle: Double,
+    config: AnalogClockConfig
 ) {
     paint.style = Paint.Style.FILL
     paint.shader = null
@@ -270,7 +289,8 @@ private fun drawHands(
         baseX = centerX,
         baseY = centerY,
         height = (config.handLengthMinutes * radius).toInt(),
-        width = (config.handWidthMinutes * radius).toInt()
+        width = (config.handWidthMinutes * radius).toInt(),
+        handStyle = config.handStyle
     )
     canvas.restore()
 
@@ -288,7 +308,8 @@ private fun drawHands(
             baseX = centerX,
             baseY = centerY,
             height = (config.handLengthMinutes * radius).toInt(),
-            width = (config.handWidthMinutes / 3 * radius).toInt()
+            width = (config.handWidthMinutes / 3 * radius).toInt(),
+            handStyle = config.handStyle
         )
         canvas.restore()
     }
@@ -305,11 +326,13 @@ private fun drawHands(
         baseX = centerX,
         baseY = centerY,
         height = (config.handLengthHours * radius).toInt(),
-        width = (config.handWidthHours * radius).toInt()
+        width = (config.handWidthHours * radius).toInt(),
+        handStyle = config.handStyle
     )
     canvas.restore()
     drawInnerCircle(
-        canvas = canvas
+        canvas = canvas,
+        innerCircleRadius = config.innerCircleRadius
     )
 }
 
@@ -319,9 +342,10 @@ private fun drawHand(
     baseX: Float,
     baseY: Float,
     height: Int,
-    width: Int
+    width: Int,
+    handStyle: AnalogClockConfig.HandStyle
 ) {
-    when (config.handStyle) {
+    when (handStyle) {
         AnalogClockConfig.HandStyle.BAR -> drawHandBar(
             canvas = canvas,
             paint = paint,
@@ -382,7 +406,8 @@ private fun drawHandTriangle(
 }
 
 private fun drawInnerCircle(
-    canvas: Canvas
+    canvas: Canvas,
+    innerCircleRadius: Float
 ) {
     paint.apply {
         colorFilter = secondaryColorFilter
@@ -390,7 +415,7 @@ private fun drawInnerCircle(
         canvas.drawCircle(
             centerX,
             centerY,
-            config.innerCircleRadius * radius,
+            innerCircleRadius,
             this
         )
         colorFilter = null
@@ -407,7 +432,7 @@ private fun drawInnerCircle(
     canvas.drawCircle(
         centerX,
         centerY,
-        config.innerCircleRadius * radius,
+        innerCircleRadius,
         paint
     )
 }
@@ -456,9 +481,14 @@ private fun fontSizeForWidth(
 }
 
 private fun getHourTextOfDigitStyle(
-    currentHour: Int
+    currentHour: Int,
+    digitStyle: AnalogClockConfig.DigitStyle
 ): String {
-    return if (config.digitStyle === AnalogClockConfig.DigitStyle.ARABIC) currentHour.toString() else ROMAN_DIGITS[currentHour - 1]
+    return if (digitStyle === AnalogClockConfig.DigitStyle.ARABIC) {
+        currentHour.toString()
+    } else {
+        ROMAN_DIGITS[currentHour - 1]
+    }
 }
 
 private fun distanceHourTextBoundsCenterToBorder(
@@ -489,15 +519,13 @@ private fun initCounter() {
 
 @Composable
 private fun Init(
-    context: Context,
     dataStore: DataStore<Preferences>
 ) {
-    config = AnalogClockConfig()
-    config.InitDataStore(dataStore)
+    val current = LocalConfig.current
+    current.InitDataStore(dataStore)
 
-    config.apply{
-        showSecondHand = config.showSecondHand
-        typeface = FontCache[context, fontUri]
+    current.apply {
+        typeface = FontCache[LocalContext.current, fontUri]
         boldTypeface = Typeface.create(typeface, Typeface.BOLD)
         primaryColor?.let {
             customColorFilter = LightingColorFilter(it, 1)
@@ -519,8 +547,9 @@ private var centerX = 0F
 private var centerY = 0F
 private var radius = 0
 private var paint = Paint()
-private lateinit var config: AnalogClockConfig
 private var customColorFilter = LightingColorFilter(Color.WHITE, 1)
 private var secondaryColorFilter = LightingColorFilter(Color.WHITE, 1)
 private var typeface = Typeface.DEFAULT
 private var boldTypeface = Typeface.DEFAULT
+
+private lateinit var LocalConfig: ProvidableCompositionLocal<AnalogClockConfig>

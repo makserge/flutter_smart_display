@@ -1,133 +1,250 @@
 package com.smsoft.smartdisplay.ui.composable.analog
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.firebirdberlin.nightdream.AnalogClockConfig
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.PreferenceKey
+import kotlinx.coroutines.flow.map
 import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
 fun AnalogClock(
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colors.primary,
+    dataStore: DataStore<Preferences>,
+    scale: Float,
     hour: Int,
     minute: Int,
     second: Int,
     millisecond: Int
 ) {
-    Box(
-        modifier = modifier
-    ) {
-        StaticUi(
-            modifier = modifier,
-            color = color
+    val defaultPrimaryColor = MaterialTheme.colors.primary
+    var primaryColor by remember { mutableStateOf(defaultPrimaryColor) }
+
+    val defaultSecondaryColor = MaterialTheme.colors.secondary
+    var secondaryColor by remember { mutableStateOf(defaultSecondaryColor) }
+
+    val primaryColorStr = getParam(
+        dataStore = dataStore,
+        defaultValue = AnalogClockConfig.DEFAULT_PRIMARY_COLOR
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PRIMARY_COLOR.key)] }
+            as String?
+    primaryColorStr?.let {
+        primaryColor = Color(android.graphics.Color.parseColor(it))
+    }
+
+    val secondaryColorStr = getParam(
+        dataStore = dataStore,
+        defaultValue = AnalogClockConfig.DEFAULT_SECONDARY_COLOR
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.SECONDARY_COLOR.key)] }
+            as String?
+    secondaryColorStr?.let {
+        secondaryColor = Color(android.graphics.Color.parseColor(it))
+    }
+
+    val fontRes = getParam(
+        dataStore = dataStore,
+        defaultValue = com.smsoft.smartdisplay.data.Font.getDefault()
+    ) { preferences ->
+        com.smsoft.smartdisplay.data.Font.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT_RECT.key)] ?: com.smsoft.smartdisplay.data.Font.getDefault().toString()).font
+    } as Int
+
+    val fontSize = scale * getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_DIGIT_FONT_SIZE
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_FONT_SIZE_RECT.key)] }
+    as Float
+
+    val font = FontFamily(
+        Font(
+            resId = fontRes,
+            weight = FontWeight.Normal
         )
-       Hands(
-            modifier = modifier,
-            color = color,
+    )
+
+    val minutesHandLength = scale * getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_HAND_LEN_MINUTES
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_MINUTES_RECT.key)] }
+    as Float
+
+    val minutesHandWidth = scale * getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_HAND_WIDTH_MINUTES
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_MINUTES_RECT.key)] }
+    as Float
+
+    val hoursHandLength = scale * getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_HAND_LEN_HOURS
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_HOURS_RECT.key)] }
+    as Float
+
+    val hoursHandWidth = scale * getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_HAND_WIDTH_HOURS
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_HOURS_RECT.key)] }
+    as Float
+
+    Box(
+        modifier = Modifier
+    ) {
+        DrawStaticUi(
+            modifier = Modifier,
+            scale = scale,
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
+            font = font,
+            fontSize = fontSize.sp
+        )
+        DrawHands(
+            modifier = Modifier,
+            color = secondaryColor,
+            minutesHandLength = minutesHandLength,
+            minutesHandWidth = minutesHandWidth,
+            hoursHandLength = hoursHandLength,
+            hoursHandWidth = hoursHandWidth,
             hour = hour,
             minute = minute,
             second = second,
             millisecond = millisecond
-       )
+        )
     }
 }
 
 @Composable
-fun StaticUi(
+fun DrawStaticUi(
     modifier: Modifier,
-    color: Color
+    scale: Float,
+    primaryColor: Color,
+    secondaryColor: Color,
+    font : FontFamily,
+    fontSize: TextUnit
 ) {
-    val digitalFont = FontFamily(
-        Font(R.font.digital, weight = FontWeight.Normal),
-    )
-    val fontSize = 80.sp
+    var parentSize by remember { mutableStateOf(Size.Zero) }
 
-    Image(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .absolutePadding(top = 9.dp),
-        painter = painterResource(R.drawable.clock_background),
-        contentDescription = null
-    )
-    Row (
-        modifier = modifier
-            .fillMaxSize()
-            .padding(25.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .onGloballyPositioned {
+                parentSize = it.parentLayoutCoordinates?.size?.toSize()?: Size.Zero
+            }
     ) {
-        Text(
-            modifier = Modifier,
-            text = "9",
-            color = color,
-            fontFamily = digitalFont,
-            fontSize = fontSize
-        )
-        Text(
+        Image(
             modifier = Modifier
-                .fillMaxWidth(),
-            textAlign = TextAlign.Right,
-            text = "3",
-            color = color,
-            fontFamily = digitalFont,
-            fontSize = fontSize
+                .fillMaxSize()
+                .padding(
+                    top = scale * 9.dp
+                ),
+            painter = painterResource(R.drawable.clock_background),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(
+                color = secondaryColor
+            )
         )
-    }
-    Column (
-        modifier = modifier
-            .fillMaxSize()
-            .padding(15.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            modifier = Modifier,
-            text = "12",
-            color = color,
-            fontFamily = digitalFont,
-            fontSize = fontSize
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            modifier = Modifier,
-            text = "6",
-            color = color,
-            fontFamily = digitalFont,
-            fontSize = fontSize
-        )
+        Row(
+            modifier = Modifier
+                .width(parentSize.width.dp)
+                .fillMaxHeight()
+                .padding(
+                    start = scale * 30.dp,
+                    end = scale * 30.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                modifier = Modifier,
+                text = "9",
+                color = primaryColor,
+                fontFamily = font,
+                fontSize = fontSize
+            )
+            Spacer(
+                modifier = Modifier
+                    .weight(1F)
+            )
+            Text(
+                modifier = Modifier,
+                textAlign = TextAlign.Right,
+                text = "3",
+                color = primaryColor,
+                fontFamily = font,
+                fontSize = fontSize
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(scale * parentSize.width.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    modifier = Modifier,
+                    text = "12",
+                    color = primaryColor,
+                    fontFamily = font,
+                    fontSize = fontSize
+                )
+                Spacer(
+                    modifier = Modifier.weight(1F)
+                )
+                Text(
+                    modifier = Modifier,
+                    text = "6",
+                    color = primaryColor,
+                    fontFamily = font,
+                    fontSize = fontSize
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun Hands(
+fun DrawHands(
     modifier: Modifier,
     color: Color,
+    minutesHandLength: Float,
+    minutesHandWidth: Float,
+    hoursHandLength: Float,
+    hoursHandWidth: Float,
     hour: Int,
     minute: Int,
     second: Int,
     millisecond: Int
 ) {
     Canvas(
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         val progression = ((millisecond % 1000) / 1000.0)
 
@@ -139,8 +256,22 @@ fun Hands(
         val animatedSecond = second + progression
         val animatedMinute = minute + animatedSecond / 60
         val animatedHour = (hourInt + (animatedMinute / 60)) * 5F
-        minuteHand(centerX, centerY, size.getRadius(0.7F), animatedMinute, color)
-        hourHand(centerX, centerY, size.getRadius(0.4F), animatedHour, color)
+        minuteHand(
+            centerX = centerX,
+            centerY = centerY,
+            clockRadius = size.getRadius(minutesHandLength),
+            strokeWidth = minutesHandWidth,
+            animatedMinute = animatedMinute,
+            color = color
+        )
+        hourHand(
+            centerX = centerX,
+            centerY = centerY,
+            clockRadius = size.getRadius(hoursHandLength),
+            strokeWidth = hoursHandWidth,
+            animatedHour = animatedHour,
+            color = color
+        )
     }
 }
 
@@ -148,18 +279,23 @@ fun DrawScope.minuteHand(
     centerX: Float,
     centerY: Float,
     clockRadius: Float,
+    strokeWidth: Float,
     animatedMinute: Double,
     color: Color
 ) {
-    val degree = animatedMinute * oneMinuteRadians - pieByTwo
-    val x = centerX + cos(degree) * clockRadius
-    val y = centerY + sin(degree) * clockRadius
+    val degree = animatedMinute * (Math.PI / 30) - (Math.PI / 2)
     drawLine(
-        start = Offset(centerX, centerY),
-        end = Offset(x.toFloat(), y.toFloat()),
+        start = Offset(
+            x = centerX,
+            y = centerY
+        ),
+        end = Offset(
+            x = (centerX + cos(degree) * clockRadius).toFloat(),
+            y = (centerY + sin(degree) * clockRadius).toFloat()
+        ),
         color = color,
-        strokeWidth = 8F,
-        cap = StrokeCap.Round
+        strokeWidth = strokeWidth,
+        cap = StrokeCap.Square
     )
 }
 
@@ -167,21 +303,42 @@ fun DrawScope.hourHand(
     centerX: Float,
     centerY: Float,
     clockRadius: Float,
+    strokeWidth: Float,
     animatedHour: Double,
     color: Color
 ) {
-    val degree = animatedHour * oneMinuteRadians - pieByTwo
-    val x = centerX + cos(degree) * clockRadius
-    val y = centerY + sin(degree) * clockRadius
+    val degree = animatedHour * (Math.PI / 30) - (Math.PI / 2)
     drawLine(
-        start = Offset(centerX, centerY),
-        end = Offset(x.toFloat(), y.toFloat()),
+        start = Offset(
+            x = centerX,
+            y = centerY
+        ),
+        end = Offset(
+            x = (centerX + cos(degree) * clockRadius).toFloat(),
+            y = (centerY + sin(degree) * clockRadius).toFloat()
+        ),
         color = color,
-        strokeWidth = 16F,
-        cap = StrokeCap.Round
+        strokeWidth = strokeWidth,
+        cap = StrokeCap.Square
     )
 }
 
-private fun Size.getRadius(expo: Float = 1F) = expo * min(Dp(width / 2), Dp(height / 2)).value
-private const val oneMinuteRadians = Math.PI / 30
-private const val pieByTwo = Math.PI / 2
+private fun Size.getRadius(
+    expo: Float
+) : Float {
+    return expo * min(Dp(width / 2), Dp(height / 2)).value
+}
+
+@SuppressLint("FlowOperatorInvokedInComposition")
+@Composable
+private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
+    return dataStore.data.map {
+        getter(it) ?: defaultValue
+    }.collectAsState(initial = defaultValue).value
+}
+
+const val DEFAULT_DIGIT_FONT_SIZE = 80F
+const val DEFAULT_HAND_LEN_MINUTES = 0.7F
+const val DEFAULT_HAND_LEN_HOURS = 0.4F
+const val DEFAULT_HAND_WIDTH_MINUTES = 16F
+const val DEFAULT_HAND_WIDTH_HOURS = 8F

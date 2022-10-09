@@ -23,5 +23,11 @@ enum class PreferenceKey(val key: String, val title: Int) {
     TICK_STYLE_HOURS("tickStyleHours", R.string.tick_style_hours),
     TICK_START_HOURS("tickStartHours", R.string.tick_start_hours),
     TICK_LEN_HOURS("tickLengthHours", R.string.tick_length_hours),
-    INNER_CIRCLE_RADIUS("innerCircleRadius", R.string.inner_circle_radius);
+    INNER_CIRCLE_RADIUS("innerCircleRadius", R.string.inner_circle_radius),
+    DIGIT_FONT_RECT("digitFontRect", R.string.digit_font),
+    DIGIT_FONT_SIZE_RECT("digitFontSizeRect", R.string.digit_font_size),
+    HAND_LENGTH_MINUTES_RECT("handLengthMinutesRect", R.string.hand_length_minutes),
+    HAND_LENGTH_HOURS_RECT("handLengthHoursRect", R.string.hand_length_hours),
+    HAND_WIDTH_MINUTES_RECT("handWidthMinutesRect", R.string.hand_width_minutes),
+    HAND_WIDTH_HOURS_RECT("handWidthHoursRect", R.string.hand_width_hours);
 }

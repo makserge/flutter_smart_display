@@ -23,6 +23,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.firebirdberlin.nightdream.AnalogClockConfig
 import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import com.godaddy.android.colorpicker.toColorInt
@@ -31,9 +32,11 @@ import com.jamal.composeprefs.ui.LocalPrefsDataStore
 import com.jamal.composeprefs.ui.PrefsScope
 import com.jamal.composeprefs.ui.PrefsScreen
 import com.jamal.composeprefs.ui.prefs.ListPref
+import com.jamal.composeprefs.ui.prefs.SliderPref
 import com.jamal.composeprefs.ui.prefs.TextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
+import com.smsoft.smartdisplay.data.Font
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import kotlinx.coroutines.launch
@@ -45,16 +48,20 @@ fun ClockSettingsScreen(
         .background(MaterialTheme.colors.background),
     viewModel: ClockSettingsViewModel = hiltViewModel(),
 ) {
+    var clockType by remember { mutableStateOf(ClockType.getDefaultId()) }
+
     val context = LocalContext.current
 
     val dataStore = viewModel.dataStore
 
-    val defaultClockTypeId = ClockType.getDefaultId()
-    var clockType by remember { mutableStateOf(defaultClockTypeId) }
+    val prefs by remember { dataStore.data }.collectAsState(initial = null)
+    prefs?.get(stringPreferencesKey(PreferenceKey.CLOCK_TYPE.key))?.also {
+        clockType = it
+    }
 
     Scaffold(
         modifier = Modifier,
-        topBar = { 
+        topBar = {
             SettingsTopBar(
                 modifier = Modifier,
             )
@@ -66,9 +73,6 @@ fun ClockSettingsScreen(
         ) {
             Box(
                 modifier = Modifier
-                    .padding(
-                        end = 100.dp
-                    )
                     .weight(1f)
                     .fillMaxWidth()
             ) {
@@ -81,16 +85,15 @@ fun ClockSettingsScreen(
                     clockType = it
                 }
             }
-            Box(
+            Column(
                 modifier = Modifier
-                    .padding(30.dp)
-                    .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .weight(1F),
+                verticalArrangement = Arrangement.Center
             ) {
                 ClockScreen(
                     modifier = Modifier,
-                    width = 550,
-                    height = 550,
+                    scale = ClockType.getById(clockType).previewScale,
                     onClick = { }
                 )
             }
@@ -191,14 +194,6 @@ fun drawClockTypePrefs(
 }
 
 fun drawAnalogFSClockPrefs(
-    modifier: Modifier,
-    scope: PrefsScope,
-    context: Context
-) {
-
-}
-
-fun drawAnalogRectangularClockPrefs(
     modifier: Modifier,
     scope: PrefsScope,
     context: Context

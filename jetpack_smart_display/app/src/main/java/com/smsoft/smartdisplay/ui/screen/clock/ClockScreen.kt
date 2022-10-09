@@ -1,9 +1,7 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -22,9 +20,8 @@ import systems.sieber.fsclock.FSAnalogClock
 @Composable
 fun ClockScreen(
     modifier: Modifier = Modifier,
+    scale: Float = 1F,
     viewModel: ClockViewModel = hiltViewModel(),
-    width: Int? = null,
-    height: Int? = null,
     onClick: () -> Unit,
 ) {
     val clockType = viewModel.clockType.collectAsStateWithLifecycle(
@@ -40,27 +37,27 @@ fun ClockScreen(
             viewModel.onStop()
         }
     }
-    DrawClock(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
+    Box(
+        modifier = Modifier
             .clickable(
                 onClick = onClick
             ),
-        width = width,
-        height = height,
-        clockType = clockType,
-        uiState = clockUiState,
-        dataStore = dataStore
-    )
+    ) {
+        DrawClock(
+            modifier = Modifier,
+            clockType = clockType,
+            scale = scale,
+            uiState = clockUiState,
+            dataStore = dataStore
+        )
+    }
 }
 
 @Composable
 fun DrawClock(
     modifier: Modifier = Modifier,
-    width: Int? = null,
-    height: Int? = null,
     clockType: ClockType,
+    scale: Float,
     uiState: ClockUiState,
     dataStore: DataStore<Preferences>
 ) {
@@ -68,8 +65,6 @@ fun DrawClock(
         ClockType.ANALOG_ROUND ->
             NightdreamAnalogClock(
                 modifier = modifier,
-                width = width,
-                height = height,
                 dataStore = dataStore,
                 hour = uiState.hour,
                 minute = uiState.minute,
@@ -77,6 +72,9 @@ fun DrawClock(
             )
         ClockType.ANALOG_RECTANGULAR ->
             AnalogClock(
+                modifier = modifier,
+                dataStore = dataStore,
+                scale = scale,
                 hour = uiState.hour,
                 minute = uiState.minute,
                 second = uiState.second,

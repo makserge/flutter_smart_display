@@ -3,11 +3,11 @@ package com.smsoft.smartdisplay.data
 import android.content.Context
 import com.smsoft.smartdisplay.R
 
-enum class ClockType(val id: String, val titleId: Int) {
-    ANALOG_ROUND("analogRound", R.string.analog_round),
-    ANALOG_RECTANGULAR("analogRectangular", R.string.analog_rectangular),
-    ANALOG_FSCLOCK("analogFsclock", R.string.analog_fsclock),
-    DIGITAL("digital", R.string.digital);
+enum class ClockType(val id: String, val titleId: Int, val previewScale: Float) {
+    ANALOG_ROUND("analogRound", R.string.analog_round, 1F),
+    ANALOG_RECTANGULAR("analogRectangular", R.string.analog_rectangular, 0.5F),
+    ANALOG_FSCLOCK("analogFsclock", R.string.analog_fsclock, 1F),
+    DIGITAL("digital", R.string.digital, 1F);
 
     companion object {
         fun toMap(context: Context): Map<String, String> {
