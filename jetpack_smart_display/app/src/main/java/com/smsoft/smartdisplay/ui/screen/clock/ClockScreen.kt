@@ -82,6 +82,8 @@ fun DrawClock(
             )
         ClockType.ANALOG_FSCLOCK ->
             FSAnalogClock(
+                modifier = modifier,
+                dataStore = dataStore,
                 hour = uiState.hour,
                 minute = uiState.minute,
                 second = uiState.second,
