@@ -23,7 +23,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.firebirdberlin.nightdream.AnalogClockConfig
 import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import com.godaddy.android.colorpicker.toColorInt
@@ -32,11 +31,9 @@ import com.jamal.composeprefs.ui.LocalPrefsDataStore
 import com.jamal.composeprefs.ui.PrefsScope
 import com.jamal.composeprefs.ui.PrefsScreen
 import com.jamal.composeprefs.ui.prefs.ListPref
-import com.jamal.composeprefs.ui.prefs.SliderPref
 import com.jamal.composeprefs.ui.prefs.TextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
-import com.smsoft.smartdisplay.data.Font
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import kotlinx.coroutines.launch
@@ -181,7 +178,7 @@ fun drawClockTypePrefs(
             scope = scope,
             context = context
         )
-        ClockType.ANALOG_FSCLOCK -> drawAnalogFSClockPrefs(
+        ClockType.ANALOG_JETALARM -> drawAnalogJetAlarmPrefs(
             modifier = modifier,
             scope = scope,
             context = context
@@ -190,15 +187,8 @@ fun drawClockTypePrefs(
             modifier = modifier,
             scope = scope
         )
+        else -> {}
     }
-}
-
-fun drawAnalogFSClockPrefs(
-    modifier: Modifier,
-    scope: PrefsScope,
-    context: Context
-) {
-
 }
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)

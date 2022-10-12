@@ -29,5 +29,14 @@ enum class PreferenceKey(val key: String, val title: Int) {
     HAND_LENGTH_MINUTES_RECT("handLengthMinutesRect", R.string.hand_length_minutes),
     HAND_LENGTH_HOURS_RECT("handLengthHoursRect", R.string.hand_length_hours),
     HAND_WIDTH_MINUTES_RECT("handWidthMinutesRect", R.string.hand_width_minutes),
-    HAND_WIDTH_HOURS_RECT("handWidthHoursRect", R.string.hand_width_hours);
+    HAND_WIDTH_HOURS_RECT("handWidthHoursRect", R.string.hand_width_hours),
+    BORDER_RADIUS_JET("borderRadiusJet", R.string.border_radius),
+    BORDER_THICKNESS_JET("borderThicknessJet", R.string.border_thickness),
+    HAND_LENGTH_SECONDS_JET("handLengthSecondsJet", R.string.hand_length_seconds),
+    HAND_LENGTH_MINUTES_JET("handLengthMinutesJet", R.string.hand_length_minutes),
+    HAND_LENGTH_HOURS_JET("handLengthHoursJet", R.string.hand_length_hours),
+    HAND_WIDTH_SECONDS_JET("handWidthSecondsJet", R.string.hand_width_seconds),
+    HAND_WIDTH_MINUTES_JET("handWidthMinutesJet", R.string.hand_width_minutes),
+    HAND_WIDTH_HOURS_JET("handWidthHoursJet", R.string.hand_width_hours),
+    HAND_SHOW_SECOND_HAND_JET("handShowSecondHandJet", R.string.hand_show_second_hand);
 }

@@ -7,6 +7,7 @@ enum class ClockType(val id: String, val titleId: Int, val previewScale: Float) 
     ANALOG_ROUND("analogRound", R.string.analog_round, 1F),
     ANALOG_RECTANGULAR("analogRectangular", R.string.analog_rectangular, 0.5F),
     ANALOG_FSCLOCK("analogFsclock", R.string.analog_fsclock, 1F),
+    ANALOG_JETALARM("analogJetAlarm", R.string.analog_jetalarm, 1F),
     DIGITAL("digital", R.string.digital, 1F);
 
     companion object {

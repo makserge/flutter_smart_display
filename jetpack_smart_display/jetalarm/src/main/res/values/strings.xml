@@ -1,0 +1,13 @@
+<resources>
+    <string name="primary_color">Color</string>
+    <string name="secondary_color">Accent color</string>
+    <string name="hand_length_seconds">Length seconds</string>
+    <string name="hand_length_minutes">Length minutes</string>
+    <string name="hand_length_hours">Length hours</string>
+    <string name="hand_width_seconds">Width seconds</string>
+    <string name="hand_width_minutes">Width minutes</string>
+    <string name="hand_width_hours">Width hours</string>
+    <string name="hand_show_second_hand">Show second hand</string>
+    <string name="border_radius">Border radius</string>
+    <string name="border_thickness">Border thickness</string>
+</resources>

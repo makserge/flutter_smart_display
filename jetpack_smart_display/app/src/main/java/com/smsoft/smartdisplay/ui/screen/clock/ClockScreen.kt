@@ -13,7 +13,8 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.firebirdberlin.nightdream.NightdreamAnalogClock
 import com.smsoft.smartdisplay.data.ClockType
-import com.smsoft.smartdisplay.ui.composable.analog.AnalogClock
+import com.smsoft.smartdisplay.ui.composable.analog.AnalogClockRectangular
+import io.ak1.jetalarm.JetAlarm
 import systems.sieber.fsclock.FSAnalogClock
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
@@ -71,7 +72,7 @@ fun DrawClock(
                 second = uiState.second
             )
         ClockType.ANALOG_RECTANGULAR ->
-            AnalogClock(
+            AnalogClockRectangular(
                 modifier = modifier,
                 dataStore = dataStore,
                 scale = scale,
@@ -87,20 +88,25 @@ fun DrawClock(
                 hour = uiState.hour,
                 minute = uiState.minute,
                 second = uiState.second,
-                millisecond = uiState.milliSecond
+                milliSecond = uiState.milliSecond
             )
+        ClockType.ANALOG_JETALARM -> {
+            JetAlarm(
+                modifier = modifier,
+                dataStore = dataStore,
+                hour = uiState.hour,
+                minute = uiState.minute,
+                second = uiState.second,
+                milliSecond = uiState.milliSecond
+            )
+        }
         ClockType.DIGITAL -> {
 
         }
     }
 /*
 
-    ClockView(
-        modifier = modifier,
-        hour = uiState.hour,
-        minute = uiState.minute,
-        second = uiState.second
-    )
+
     ClockView2(
         hour = uiState.hour,
         minute = uiState.minute,

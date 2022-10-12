@@ -41,4 +41,10 @@
     <string name="secondary_color">Accent color</string>
     <string name="cancel">Cancel</string>
     <string name="colors">Colors</string>
+    <string name="analog_jetalarm">Analog (JetAlarm)</string>
+    <string name="hand_length_seconds">Length seconds</string>
+    <string name="hand_width_seconds">Width seconds</string>
+    <string name="border_radius">Border radius</string>
+    <string name="border_thickness">Border thickness</string>
+    <string name="border">Border</string>
 </resources>

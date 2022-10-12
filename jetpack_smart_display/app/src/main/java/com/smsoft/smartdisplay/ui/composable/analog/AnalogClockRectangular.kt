@@ -34,7 +34,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun AnalogClock(
+fun AnalogClockRectangular(
     modifier: Modifier = Modifier,
     dataStore: DataStore<Preferences>,
     scale: Float,

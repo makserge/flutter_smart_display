@@ -51,7 +51,7 @@ fun FSAnalogClock(
     getColorSetings(
         key = PreferenceKey.SECONDARY_COLOR,
         dataStore = dataStore,
-        defaultValue = MaterialTheme.colors.primary
+        defaultValue = MaterialTheme.colors.secondary
     )?.let {
         secondaryColor = Color(android.graphics.Color.parseColor(it))
     }
