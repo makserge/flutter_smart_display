@@ -15,11 +15,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Smart Display"
 include ':app'
-include ':fsclock'
-include ':nightdream'
-include ':clockview'
-include ':clockview2'
-include ':jetalarm'
-include ':matrixdisplay'
-include ':digitalclock'
-include ':digitalclock2'

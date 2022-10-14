@@ -35,6 +35,11 @@ import com.jamal.composeprefs.ui.prefs.TextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.ui.composable.clock.clockview.drawAnalogClockViewPrefs
+import com.smsoft.smartdisplay.ui.composable.clock.jetalarm.drawAnalogJetAlarmPrefs
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.drawAnalogNightdreamPrefs
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.drawDigitalFlipClockPrefs
+import com.smsoft.smartdisplay.ui.composable.clock.rectangular.drawAnalogRectangularPrefs
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import kotlinx.coroutines.launch
 
@@ -168,22 +173,26 @@ fun drawClockTypePrefs(
     context: Context
 ) {
     when (clockType) {
-        ClockType.ANALOG_ROUND -> drawAnalogRoundClockPrefs(
+        ClockType.ANALOG_NIGHTDREAM -> drawAnalogNightdreamPrefs(
             modifier = modifier,
             scope = scope,
             context = context
         )
-        ClockType.ANALOG_RECTANGULAR -> drawAnalogRectangularClockPrefs(
+        ClockType.ANALOG_CLOCKVIEW -> drawAnalogClockViewPrefs(
+            modifier = modifier,
+            scope = scope,
+            context = context
+        )
+        ClockType.ANALOG_RECTANGULAR -> drawAnalogRectangularPrefs(
             modifier = modifier,
             scope = scope,
             context = context
         )
         ClockType.ANALOG_JETALARM -> drawAnalogJetAlarmPrefs(
             modifier = modifier,
-            scope = scope,
-            context = context
+            scope = scope
         )
-        ClockType.DIGITAL -> drawDigitalClockPrefs(
+        ClockType.DIGITAL_FLIPCLOCK -> drawDigitalFlipClockPrefs(
             modifier = modifier,
             scope = scope
         )
