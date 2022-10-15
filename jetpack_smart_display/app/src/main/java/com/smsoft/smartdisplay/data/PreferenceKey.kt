@@ -38,5 +38,17 @@ enum class PreferenceKey(val key: String, val title: Int) {
     HAND_WIDTH_SECONDS_JET("handWidthSecondsJet", R.string.hand_width_seconds),
     HAND_WIDTH_MINUTES_JET("handWidthMinutesJet", R.string.hand_width_minutes),
     HAND_WIDTH_HOURS_JET("handWidthHoursJet", R.string.hand_width_hours),
-    HAND_SHOW_SECOND_HAND_JET("handShowSecondHandJet", R.string.hand_show_second_hand);
+    HAND_SHOW_SECOND_HAND_JET("handShowSecondHandJet", R.string.hand_show_second_hand),
+    DIGIT_FONT_CLOCKVIEW("digitFontClockView", R.string.digit_font),
+    DIGIT_STYLE_CLOCKVIEW("digitStyleClockView", R.string.digit_style),
+    DIGIT_SHOW_HOURS_CLOCKVIEW("digitShowHoursClockView", R.string.digit_show_hours),
+    DIGIT_SHOW_MINUTES_CLOCKVIEW("digitShowMinutesClockView", R.string.digit_show_minutes),
+    DIGIT_SHOW_DEGREES_CLOCKVIEW("digitShowDegreesClockView", R.string.digit_show_degrees),
+    DIGIT_DISPOSITION_CLOCKVIEW("digitDispositionClockView", R.string.digit_disposition),
+    DIGIT_STEP_CLOCKVIEW("digitStepClockView", R.string.digit_step),
+    DEGREE_TYPE_CLOCKVIEW("degreeTypeClockView", R.string.degree_type),
+    DEGREE_STEP_CLOCKVIEW("degreeStepClockView", R.string.degree_step),
+    SHOW_CENTER_CLOCKVIEW("showCenterClockView", R.string.show_center),
+    SHOW_SECOND_HAND_CLOCKVIEW("showSecondHandClockView", R.string.hand_show_second_hand)
+    ;
 }

@@ -1,17 +1,18 @@
 package com.smsoft.smartdisplay.ui.composable.clock.clockview
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.*
-import android.text.*
-import android.text.style.RelativeSizeSpan
+import android.text.TextPaint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.NativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -20,8 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import java.util.*
+import com.smsoft.smartdisplay.data.PreferenceKey
+import kotlinx.coroutines.flow.map
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -43,35 +47,101 @@ fun ClockView(
 
     val context = LocalContext.current
 
+    val font = getParam(
+        dataStore = dataStore,
+        defaultValue = Font.getDefault().font
+    ) { preferences ->
+        Font.getById((preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT_CLOCKVIEW.key)] ?: Font.getDefaultId())).font }
+    as Int
+
+    val digitStyle = getParam(
+        dataStore = dataStore,
+        defaultValue = DigitStyle.getDefault()
+    ) { preferences -> DigitStyle.getById(preferences[stringPreferencesKey(
+        PreferenceKey.DIGIT_STYLE_CLOCKVIEW.key)] ?: DigitStyle.getDefaultId()) }
+    as DigitStyle
+
+    val showHoursValues = getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_SHOW_HOURS
+    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_SHOW_HOURS_CLOCKVIEW.key)] }
+    as Boolean
+
+    val showMinutesValues = getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_SHOW_MINUTES
+    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_SHOW_MINUTES_CLOCKVIEW.key)] }
+    as Boolean
+
+    val showDegrees = getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_SHOW_DEGREES
+    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_SHOW_DEGREES_CLOCKVIEW.key)] }
+    as Boolean
+
+    val digitDisposition = getParam(
+        dataStore = dataStore,
+        defaultValue = DigitDisposition.getDefault()
+    ) { preferences -> DigitDisposition.getById(preferences[stringPreferencesKey(
+        PreferenceKey.DIGIT_DISPOSITION_CLOCKVIEW.key)] ?: DigitDisposition.getDefaultId()) }
+    as DigitDisposition
+
+    val digitStep = getParam(
+        dataStore = dataStore,
+        defaultValue = DigitStep.getDefault()
+    ) { preferences -> DigitStep.getById(preferences[stringPreferencesKey(
+        PreferenceKey.DIGIT_STEP_CLOCKVIEW.key)] ?: DigitStep.getDefaultId()) }
+    as DigitStep
+
+    val degreesType = getParam(
+        dataStore = dataStore,
+        defaultValue = DegreeType.getDefault()
+    ) { preferences -> DegreeType.getById(preferences[stringPreferencesKey(
+        PreferenceKey.DEGREE_TYPE_CLOCKVIEW.key)] ?: DegreeType.getDefaultId()) }
+    as DegreeType
+
+    val degreesStep = getParam(
+        dataStore = dataStore,
+        defaultValue = DegreesStep.getDefault()
+    ) { preferences -> DegreesStep.getById(preferences[stringPreferencesKey(
+        PreferenceKey.DEGREE_STEP_CLOCKVIEW.key)] ?: DegreesStep.getDefaultId()) }
+    as DegreesStep
+
+    val showCenter = getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_SHOW_CENTER
+    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_CENTER_CLOCKVIEW.key)] }
+    as Boolean
+
+    val showSecondsHand = getParam(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_SHOW_SECOND_HAND
+    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_SECOND_HAND_CLOCKVIEW.key)] }
+    as Boolean
+
     OnDraw(
         modifier = modifier,
         scale = scale,
-        clockType = ClockType.ANALOG,
-        showBorder = false,
-        borderColor = primaryColor,
-        showHoursValues = true,
+        showHoursValues = showHoursValues,
+        showMinutesValues = showMinutesValues,
+        digitStyle = digitStyle,
         digitsColor = secondaryColor,
-        digitsFont = ResourcesCompat.getFont(context, R.font.roboto_regular)!!,
-        showDegrees = true,
-        digitType = DigitType.ROMAN,
-        digitDisposition = DigitDisposition.ALTERNATE,
-        digitStep = DigitStep.FULL,
-        showMinutesValues = true,
+        digitsFont = ResourcesCompat.getFont(context, font)!!,
+        showDegrees = showDegrees,
+        digitDisposition = digitDisposition,
+        digitStep = digitStep,
         minutesProgressColor = primaryColor,
         minutesValuesFactor = 0.3F,
         degreesColor = primaryColor,
-        degreesType = DegreeType.LINE,
-        degreesStep = DegreesStep.FULL,
-        showCenter = true,
+        degreesType = degreesType,
+        degreesStep = degreesStep,
+        showCenter = showCenter,
         centerInnerColor = primaryColor,
         centerOuterColor = primaryColor,
         needleHoursColor = primaryColor,
         needleMinutesColor = primaryColor,
         needleSecondsColor = primaryColor,
-        showSecondsNeedle = true,
-        numericShowSeconds = true,
-        isHourFormat24 = true,
-        isAM = false,
+        showSecondsHand = showSecondsHand,
         second = second,
         hour = hour,
         minute = minute
@@ -82,17 +152,14 @@ fun ClockView(
 fun OnDraw(
     modifier: Modifier,
     scale: Float,
-    clockType: ClockType,
-    showBorder: Boolean,
-    borderColor: Int,
     showHoursValues: Boolean,
+    showMinutesValues: Boolean,
+    digitStyle: DigitStyle,
     digitsColor: Int,
     digitsFont: Typeface,
     showDegrees: Boolean,
-    digitType: DigitType,
     digitDisposition: DigitDisposition,
     digitStep: DigitStep,
-    showMinutesValues: Boolean,
     minutesProgressColor: Int,
     minutesValuesFactor: Float,
     degreesColor: Int,
@@ -104,10 +171,7 @@ fun OnDraw(
     needleHoursColor: Int,
     needleMinutesColor: Int,
     needleSecondsColor: Int,
-    showSecondsNeedle: Boolean,
-    numericShowSeconds: Boolean,
-    isHourFormat24: Boolean,
-    isAM: Boolean,
+    showSecondsHand: Boolean,
     second: Int,
     hour: Int,
     minute: Int
@@ -131,123 +195,54 @@ fun OnDraw(
                 )
                 drawIntoCanvas {
                     val canvas = it.nativeCanvas
-                    when (clockType) {
-                        ClockType.ANALOG -> drawAnalogClock(
+                    if (showHoursValues) {
+                        drawHoursValues(
                             canvas = canvas,
-                            showBorder = showBorder,
-                            borderColor = borderColor,
-                            showHoursValues = showHoursValues,
                             digitsColor = digitsColor,
                             digitsFont = digitsFont,
                             showDegrees = showDegrees,
-                            digitType = digitType,
+                            digitStyle = digitStyle,
                             digitDisposition = digitDisposition,
-                            digitStep = digitStep,
-                            showMinutesValues = showMinutesValues,
-                            minutesProgressColor = minutesProgressColor,
-                            minutesValuesFactor = minutesValuesFactor,
-                            degreesColor = degreesColor,
-                            degreesType = degreesType,
-                            degreesStep = degreesStep,
-                            showCenter = showCenter,
-                            centerInnerColor = centerInnerColor,
-                            centerOuterColor = centerOuterColor,
-                            needleHoursColor = needleHoursColor,
-                            needleMinutesColor = needleMinutesColor,
-                            needleSecondsColor = needleSecondsColor,
-                            showSecondsNeedle = showSecondsNeedle,
-                            second = second,
-                            hour = hour,
-                            minute = minute
-                        )
-                        ClockType.DIGITAL -> drawDigitalClock(
-                            canvas = canvas,
-                            digitsFont = digitsFont,
-                            digitsColor = digitsColor,
-                            numericShowSeconds = numericShowSeconds,
-                            isHourFormat24 = isHourFormat24,
-                            isAM = isAM,
-                            hour = hour,
-                            minute = minute,
-                            second = second,
+                            digitStep = digitStep
                         )
                     }
+                    if (showMinutesValues) {
+                        drawMinutesValues(
+                            canvas = canvas,
+                            minutesProgressColor = minutesProgressColor,
+                            digitsFont = digitsFont,
+                            minutesValuesFactor = minutesValuesFactor,
+                            digitStyle = digitStyle
+                        )
+                    }
+                    if (showDegrees) {
+                        drawDegrees(
+                            canvas = canvas,
+                            degreesColor = degreesColor,
+                            degreesType = degreesType,
+                            degreesStep = degreesStep
+                        )
+                    }
+                    if (showCenter) {
+                        drawCenter(
+                            canvas = canvas,
+                            centerInnerColor = centerInnerColor,
+                            centerOuterColor = centerOuterColor
+                        )
+                    }
+                    drawNeedles(
+                        canvas = canvas,
+                        needleHoursColor = needleHoursColor,
+                        needleMinutesColor = needleMinutesColor,
+                        needleSecondsColor = needleSecondsColor,
+                        showSecondsHand = showSecondsHand,
+                        second = second,
+                        hour = hour,
+                        minute = minute
+                    )
                 }
             }
     }
-}
-
-private fun drawDigitalClock(
-    canvas: Canvas,
-    digitsFont: Typeface,
-    digitsColor: Int,
-    numericShowSeconds: Boolean,
-    isHourFormat24: Boolean,
-    isAM: Boolean,
-    hour: Int,
-    minute: Int,
-    second: Int,
-) {
-    val textPaint = TextPaint().apply{
-        isAntiAlias = true
-        typeface = digitsFont
-        textSize = clockSize * 0.22F
-        color = digitsColor
-    }
-    val spannableString = SpannableStringBuilder()
-
-    val hourStr = String.format(Locale.getDefault(), "%02d", hour)
-    val minuteStr = String.format(Locale.getDefault(), "%02d", minute)
-
-    if (numericShowSeconds) {
-        val secondStr = String.format(Locale.getDefault(), "%02d", second)
-        if (isHourFormat24) {
-            spannableString.apply {
-                append(hourStr)
-                append(":")
-                append(minuteStr)
-                append(".")
-                append(secondStr)
-            }
-        } else {
-            spannableString.apply {
-                append(hourStr)
-                append(":")
-                append(minuteStr)
-                append(".")
-                append(secondStr)
-                append(if (isAM) "AM" else "PM")
-                setSpan(RelativeSizeSpan(0.3F), toString().length - 2, toString().length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) // se superscript percent
-            }
-        }
-    } else {
-        if (isHourFormat24) {
-            spannableString.apply {
-                append(hourStr)
-                append(":")
-                append(minuteStr)
-            }
-        } else {
-            spannableString.apply {
-                append(hourStr)
-                append(":")
-                append(minuteStr)
-                append(if (isAM) "AM" else "PM")
-                setSpan(RelativeSizeSpan(0.4F), toString().length - 2, toString().length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) // se superscript percent
-            }
-        }
-    }
-    val layout = StaticLayout(
-        spannableString,
-        textPaint,
-        canvas.width,
-        Layout.Alignment.ALIGN_CENTER,
-        1F,
-        1F,
-        true
-    )
-    canvas.translate(centerX - layout.width / 2F, centerY - layout.height / 2F)
-    layout.draw(canvas)
 }
 
 private fun onPreDraw(
@@ -262,109 +257,12 @@ private fun onPreDraw(
     defaultRectF = RectF(defaultThickness, defaultThickness, clockSize - defaultThickness, clockSize - defaultThickness)
 }
 
-private fun drawAnalogClock(
-    canvas: NativeCanvas,
-    showBorder: Boolean,
-    borderColor: Int,
-    showHoursValues: Boolean,
-    digitsColor: Int,
-    digitsFont: Typeface,
-    showDegrees: Boolean,
-    digitType: DigitType,
-    digitDisposition: DigitDisposition,
-    digitStep: DigitStep,
-    showMinutesValues: Boolean,
-    minutesProgressColor: Int,
-    minutesValuesFactor: Float,
-    degreesColor: Int,
-    degreesType: DegreeType,
-    degreesStep: DegreesStep,
-    showCenter: Boolean,
-    centerInnerColor: Int,
-    centerOuterColor: Int,
-    needleHoursColor: Int,
-    needleMinutesColor: Int,
-    needleSecondsColor: Int,
-    showSecondsNeedle: Boolean,
-    second: Int,
-    hour: Int,
-    minute: Int
-) {
-    if (showBorder) {
-        drawBorder(
-            canvas = canvas,
-            borderColor = borderColor
-        )
-    }
-    if (showHoursValues) {
-        drawHoursValues(
-            canvas = canvas,
-            digitsColor = digitsColor,
-            digitsFont = digitsFont,
-            showDegrees = showDegrees,
-            digitType = digitType,
-            digitDisposition = digitDisposition,
-            digitStep = digitStep
-        )
-    }
-    if (showMinutesValues) {
-        drawMinutesValues(
-            canvas = canvas,
-            minutesProgressColor = minutesProgressColor,
-            digitsFont = digitsFont,
-            minutesValuesFactor = minutesValuesFactor,
-            digitType = digitType
-        )
-    }
-    if (showDegrees) {
-        drawDegrees(
-            canvas = canvas,
-            degreesColor = degreesColor,
-            degreesType = degreesType,
-            degreesStep = degreesStep
-        )
-    }
-    if (showCenter) {
-        drawCenter(
-            canvas = canvas,
-            centerInnerColor = centerInnerColor,
-            centerOuterColor = centerOuterColor
-        )
-    }
-    drawNeedles(
-        canvas = canvas,
-        showBorder = showBorder,
-        showHoursValues = showHoursValues,
-        showDegrees = showDegrees,
-        needleHoursColor = needleHoursColor,
-        needleMinutesColor = needleMinutesColor,
-        needleSecondsColor = needleSecondsColor,
-        showSecondsNeedle = showSecondsNeedle,
-        second = second,
-        hour = hour,
-        minute = minute
-    )
-}
-
-private fun drawBorder(
-    canvas: NativeCanvas,
-    borderColor: Int
-) {
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply{
-        isAntiAlias = true
-        color = borderColor
-        style = Paint.Style.STROKE
-        strokeWidth = clockSize * DEFAULT_BORDER_THICKNESS
-    }
-    canvas.drawCircle(centerX.toFloat(), centerY.toFloat(), radius.toFloat(), paint)
-}
-
 private fun drawHoursValues(
     canvas: Canvas,
     digitsColor: Int,
     digitsFont: Typeface,
     showDegrees: Boolean,
-    digitType: DigitType,
+    digitStyle: DigitStyle,
     digitDisposition: DigitDisposition,
     digitStep: DigitStep
 ) {
@@ -375,15 +273,14 @@ private fun drawHoursValues(
         typeface = digitsFont
         textSize = clockSize * DEFAULT_HOURS_VALUES_TEXT_SIZE
     }
-    var degreeSpace = 0F
-    if (showDegrees) degreeSpace = DEFAULT_DEGREE_STROKE_WIDTH + 0.06F
+    val degreeSpace = if (showDegrees) DEFAULT_DEGREE_STROKE_WIDTH + 0.06F else 0F
     val text = (centerX - clockSize * DEFAULT_HOURS_VALUES_TEXT_SIZE - clockSize * degreeSpace).toInt()
     var i = FULL_ANGLE
     val rect = Rect()
     while (i > 0) {
         val value = i / 30
-        val formatted = when (digitType) {
-            DigitType.ROMAN -> toRoman(value)
+        val formatted = when (digitStyle) {
+            DigitStyle.ROMAN -> toRoman(value)
             else -> value.toString()
         }
         if (digitDisposition == DigitDisposition.ALTERNATE) {
@@ -417,7 +314,7 @@ private fun drawMinutesValues(
     minutesProgressColor: Int,
     digitsFont: Typeface,
     minutesValuesFactor: Float,
-    digitType: DigitType
+    digitStyle: DigitStyle
 ) {
     val textPaint = TextPaint().apply{
         color = minutesProgressColor
@@ -430,8 +327,8 @@ private fun drawMinutesValues(
     while (i < FULL_ANGLE) {
         val value = i / 6
         if (value > 0) {
-            val formatted = when (digitType) {
-                DigitType.ROMAN -> toRoman(value)
+            val formatted = when (digitStyle) {
+                DigitStyle.ROMAN -> toRoman(value)
                 else -> value.toString()
             }
             val textX = (centerX + text * cos(Math.toRadians((REGULAR_ANGLE - i).toDouble()))).toInt()
@@ -519,13 +416,10 @@ private fun drawCenter(
 
 private fun drawNeedles(
     canvas: Canvas,
-    showBorder: Boolean,
-    showHoursValues: Boolean,
-    showDegrees: Boolean,
     needleHoursColor: Int,
     needleMinutesColor: Int,
     needleSecondsColor: Int,
-    showSecondsNeedle: Boolean,
+    showSecondsHand: Boolean,
     second: Int,
     hour: Int,
     minute: Int
@@ -535,13 +429,9 @@ private fun drawNeedles(
         strokeWidth = clockSize * DEFAULT_NEEDLE_STROKE_WIDTH
     }
     val needleStartSpace = DEFAULT_NEEDLE_START_SPACE
-    var borderThickness = 0F
-    var hoursTextSize = 0F
-    var degreesSpace = 0F
-    if (showBorder) borderThickness = clockSize * DEFAULT_BORDER_THICKNESS
-    if (showHoursValues) hoursTextSize = clockSize * DEFAULT_HOURS_VALUES_TEXT_SIZE
-    if (showDegrees) degreesSpace = clockSize * (DEFAULT_BORDER_THICKNESS + 0.06F)
-    val needleMaxLength = radius * NEEDLE_LENGTH_FACTOR - 2 * (degreesSpace + borderThickness + hoursTextSize)
+    val hoursTextSize = clockSize * DEFAULT_HOURS_VALUES_TEXT_SIZE
+    val degreesSpace = clockSize * (DEFAULT_BORDER_THICKNESS + 0.06F)
+    val needleMaxLength = radius * NEEDLE_LENGTH_FACTOR - 2 * (degreesSpace + hoursTextSize)
 
     // draw seconds needle
     val secondsDegree = (second * 6).toFloat()
@@ -555,34 +445,47 @@ private fun drawNeedles(
     // draw minutes needle
     val minutesDegree = (minute + second / 60F) * 6
     val startMinutesX = (centerX + radius * needleStartSpace * cos(Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble()))).toFloat()
-    val stopMinutesX =
-        (centerX + needleMaxLength * 0.8F * cos(Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble()))).toFloat()
-    val startMinutesY =
-        (centerY + (radius - clockSize * DEFAULT_BORDER_THICKNESS) * needleStartSpace * sin(
-            Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble())
-        )).toFloat()
-    val stopMinutesY =
-        (centerY + needleMaxLength * 0.8F * sin(Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble()))).toFloat()
+    val stopMinutesX = (centerX + needleMaxLength * 0.8F * cos(Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble()))).toFloat()
+    val startMinutesY = (centerY + (radius - clockSize * DEFAULT_BORDER_THICKNESS) * needleStartSpace * sin(Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble()))).toFloat()
+    val stopMinutesY = (centerY + needleMaxLength * 0.8F * sin(Math.toRadians((-REGULAR_ANGLE + minutesDegree).toDouble()))).toFloat()
 
     // hours needle
     paint.color = needleHoursColor
-    canvas.drawLine(startHoursX, startHoursY, stopHoursX, stopHoursY, paint)
+    canvas.drawLine(
+        startHoursX,
+        startHoursY,
+        stopHoursX,
+        stopHoursY,
+        paint
+    )
 
     // minutes needle
     paint.color = needleMinutesColor
-    canvas.drawLine(startMinutesX, startMinutesY, stopMinutesX, stopMinutesY, paint)
+    canvas.drawLine(
+        startMinutesX,
+        startMinutesY,
+        stopMinutesX,
+        stopMinutesY,
+        paint
+    )
 
     // seconds needle
     paint.strokeWidth = clockSize * 0.008F
     paint.color = needleSecondsColor
 
-    if (showSecondsNeedle) {
+    if (showSecondsHand) {
         val startSecondsX = (centerX + radius * needleStartSpace * cos(Math.toRadians((-REGULAR_ANGLE + secondsDegree).toDouble()))).toFloat()
         val stopSecondsX = (centerX + needleMaxLength * cos(Math.toRadians((-REGULAR_ANGLE + secondsDegree).toDouble()))).toFloat()
         val startSecondsY = (centerY + radius * needleStartSpace * sin(Math.toRadians((-REGULAR_ANGLE + secondsDegree).toDouble()))).toFloat()
         val stopSecondsY = (centerY + needleMaxLength * sin(Math.toRadians((-REGULAR_ANGLE + secondsDegree).toDouble()))).toFloat()
 
-        canvas.drawLine(startSecondsX, startSecondsY, stopSecondsX, stopSecondsY, paint)
+        canvas.drawLine(
+            startSecondsX,
+            startSecondsY,
+            stopSecondsX,
+            stopSecondsY,
+            paint
+        )
     }
 }
 
@@ -590,6 +493,14 @@ private fun toRoman(number: Int): String {
     return if (number < 11) {
         romanMap[number]!!
     } else romanMap[10] + toRoman(number - 10)
+}
+
+@SuppressLint("FlowOperatorInvokedInComposition")
+@Composable
+private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
+    return dataStore.data.map {
+        getter(it) ?: defaultValue
+    }.collectAsState(initial = defaultValue).value
 }
 
 private const val DEFAULT_BORDER_THICKNESS = 0.015F
@@ -624,35 +535,183 @@ private val romanMap = sortedMapOf(
     1 to "I"
 )
 
-enum class DegreesStep(val value: String, titleId: Int) {
+enum class DegreesStep(val value: String, val titleId: Int) {
     QUARTER("90", R.string.degree_step_quarter),
     FULL("6", R.string.degree_step_full),
     TWELVE("30", R.string.degree_step_twelve);
+
+    companion object {
+        fun toMap(context: Context): Map<String, String> {
+            return values().associate {
+                it.value to context.getString(it.titleId)
+            }
+        }
+
+        fun getDefault(): DegreesStep {
+            return FULL
+        }
+
+        fun getDefaultId(): String {
+            return getDefault().value
+        }
+
+        fun getById(id: String): DegreesStep {
+            val item = values().filter {
+                it.value == id
+            }
+            return item[0]
+        }
+    }
 }
 
-enum class DegreeType(val value: String, titleId: Int) {
+enum class DegreeType(val value: String, val titleId: Int) {
     LINE("line", R.string.degree_type_line),
     CIRCLE("circle", R.string.degree_type_circle),
     SQUARE("square", R.string.degree_type_square);
+
+    companion object {
+        fun toMap(context: Context): Map<String, String> {
+            return values().associate {
+                it.value to context.getString(it.titleId)
+            }
+        }
+
+        fun getDefault(): DegreeType {
+            return LINE
+        }
+
+        fun getDefaultId(): String {
+            return getDefault().value
+        }
+
+        fun getById(id: String): DegreeType {
+            val item = values().filter {
+                it.value == id
+            }
+            return item[0]
+        }
+    }
 }
 
-enum class DigitDisposition(val value: String, titleId: Int) {
+enum class DigitDisposition(val value: String, val titleId: Int) {
     REGULAR("regular", R.string.digit_disposition_regular),
     ALTERNATE("alternate", R.string.digit_disposition_alternate);
+
+    companion object {
+        fun toMap(context: Context): Map<String, String> {
+            return values().associate {
+                it.value to context.getString(it.titleId)
+            }
+        }
+
+        fun getDefault(): DigitDisposition {
+            return REGULAR
+        }
+
+        fun getDefaultId(): String {
+            return getDefault().value
+        }
+
+        fun getById(id: String): DigitDisposition {
+            val item = values().filter {
+                it.value == id
+            }
+            return item[0]
+        }
+    }
 }
 
-enum class DigitStep(val value: String, titleId: Int) {
+enum class DigitStep(val value: String, val titleId: Int) {
     QUARTER("90", R.string.digit_step_quarter),
     FULL("30", R.string.digit_step_full);
+
+    companion object {
+        fun toMap(context: Context): Map<String, String> {
+            return values().associate {
+                it.value to context.getString(it.titleId)
+            }
+        }
+
+        fun getDefault(): DigitStep {
+            return QUARTER
+        }
+
+        fun getDefaultId(): String {
+            return getDefault().value
+        }
+
+        fun getById(id: String): DigitStep {
+            val item = values().filter {
+                it.value == id
+            }
+            return item[0]
+        }
+    }
 }
 
-enum class DigitType(val value: String, titleId: Int) {
-    ARABIC("arabic", R.string.digit_type_arabic),
-    ROMAN("roman", R.string.digit_type_roman);
+enum class DigitStyle(val value: String, val titleId: Int) {
+    ARABIC("arabic", R.string.digit_style_arabic),
+    ROMAN("roman", R.string.digit_style_roman);
+
+    companion object {
+        fun toMap(context: Context): Map<String, String> {
+            return values().associate {
+                it.value to context.getString(it.titleId)
+            }
+        }
+
+        fun getDefault(): DigitStyle {
+            return ARABIC
+        }
+
+        fun getDefaultId(): String {
+            return getDefault().value
+        }
+
+        fun getById(id: String): DigitStyle {
+            val item = values().filter {
+                it.value == id
+            }
+            return item[0]
+        }
+    }
 }
 
-enum class ClockType(val id: Int) {
-    ANALOG(0), DIGITAL(1);
+enum class Font(val id: String, val font: Int, val titleId: Int) {
+    ROBOTO_REGULAR("roboto_regular", R.font.roboto_regular, R.string.digit_font_roboto_regular),
+    ROBOTO_LIGHT("roboto_light", R.font.roboto_light, R.string.digit_font_roboto_light),
+    ROBOTO_THIN("roboto_thin", R.font.roboto_thin, R.string.digit_font_roboto_thin),
+    SEVEN_SEGMENT_DIGITAL("seven_segment_digital", R.font.seven_segment_digital, R.string.digit_font_seven_segment_digital),
+    DSEG14_CLASSIC("dseg14classic", R.font.dseg14classic, R.string.digit_font_dseg14_classic);
+
+    companion object {
+        fun toMap(context: Context): Map<String, String> {
+            return values().associate {
+                it.id to context.getString(it.titleId)
+            }
+        }
+
+        fun getDefault(): Font {
+            return ROBOTO_REGULAR
+        }
+
+        fun getDefaultId(): String {
+            return getDefault().id
+        }
+
+        fun getById(id: String): Font {
+            val item = values().filter {
+                it.id == id
+            }
+            return item[0]
+        }
+    }
 }
 
 private fun getColor(value: Color) = android.graphics.Color.parseColor("#${Integer.toHexString(value.toArgb())}")
+
+const val DEFAULT_SHOW_HOURS = true
+const val DEFAULT_SHOW_MINUTES = true
+const val DEFAULT_SHOW_DEGREES = true
+const val DEFAULT_SHOW_CENTER = true
+const val DEFAULT_SHOW_SECOND_HAND = true

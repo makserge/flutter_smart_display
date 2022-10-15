@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AppNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.Clock.route) {
+    NavHost(navController = navController, startDestination = Screen.ClockSettings.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen()
         }

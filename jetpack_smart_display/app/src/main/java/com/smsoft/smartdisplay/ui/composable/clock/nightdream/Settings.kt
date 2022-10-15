@@ -77,8 +77,6 @@ fun drawDigits(
                 useSelectedAsSummary = true,
                 entries = DigitStyle.toMap(context),
             )
-        }
-        prefsItem {
             SliderPref(
                 modifier = modifier,
                 key = PreferenceKey.DIGIT_POSITION.key,
@@ -86,16 +84,12 @@ fun drawDigits(
                 defaultValue = DEFAULT_DIGIT_POSITION,
                 valueRange = 0.1F..1F,
             )
-        }
-        prefsItem {
             SwitchPref(
                 modifier = modifier,
                 key = PreferenceKey.DIGIT_EMP_QUARTERS.key,
                 title = stringResource(PreferenceKey.DIGIT_EMP_QUARTERS.title),
                 defaultChecked = DEFAULT_DIGIT_EMP_QUARTERS
             )
-        }
-        prefsItem {
             ListPref(
                 modifier = modifier,
                 key = PreferenceKey.DIGIT_FONT.key,
@@ -104,8 +98,6 @@ fun drawDigits(
                 useSelectedAsSummary = true,
                 entries = Font.toMap(context),
             )
-        }
-        prefsItem {
             SliderPref(
                 modifier = modifier,
                 key = PreferenceKey.DIGIT_FONT_SIZE.key,

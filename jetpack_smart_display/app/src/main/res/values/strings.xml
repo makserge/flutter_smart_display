@@ -69,10 +69,16 @@
     <string name="digit_disposition_alternate">Alternate</string>
     <string name="digit_step_quarter">Quarter</string>
     <string name="digit_step_full">Full</string>
-    <string name="digit_type_arabic">Arabic</string>
-    <string name="digit_type_roman">Roman</string>
     <string name="analog_clockview2">Analog (ClockView2)</string>
     <string name="digital_clock">Digital Clock</string>
     <string name="digital_clock2">Digital Clock 2</string>
     <string name="digital_matrixclock">Digital (Matrix)</string>
+    <string name="digit_show_hours">Show hours</string>
+    <string name="digit_show_minutes">Show minutes</string>
+    <string name="digit_show_degrees">Show degrees</string>
+    <string name="digit_disposition">Disposition</string>
+    <string name="digit_step">Step</string>
+    <string name="degree_type">Degree type</string>
+    <string name="degree_step">Degree step</string>
+    <string name="show_center">Show center</string>
 </resources>
