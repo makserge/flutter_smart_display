@@ -49,6 +49,17 @@ enum class PreferenceKey(val key: String, val title: Int) {
     DEGREE_TYPE_CLOCKVIEW("degreeTypeClockView", R.string.degree_type),
     DEGREE_STEP_CLOCKVIEW("degreeStepClockView", R.string.degree_step),
     SHOW_CENTER_CLOCKVIEW("showCenterClockView", R.string.show_center),
-    SHOW_SECOND_HAND_CLOCKVIEW("showSecondHandClockView", R.string.hand_show_second_hand)
+    SHOW_SECOND_HAND_CLOCKVIEW("showSecondHandClockView", R.string.hand_show_second_hand),
+    DIGIT_FONT_CLOCKVIEW2("digitFontClockView2", R.string.digit_font),
+    DIGIT_STYLE_CLOCKVIEW2("digitStyleClockView2", R.string.digit_style),
+    OUTER_RIM_WIDTH_CLOCKVIEW2("outerRimWidthClockView2", R.string.outer_rim_width),
+    INNER_RIM_WIDTH_CLOCKVIEW2("innerRimWidthClockView2", R.string.inner_rim_width),
+    THICK_MARKER_WIDTH_CLOCKVIEW2("thickMarkerWidthClockView2", R.string.thick_marker_width),
+    THIN_MARKER_WIDTH_CLOCKVIEW2("thinMarkerWidthClockView2", R.string.thin_marker_width),
+    DIGIT_TEXT_SIZE_CLOCKVIEW2("digitTextSizeClockView2", R.string.digit_text_size),
+    HOUR_HAND_WIDTH_CLOCKVIEW2("hourHandWidthClockView2", R.string.hour_hand_width),
+    MINUTE_HAND_WIDTH_CLOCKVIEW2("minuteHandWidthClockView2", R.string.minute_hand_width),
+    SECOND_HAND_WIDTH_CLOCKVIEW2("secondHandWidthClockView2", R.string.second_hand_width),
+    CENTER_CIRCLE_RADIUS_CLOCKVIEW2("centerCircleRadiusClockView2", R.string.center_circle_radius)
     ;
 }

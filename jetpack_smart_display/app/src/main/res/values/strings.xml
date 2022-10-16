@@ -81,4 +81,13 @@
     <string name="degree_type">Degree type</string>
     <string name="degree_step">Degree step</string>
     <string name="show_center">Show center</string>
+    <string name="outer_rim_width">Outer rim width</string>
+    <string name="inner_rim_width">Inner rim width</string>
+    <string name="thick_marker_width">Thick marker width</string>
+    <string name="thin_marker_width">Thin marker width</string>
+    <string name="digit_text_size">Text size</string>
+    <string name="hour_hand_width">Hour width</string>
+    <string name="minute_hand_width">Minute width</string>
+    <string name="second_hand_width">Second width</string>
+    <string name="center_circle_radius">Center circle radius</string>
 </resources>
