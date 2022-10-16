@@ -1,4 +1,4 @@
-package com.xenione.digit
+package com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit
 
 abstract class AbstractTabAnimation(
     protected val topTab: TabDigit.Tab,
@@ -21,10 +21,6 @@ abstract class AbstractTabAnimation(
     fun start() {
         makeSureCycleIsClosed()
         time = System.currentTimeMillis()
-    }
-
-    fun sync() {
-        makeSureCycleIsClosed()
     }
 
     abstract fun initState()

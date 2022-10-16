@@ -1,10 +1,17 @@
-package com.xenione.digit
+package com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit
 
 /**
  * rotates middle tab downwards
  */
-class TabAnimationDown(topTab: TabDigit.Tab, bottomTab: TabDigit.Tab, middleTab: TabDigit.Tab) :
-    AbstractTabAnimation(topTab, bottomTab, middleTab) {
+class TabAnimationDown(
+    topTab: TabDigit.Tab,
+    bottomTab: TabDigit.Tab,
+    middleTab: TabDigit.Tab) :
+    AbstractTabAnimation(
+        topTab,
+        bottomTab,
+        middleTab
+    ) {
 
     override fun initState() {
         state = UPPER_POSITION

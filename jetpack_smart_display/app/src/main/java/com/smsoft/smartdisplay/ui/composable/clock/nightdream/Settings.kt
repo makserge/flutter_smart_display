@@ -249,9 +249,45 @@ fun drawDecoration(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 fun drawDigitalFlipClockPrefs(
     modifier: Modifier,
     scope: PrefsScope
 ) {
-
+    scope.prefsGroup({
+        GroupHeader(
+            title = stringResource(R.string.digits)
+        )
+    }) {
+        prefsItem {
+            SliderPref(
+                modifier = modifier,
+                key = PreferenceKey.FONT_SIZE_FLIP_CLOCK.key,
+                title = stringResource(PreferenceKey.FONT_SIZE_FLIP_CLOCK.title),
+                defaultValue = DEFAULT_TEXT_SIZE,
+                valueRange = 250F..450F,
+            )
+        }
+    }
+    scope.prefsGroup({
+        GroupHeader(
+            title = stringResource(R.string.decoration)
+        )
+    }) {
+        prefsItem {
+            SwitchPref(
+                modifier = modifier,
+                key = PreferenceKey.REVERSE_ROTATION_FLIP_CLOCK.key,
+                title = stringResource(PreferenceKey.REVERSE_ROTATION_FLIP_CLOCK.title),
+                defaultChecked = DEFAULT_REVERSE_ROTATION
+            )
+            SliderPref(
+                modifier = modifier,
+                key = PreferenceKey.PADDING_FLIP_CLOCK.key,
+                title = stringResource(PreferenceKey.PADDING_FLIP_CLOCK.title),
+                defaultValue = DEFAULT_PADDING,
+                valueRange = 0F..15F,
+            )
+        }
+    }
 }

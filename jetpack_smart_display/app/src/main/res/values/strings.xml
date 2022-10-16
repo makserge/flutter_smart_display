@@ -90,4 +90,7 @@
     <string name="minute_hand_width">Minute width</string>
     <string name="second_hand_width">Second width</string>
     <string name="center_circle_radius">Center circle radius</string>
+    <string name="reverse_rotation_flip_clock">Reverse rotation</string>
+    <string name="padding_flip_clock">Padding</string>
+    <string name="font_size_flip_clock">Font size</string>
 </resources>

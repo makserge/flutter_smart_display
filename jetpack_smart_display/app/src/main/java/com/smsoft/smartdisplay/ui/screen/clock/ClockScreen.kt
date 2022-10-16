@@ -14,11 +14,11 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.smsoft.smartdisplay.ui.composable.clock.digitalclock.DigitalClock
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.ClockView
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.ClockView2
+import com.smsoft.smartdisplay.ui.composable.clock.digitalclock.DigitalClock
 import com.smsoft.smartdisplay.ui.composable.clock.digitalclock2.DigitalClock2
 import com.smsoft.smartdisplay.ui.composable.clock.digitalmatrixclock.DigitalMatrixClock
 import com.smsoft.smartdisplay.ui.composable.clock.fsclock.FSAnalogClock
@@ -169,6 +169,7 @@ fun DrawClock(
             DigitalFlipClock(
                 modifier = modifier,
                 dataStore = dataStore,
+                scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,

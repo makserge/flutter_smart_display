@@ -1,4 +1,4 @@
-package com.xenione.digit
+package com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit
 
 import android.graphics.Camera
 import android.graphics.Matrix
@@ -24,7 +24,10 @@ object MatrixHelper {
     val ROTATE_X_0 = Matrix()
 
     init {
-        rotateX(ROTATE_X_0, 0)
+        rotateX(
+            matrix = ROTATE_X_0,
+            alpha = 0
+        )
     }
 
     /**
@@ -33,46 +36,39 @@ object MatrixHelper {
     val ROTATE_X_90 = Matrix()
 
     init {
-        rotateX(ROTATE_X_90, 90)
+        rotateX(
+            matrix = ROTATE_X_90,
+            alpha = 90
+        )
     }
 
-    fun mirrorX(matrix: Matrix?) {
-        rotateX(matrix, 180)
-    }
-
-    fun rotateX(matrix: Matrix?, alpha: Int) {
+    fun rotateX(
+        matrix: Matrix,
+        alpha: Int
+    ) {
         synchronized(camera) {
-            camera.save()
-            camera.rotateX(alpha.toFloat())
-            camera.getMatrix(matrix)
-            camera.restore()
+            camera.apply {
+                save()
+                rotateX(alpha.toFloat())
+                getMatrix(matrix)
+                restore()
+            }
         }
     }
 
-    fun rotateZ(matrix: Matrix?, alpha: Int) {
+    fun translate(
+        matrix: Matrix,
+        dx: Float,
+        dy: Float,
+        dz: Float
+    ) {
         synchronized(camera) {
-            camera.save()
-            camera.rotateZ(alpha.toFloat())
-            camera.getMatrix(matrix)
-            camera.restore()
-        }
-    }
-
-    fun translate(matrix: Matrix?, dx: Float, dy: Float, dz: Float) {
-        synchronized(camera) {
-            camera.save()
-            camera.translate(dx, dy, dz)
-            camera.getMatrix(matrix)
-            camera.restore()
-        }
-    }
-
-    fun translateY(matrix: Matrix?, dy: Float) {
-        synchronized(camera) {
-            camera.save()
-            camera.translate(0f, dy, 0f)
-            camera.getMatrix(matrix)
-            camera.restore()
+            camera.apply {
+                save()
+                translate(dx, dy, dz)
+                getMatrix(matrix)
+                restore()
+            }
         }
     }
 }

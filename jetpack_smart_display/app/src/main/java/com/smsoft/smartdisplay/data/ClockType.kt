@@ -10,7 +10,7 @@ enum class ClockType(val id: String, val titleId: Int, val previewScale: Float) 
     ANALOG_RECTANGULAR("analogRectangular", R.string.analog_rectangular, 0.5F),
     ANALOG_FSCLOCK("analogFsclock", R.string.analog_fsclock, 1F),
     ANALOG_JETALARM("analogJetAlarm", R.string.analog_jetalarm, 1F),
-    DIGITAL_FLIPCLOCK("digitalFlipClock", R.string.digital_flipclock, 1F),
+    DIGITAL_FLIPCLOCK("digitalFlipClock", R.string.digital_flipclock, 0.5F),
     DIGITAL_MATRIXCLOCK("digitalMatrixClock", R.string.digital_matrixclock, 1F),
     DIGITAL_CLOCK("digitalClock", R.string.digital_clock, 1F),
     DIGITAL_CLOCK2("digitalClock2", R.string.digital_clock2, 1F);

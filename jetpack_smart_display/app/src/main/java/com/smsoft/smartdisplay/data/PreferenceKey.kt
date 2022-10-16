@@ -60,6 +60,10 @@ enum class PreferenceKey(val key: String, val title: Int) {
     HOUR_HAND_WIDTH_CLOCKVIEW2("hourHandWidthClockView2", R.string.hour_hand_width),
     MINUTE_HAND_WIDTH_CLOCKVIEW2("minuteHandWidthClockView2", R.string.minute_hand_width),
     SECOND_HAND_WIDTH_CLOCKVIEW2("secondHandWidthClockView2", R.string.second_hand_width),
-    CENTER_CIRCLE_RADIUS_CLOCKVIEW2("centerCircleRadiusClockView2", R.string.center_circle_radius)
+    CENTER_CIRCLE_RADIUS_CLOCKVIEW2("centerCircleRadiusClockView2", R.string.center_circle_radius),
+    REVERSE_ROTATION_FLIP_CLOCK("reverseRotationFlipClock", R.string.reverse_rotation_flip_clock),
+    PADDING_FLIP_CLOCK("paddingFlipClock", R.string.padding_flip_clock),
+    FONT_SIZE_FLIP_CLOCK("fontSizeFlipClock", R.string.font_size_flip_clock)
     ;
+
 }
