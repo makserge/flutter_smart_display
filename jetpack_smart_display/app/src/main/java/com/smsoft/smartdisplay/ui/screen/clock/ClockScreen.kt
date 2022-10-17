@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.MaterialTheme
@@ -16,6 +15,7 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.getParam
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.ClockView
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.ClockView2
 import com.smsoft.smartdisplay.ui.composable.clock.digitalclock.DigitalClock
@@ -26,7 +26,6 @@ import com.smsoft.smartdisplay.ui.composable.clock.jetalarm.JetAlarm
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DigitalFlipClock
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.NightdreamAnalogClock
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.AnalogClockRectangular
-import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -180,6 +179,7 @@ fun DrawClock(
             DigitalMatrixClock(
                 modifier = modifier,
                 dataStore = dataStore,
+                scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,
@@ -231,15 +231,3 @@ private fun getColorSetings(
 }
 
 private fun getColor(color: Color) = Color(android.graphics.Color.parseColor("#${Integer.toHexString(color.toArgb())}"))
-
-@SuppressLint("FlowOperatorInvokedInComposition")
-@Composable
-private fun getParam(
-    dataStore: DataStore<Preferences>,
-    defaultValue: Any?,
-    getter: (preferences: Preferences) -> Any?
-): Any? {
-    return dataStore.data.map {
-        getter(it) ?: defaultValue
-    }.collectAsState(initial = defaultValue).value
-}

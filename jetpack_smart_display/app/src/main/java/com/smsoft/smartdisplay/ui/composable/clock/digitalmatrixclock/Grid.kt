@@ -24,7 +24,11 @@ internal class Grid {
     private lateinit var grid: Array<IntArray>
     private lateinit var digits: Array<Digit>
 
-    fun changeDot(x: Int, y: Int, on: Boolean) {
+    fun changeDot(
+        x: Int,
+        y: Int,
+        on: Boolean
+    ) {
         val current = grid[x][y]
         if (on) {
             if (current == 0 || current == 1) {
@@ -86,14 +90,21 @@ internal class Grid {
         }
     }
 
-    fun setPaddingDots(top: Int, left: Int, bottom: Int, right: Int) {
+    fun setPaddingDots(
+        top: Int,
+        left: Int,
+        bottom: Int,
+        right: Int
+    ) {
         paddingTop = top
         paddingLeft = left
         paddingBottom = bottom
         paddingRight = right
     }
 
-    private fun extractDigits(glyphs: Array<Glyph>): Array<Digit> {
+    private fun extractDigits(
+        glyphs: Array<Glyph>
+    ): Array<Digit> {
         val digits: MutableList<Digit> = ArrayList()
         for (glyph in glyphs) {
             if (glyph is Digit) {

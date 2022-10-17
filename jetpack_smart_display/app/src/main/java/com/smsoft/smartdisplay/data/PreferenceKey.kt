@@ -63,7 +63,15 @@ enum class PreferenceKey(val key: String, val title: Int) {
     CENTER_CIRCLE_RADIUS_CLOCKVIEW2("centerCircleRadiusClockView2", R.string.center_circle_radius),
     REVERSE_ROTATION_FLIP_CLOCK("reverseRotationFlipClock", R.string.reverse_rotation_flip_clock),
     PADDING_FLIP_CLOCK("paddingFlipClock", R.string.padding_flip_clock),
-    FONT_SIZE_FLIP_CLOCK("fontSizeFlipClock", R.string.font_size_flip_clock)
-    ;
-
+    FONT_SIZE_FLIP_CLOCK("fontSizeFlipClock", R.string.font_size_flip_clock),
+    DOT_STYLE_MATRIX_CLOCK("dotStyleMatrixClock", R.string.dot_style_matrix_clock),
+    SHOW_SECONDS_MATRIX_CLOCK("showSecondsMatrixClock", R.string.show_seconds_matrix_clock),
+    DOT_RADIUS_ROUND_MATRIX_CLOCK("dotRadiusRoundMatrixClock", R.string.dot_radius_round_matrix_clock),
+    DOT_SPACING_ROUND_MATRIX_CLOCK("dotSpacingRoundMatrixClock", R.string.dot_spacing_round_matrix_clock),
+    DOT_RADIUS_ROUND_SEC_MATRIX_CLOCK("dotRadiusRoundSecMatrixClock", R.string.dot_radius_round_sec_matrix_clock),
+    DOT_SPACING_ROUND_SEC_MATRIX_CLOCK("dotSpacingRoundSecMatrixClock", R.string.dot_spacing_round_sec_matrix_clock),
+    DOT_RADIUS_SQUARE_MATRIX_CLOCK("dotRadiusSquareMatrixClock", R.string.dot_radius_square_matrix_clock),
+    DOT_SPACING_SQUARE_MATRIX_CLOCK("dotSpacingSquareMatrixClock", R.string.dot_spacing_square_matrix_clock),
+    DOT_RADIUS_SQUARE_SEC_MATRIX_CLOCK("dotRadiusSquareSecMatrixClock", R.string.dot_radius_square_sec_matrix_clock),
+    DOT_SPACING_SQUARE_SEC_MATRIX_CLOCK("dotSpacingSquareSecMatrixClock", R.string.dot_spacing_square_sec_matrix_clock);
 }

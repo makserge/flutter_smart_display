@@ -1,9 +1,7 @@
 package com.smsoft.smartdisplay.ui.composable.clock.nightdream
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -11,7 +9,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
-import kotlinx.coroutines.flow.map
+import com.smsoft.smartdisplay.getParam
 
 data class AnalogClockConfig(
     var digitStyle: DigitStyle = DigitStyle.getDefault(),
@@ -148,14 +146,6 @@ data class AnalogClockConfig(
             defaultValue = DEFAULT_INNER_CIRCLE_RADIUS
         ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.INNER_CIRCLE_RADIUS.key)] }
         as Float / 10
-    }
-
-    @SuppressLint("FlowOperatorInvokedInComposition")
-    @Composable
-    private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
-        return dataStore.data.map {
-            getter(it) ?: defaultValue
-        }.collectAsState(initial = defaultValue).value
     }
 
     enum class DigitStyle(val id: Int, val titleId: Int) {

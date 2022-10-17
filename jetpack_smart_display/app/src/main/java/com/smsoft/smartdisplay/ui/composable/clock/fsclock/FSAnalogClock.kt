@@ -1,13 +1,11 @@
 package com.smsoft.smartdisplay.ui.composable.clock.fsclock
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -17,7 +15,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.smsoft.smartdisplay.R
-import kotlinx.coroutines.flow.map
 
 @Composable
 fun FSAnalogClock(
@@ -102,16 +99,4 @@ fun OnDraw(
             )
         }
     }
-}
-
-@SuppressLint("FlowOperatorInvokedInComposition")
-@Composable
-private fun getParam(
-    dataStore: DataStore<Preferences>,
-    defaultValue: Any?,
-    getter: (preferences: Preferences) -> Any?
-): Any? {
-    return dataStore.data.map {
-        getter(it) ?: defaultValue
-    }.collectAsState(initial = defaultValue).value
 }

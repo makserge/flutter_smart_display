@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui.composable.clock.clockview
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.text.TextPaint
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,7 +23,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
-import kotlinx.coroutines.flow.map
+import com.smsoft.smartdisplay.getParam
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -493,14 +491,6 @@ private fun toRoman(number: Int): String {
     return if (number < 11) {
         romanMap[number]!!
     } else romanMap[10] + toRoman(number - 10)
-}
-
-@SuppressLint("FlowOperatorInvokedInComposition")
-@Composable
-private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
-    return dataStore.data.map {
-        getter(it) ?: defaultValue
-    }.collectAsState(initial = defaultValue).value
 }
 
 private const val DEFAULT_BORDER_THICKNESS = 0.015F

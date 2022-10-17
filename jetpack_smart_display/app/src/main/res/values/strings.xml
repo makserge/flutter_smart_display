@@ -93,4 +93,17 @@
     <string name="reverse_rotation_flip_clock">Reverse rotation</string>
     <string name="padding_flip_clock">Padding</string>
     <string name="font_size_flip_clock">Font size</string>
+    <string name="dot_style_square">Square</string>
+    <string name="dot_style_round">Round</string>
+    <string name="dot_style_matrix_clock">Dot style</string>
+    <string name="show_seconds_matrix_clock">Show seconds</string>
+    <string name="dots">Dots</string>
+    <string name="dot_radius_round_matrix_clock">Radius (round)</string>
+    <string name="dot_spacing_round_matrix_clock">Spacing (round)</string>
+    <string name="dot_radius_round_sec_matrix_clock">Radius (round with seconds)</string>
+    <string name="dot_spacing_round_sec_matrix_clock">Spacing (round with seconds)</string>
+    <string name="dot_radius_square_matrix_clock">Radius (square)</string>
+    <string name="dot_spacing_square_matrix_clock">Spacing (square)</string>
+    <string name="dot_radius_square_sec_matrix_clock">Radius (square with seconds)</string>
+    <string name="dot_spacing_square_sec_matrix_clock">Spacing (square with seconds)</string>
 </resources>

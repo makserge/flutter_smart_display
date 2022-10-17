@@ -62,7 +62,10 @@ internal abstract class Glyph {
      * @param on
      * The new state of the dot.
      */
-    protected fun changeDot(index: Int, on: Boolean) {
+    protected fun changeDot(
+        index: Int,
+        on: Boolean
+    ) {
         // index is relative to topRow and leftMostColumn.
         val x = leftMostColumn + index % width
         val y = index / width + topRow

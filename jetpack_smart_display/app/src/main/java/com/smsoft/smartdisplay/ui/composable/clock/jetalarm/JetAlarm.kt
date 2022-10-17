@@ -1,12 +1,10 @@
 package com.smsoft.smartdisplay.ui.composable.clock.jetalarm
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,7 +20,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import com.smsoft.smartdisplay.data.PreferenceKey
-import kotlinx.coroutines.flow.map
+import com.smsoft.smartdisplay.getParam
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -315,18 +313,6 @@ private fun drawHand2(
 private fun Size.getRadius(
     expo: Float = 1F
 ) = expo * min(Dp(width / 2), Dp(height / 2)).value
-
-@SuppressLint("FlowOperatorInvokedInComposition")
-@Composable
-private fun getParam(
-    dataStore: DataStore<Preferences>,
-    defaultValue: Any?,
-    getter: (preferences: Preferences) -> Any?
-): Any? {
-    return dataStore.data.map {
-        getter(it) ?: defaultValue
-    }.collectAsState(initial = defaultValue).value
-}
 
 const val DEFAULT_BORDER_RADIUS = 0.9F
 const val DEFAULT_BORDER_THICKNESS = 7F

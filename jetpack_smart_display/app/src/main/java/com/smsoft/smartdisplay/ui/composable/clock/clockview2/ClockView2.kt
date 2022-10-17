@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui.composable.clock.clockview2
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.*
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.NativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -25,7 +23,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
-import kotlinx.coroutines.flow.map
+import com.smsoft.smartdisplay.getParam
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -455,14 +453,6 @@ private fun dipToPx(
 }
 
 private fun getColor(value: androidx.compose.ui.graphics.Color) = Color.parseColor("#${Integer.toHexString(value.toArgb())}")
-
-@SuppressLint("FlowOperatorInvokedInComposition")
-@Composable
-private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
-    return dataStore.data.map {
-        getter(it) ?: defaultValue
-    }.collectAsState(initial = defaultValue).value
-}
 
 enum class DigitStyle(val value: String, val titleId: Int) {
     ARABIC("arabic", R.string.digit_style_arabic),

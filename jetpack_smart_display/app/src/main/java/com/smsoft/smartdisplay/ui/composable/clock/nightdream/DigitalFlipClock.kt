@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui.composable.clock.nightdream
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -20,14 +19,13 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.getParam
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit.TabDigit
-import kotlinx.coroutines.flow.map
 
 @Composable
 fun DigitalFlipClock(
     modifier: Modifier = Modifier
-        .fillMaxSize()
-        .wrapContentSize(Alignment.Center),
+        .fillMaxSize(),
     dataStore: DataStore<Preferences>,
     scale: Float,
     primaryColor: Color,
@@ -207,14 +205,6 @@ fun DigitalFlipClock(
             )
         }
     }
-}
-
-@SuppressLint("FlowOperatorInvokedInComposition")
-@Composable
-private fun getParam(dataStore: DataStore<Preferences>, defaultValue: Any?, getter: (preferences: Preferences) -> Any?): Any? {
-    return dataStore.data.map {
-        getter(it) ?: defaultValue
-    }.collectAsState(initial = defaultValue).value
 }
 
 private val HOURS = charArrayOf('0', '1', '2')

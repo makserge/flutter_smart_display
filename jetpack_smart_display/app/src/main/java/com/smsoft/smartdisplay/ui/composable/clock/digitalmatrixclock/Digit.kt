@@ -65,7 +65,10 @@ internal class Digit(grid: Grid, column: Int, row: Int) : Glyph() {
         get() = current
         set(to) {
             if (to != current) {
-                makeTransition(patterns[current], patterns[to])
+                makeTransition(
+                    patterns[current],
+                    patterns[to]
+                )
                 current = to
             }
         }

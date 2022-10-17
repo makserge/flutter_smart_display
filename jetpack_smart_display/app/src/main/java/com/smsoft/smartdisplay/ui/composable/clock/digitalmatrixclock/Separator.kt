@@ -4,7 +4,11 @@ package com.smsoft.smartdisplay.ui.composable.clock.digitalmatrixclock
  * A [Glyph] representing a colon.
  * @author Mark Roberts
  */
-internal class Separator(grid: Grid, column: Int, row: Int) : Glyph() {
+internal class Separator(
+    grid: Grid,
+    column: Int,
+    row: Int
+) : Glyph() {
     init {
         width = 1
         height = 13
@@ -14,7 +18,13 @@ internal class Separator(grid: Grid, column: Int, row: Int) : Glyph() {
     }
 
     override fun draw() {
-        changeDot(5, true)
-        changeDot(9, true)
+        changeDot(
+            index = 5,
+            on = true
+        )
+        changeDot(
+            index = 9,
+            on = true
+        )
     }
 }
