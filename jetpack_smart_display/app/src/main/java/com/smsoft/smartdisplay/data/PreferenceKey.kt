@@ -66,6 +66,7 @@ enum class PreferenceKey(val key: String, val title: Int) {
     FONT_SIZE_FLIP_CLOCK("fontSizeFlipClock", R.string.font_size_flip_clock),
     DOT_STYLE_MATRIX_CLOCK("dotStyleMatrixClock", R.string.dot_style_matrix_clock),
     SHOW_SECONDS_MATRIX_CLOCK("showSecondsMatrixClock", R.string.show_seconds_matrix_clock),
+    SPACE_HEIGHT_DIGITAL_CLOCK("spaceHeightMatrixClock", R.string.space_height_matrix_clock),
     DOT_RADIUS_ROUND_MATRIX_CLOCK("dotRadiusRoundMatrixClock", R.string.dot_radius_round_matrix_clock),
     DOT_SPACING_ROUND_MATRIX_CLOCK("dotSpacingRoundMatrixClock", R.string.dot_spacing_round_matrix_clock),
     DOT_RADIUS_ROUND_SEC_MATRIX_CLOCK("dotRadiusRoundSecMatrixClock", R.string.dot_radius_round_sec_matrix_clock),
@@ -73,5 +74,11 @@ enum class PreferenceKey(val key: String, val title: Int) {
     DOT_RADIUS_SQUARE_MATRIX_CLOCK("dotRadiusSquareMatrixClock", R.string.dot_radius_square_matrix_clock),
     DOT_SPACING_SQUARE_MATRIX_CLOCK("dotSpacingSquareMatrixClock", R.string.dot_spacing_square_matrix_clock),
     DOT_RADIUS_SQUARE_SEC_MATRIX_CLOCK("dotRadiusSquareSecMatrixClock", R.string.dot_radius_square_sec_matrix_clock),
-    DOT_SPACING_SQUARE_SEC_MATRIX_CLOCK("dotSpacingSquareSecMatrixClock", R.string.dot_spacing_square_sec_matrix_clock);
+    DOT_SPACING_SQUARE_SEC_MATRIX_CLOCK("dotSpacingSquareSecMatrixClock", R.string.dot_spacing_square_sec_matrix_clock),
+    SHOW_SECONDS_DIGITAL_CLOCK("showSecondsDigitalClock", R.string.show_seconds_digital_clock),
+    SHOW_DATE_DIGITAL_CLOCK("showDateDigitalClock", R.string.show_date_digital_clock),
+    TIME_FONT_DIGITAL_CLOCK("timeFontDigitalClock", R.string.time_font_digital_clock),
+    TIME_FONT_SIZE_DIGITAL_CLOCK("timeFontSizeDigitalClock", R.string.time_font_size_digital_clock),
+    DATE_FONT_DIGITAL_CLOCK("dateFontDigitalClock", R.string.date_font_digital_clock),
+    DATE_FONT_SIZE_DIGITAL_CLOCK("dateFontSizeDigitalClock", R.string.date_font_size_digital_clock),;
 }

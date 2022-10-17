@@ -12,7 +12,7 @@ enum class ClockType(val id: String, val titleId: Int, val previewScale: Float) 
     ANALOG_JETALARM("analogJetAlarm", R.string.analog_jetalarm, 1F),
     DIGITAL_FLIPCLOCK("digitalFlipClock", R.string.digital_flipclock, 0.5F),
     DIGITAL_MATRIXCLOCK("digitalMatrixClock", R.string.digital_matrixclock, 0.5F),
-    DIGITAL_CLOCK("digitalClock", R.string.digital_clock, 1F),
+    DIGITAL_CLOCK("digitalClock", R.string.digital_clock, 0.5F),
     DIGITAL_CLOCK2("digitalClock2", R.string.digital_clock2, 1F);
 
     companion object {

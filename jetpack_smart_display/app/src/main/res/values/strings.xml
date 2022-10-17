@@ -106,4 +106,11 @@
     <string name="dot_spacing_square_matrix_clock">Spacing (square)</string>
     <string name="dot_radius_square_sec_matrix_clock">Radius (square with seconds)</string>
     <string name="dot_spacing_square_sec_matrix_clock">Spacing (square with seconds)</string>
+    <string name="show_date_digital_clock">Show date</string>
+    <string name="time_font_digital_clock">Time font</string>
+    <string name="time_font_size_digital_clock">Time text size</string>
+    <string name="date_font_digital_clock">Date font</string>
+    <string name="date_font_size_digital_clock">Date text size</string>
+    <string name="space_height_matrix_clock">Space between time and clock</string>
+    <string name="show_seconds_digital_clock">Show seconds</string>
 </resources>

@@ -37,6 +37,7 @@ import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.drawAnalogClockViewPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.drawAnalogClockView2Prefs
+import com.smsoft.smartdisplay.ui.composable.clock.digitalclock.drawDigitalClockPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.digitalmatrixclock.drawDigitalMatrixClockPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.jetalarm.drawAnalogJetAlarmPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.drawAnalogNightdreamPrefs
@@ -209,9 +210,11 @@ fun drawClockTypePrefs(
             scope = scope,
             context = context
         )
-        ClockType.DIGITAL_CLOCK -> {
-
-        }
+        ClockType.DIGITAL_CLOCK -> drawDigitalClockPrefs(
+            modifier = modifier,
+            scope = scope,
+            context = context
+        )
         ClockType.DIGITAL_CLOCK2 -> {
 
         }

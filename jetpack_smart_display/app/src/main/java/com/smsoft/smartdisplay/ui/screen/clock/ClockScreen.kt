@@ -191,6 +191,7 @@ fun DrawClock(
             DigitalClock(
                 modifier = modifier,
                 dataStore = dataStore,
+                scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 year = uiState.year,
