@@ -2,7 +2,10 @@ package com.smsoft.smartdisplay.ui.composable.clock.clockview2
 
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
 import android.text.TextPaint
 import android.util.TypedValue
 import androidx.compose.foundation.Canvas
@@ -14,16 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.NativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getColor
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -35,7 +35,7 @@ fun ClockView2(
     minute: Int,
     second: Int,
     milliSecond: Int,
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     primaryColor: androidx.compose.ui.graphics.Color,
     secondaryColor: androidx.compose.ui.graphics.Color
 ) {
@@ -44,74 +44,61 @@ fun ClockView2(
 
     val context = LocalContext.current
 
-    val font = getParam(
-        dataStore = dataStore,
+    val font = getStateFromFlow(
+        flow = viewModel.fontCV2,
         defaultValue = Font.getDefault().font
-    ) { preferences -> Font.getById((preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT_CLOCKVIEW2.key)] ?: Font.getDefaultId())).font }
-    as Int
+    ) as Int
 
-    val digitStyle = getParam(
-        dataStore = dataStore,
+    val digitStyle = getStateFromFlow(
+        flow = viewModel.digitStyleCV2,
         defaultValue = DigitStyle.getDefault()
-    ) { preferences ->
-        DigitStyle.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_STYLE_CLOCKVIEW2.key)] ?: DigitStyle.getDefaultId())
-    }
-    as DigitStyle
+    ) as DigitStyle
 
-    val digitTextSize = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DIGIT_TEXT_SIZE
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DIGIT_TEXT_SIZE_CLOCKVIEW2.key)] }
+    val digitTextSize = getStateFromFlow(
+        flow = viewModel.digitTextSizeCV2,
+        defaultValue = DEFAULT_DIGIT_TEXT_SIZE_CV2
+    ) as Float
+
+    val outerRimWidth = getStateFromFlow(
+        flow = viewModel.outerRimWidthCV2,
+        defaultValue = DEFAULT_OUTER_RIM_WIDTH_CV2
+    ) as Float
+
+    val innerRimWidth = getStateFromFlow(
+        flow = viewModel.innerRimWidthCV2,
+        defaultValue = DEFAULT_INNER_RIM_WIDTH_CV2
+    ) as Float
+
+    val thickMarkerWidth = getStateFromFlow(
+        flow = viewModel.thickMarkerWidthCV2,
+        defaultValue = DEFAULT_THICK_MARKER_WIDTH_CV2
+    ) as Float
+
+    val thinMarkerWidth = getStateFromFlow(
+        flow = viewModel.thinMarkerWidthCV2,
+        defaultValue = DEFAULT_THIN_MARKER_WIDTH_CV2
+    ) as Float
+
+    val hourHandWidth = getStateFromFlow(
+        flow = viewModel.hourHandWidthCV2,
+        defaultValue = DEFAULT_HOUR_HAND_WIDTH_CV2
+    ) as Float
+
+    val minuteHandWidth = getStateFromFlow(
+        flow = viewModel.minuteHandWidthCV2,
+        defaultValue = DEFAULT_MINUTE_HAND_WIDTH_CV2
+    )
     as Float
 
-    val outerRimWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_OUTER_RIM_WIDTH
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.OUTER_RIM_WIDTH_CLOCKVIEW2.key)] }
-    as Float
+    val secondHandWidth = getStateFromFlow(
+        flow = viewModel.secondHandWidthCV2,
+        defaultValue = DEFAULT_SECOND_HAND_WIDTH_CV2
+    ) as Float
 
-    val innerRimWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_INNER_RIM_WIDTH
-    ) { preferences ->
-        preferences[stringPreferencesKey(PreferenceKey.INNER_RIM_WIDTH_CLOCKVIEW2.key)] }
-    as Float
-
-    val thickMarkerWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_THICK_MARKER_WIDTH
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.THICK_MARKER_WIDTH_CLOCKVIEW2.key)] }
-    as Float
-
-    val thinMarkerWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_THIN_MARKER_WIDTH
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.THIN_MARKER_WIDTH_CLOCKVIEW2.key)] }
-    as Float
-
-    val hourHandWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HOUR_HAND_WIDTH
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.HOUR_HAND_WIDTH_CLOCKVIEW2.key)] }
-    as Float
-
-    val minuteHandWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_MINUTE_HAND_WIDTH
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MINUTE_HAND_WIDTH_CLOCKVIEW2.key)] }
-    as Float
-
-    val secondHandWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SECOND_HAND_WIDTH
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.SECOND_HAND_WIDTH_CLOCKVIEW2.key)] }
-    as Float
-
-    val centerCircleRadius = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_CENTER_CIRCLE_RADIUS
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CENTER_CIRCLE_RADIUS_CLOCKVIEW2.key)] }
-    as Float
+    val centerCircleRadius = getStateFromFlow(
+        flow = viewModel.centerCircleRadiusCV2,
+        defaultValue = DEFAULT_CENTER_CIRCLE_RADIUS_CV2
+    ) as Float
 
     init(
         outerRimColor = primaryColor,
@@ -452,8 +439,6 @@ private fun dipToPx(
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, Resources.getSystem().displayMetrics)
 }
 
-private fun getColor(value: androidx.compose.ui.graphics.Color) = Color.parseColor("#${Integer.toHexString(value.toArgb())}")
-
 enum class DigitStyle(val value: String, val titleId: Int) {
     ARABIC("arabic", R.string.digit_style_arabic),
     ROMAN("roman", R.string.digit_style_roman);
@@ -529,12 +514,12 @@ private val sweepHandPaint = Paint()
 private val centerCirclePaint = Paint()
 private val paintRect = Rect()
 
-const val DEFAULT_OUTER_RIM_WIDTH = 1F
-const val DEFAULT_SECOND_HAND_WIDTH = 1F
-const val DEFAULT_MINUTE_HAND_WIDTH = 3F
-const val DEFAULT_HOUR_HAND_WIDTH = 5F
-const val DEFAULT_DIGIT_TEXT_SIZE = 18F
-const val DEFAULT_THIN_MARKER_WIDTH = 1F
-const val DEFAULT_THICK_MARKER_WIDTH = 3F
-const val DEFAULT_INNER_RIM_WIDTH = 1F
-const val DEFAULT_CENTER_CIRCLE_RADIUS = 5F
+const val DEFAULT_OUTER_RIM_WIDTH_CV2 = 1F
+const val DEFAULT_SECOND_HAND_WIDTH_CV2 = 1F
+const val DEFAULT_MINUTE_HAND_WIDTH_CV2 = 3F
+const val DEFAULT_HOUR_HAND_WIDTH_CV2 = 5F
+const val DEFAULT_DIGIT_TEXT_SIZE_CV2 = 18F
+const val DEFAULT_THIN_MARKER_WIDTH_CV2 = 1F
+const val DEFAULT_THICK_MARKER_WIDTH_CV2 = 3F
+const val DEFAULT_INNER_RIM_WIDTH_CV2 = 1F
+const val DEFAULT_CENTER_CIRCLE_RADIUS_CV2 = 5F

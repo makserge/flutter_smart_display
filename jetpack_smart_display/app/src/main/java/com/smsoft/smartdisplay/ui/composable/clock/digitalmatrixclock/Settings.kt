@@ -27,58 +27,58 @@ fun drawDigitalMatrixClockPrefs(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_RADIUS_ROUND_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_RADIUS_ROUND_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_RADIUS_ROUND,
+                key = PreferenceKey.DOT_RADIUS_ROUND_MC.key,
+                title = stringResource(PreferenceKey.DOT_RADIUS_ROUND_MC.title),
+                defaultValue = DEFAULT_DOT_RADIUS_ROUND_MC,
                 valueRange = 2F..14F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_SPACING_ROUND_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_SPACING_ROUND_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_SPACING_ROUND,
+                key = PreferenceKey.DOT_SPACING_ROUND_MC.key,
+                title = stringResource(PreferenceKey.DOT_SPACING_ROUND_MC.title),
+                defaultValue = DEFAULT_DOT_SPACING_ROUND_MC,
                 valueRange = 2F..7F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_RADIUS_ROUND_SEC_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_RADIUS_ROUND_SEC_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_RADIUS_ROUND_SECONDS,
+                key = PreferenceKey.DOT_RADIUS_ROUND_SEC_MC.key,
+                title = stringResource(PreferenceKey.DOT_RADIUS_ROUND_SEC_MC.title),
+                defaultValue = DEFAULT_DOT_RADIUS_ROUND_SECONDS_MC,
                 valueRange = 2F..10F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_SPACING_ROUND_SEC_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_SPACING_ROUND_SEC_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_SPACING_ROUND_SECONDS,
+                key = PreferenceKey.DOT_SPACING_ROUND_SEC_MC.key,
+                title = stringResource(PreferenceKey.DOT_SPACING_ROUND_SEC_MC.title),
+                defaultValue = DEFAULT_DOT_SPACING_ROUND_SECONDS_MC,
                 valueRange = 2F..5F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_RADIUS_SQUARE_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_RADIUS_SQUARE_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_RADIUS_SQUARE,
+                key = PreferenceKey.DOT_RADIUS_SQUARE_MC.key,
+                title = stringResource(PreferenceKey.DOT_RADIUS_SQUARE_MC.title),
+                defaultValue = DEFAULT_DOT_RADIUS_SQUARE_MC,
                 valueRange = 8F..24F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_SPACING_SQUARE_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_SPACING_SQUARE_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_SPACING_SQUARE,
+                key = PreferenceKey.DOT_SPACING_SQUARE_MC.key,
+                title = stringResource(PreferenceKey.DOT_SPACING_SQUARE_MC.title),
+                defaultValue = DEFAULT_DOT_SPACING_SQUARE_MC,
                 valueRange = 4F..12F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_RADIUS_SQUARE_SEC_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_RADIUS_SQUARE_SEC_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_RADIUS_SQUARE_SECONDS,
+                key = PreferenceKey.DOT_RADIUS_SQUARE_SEC_MC.key,
+                title = stringResource(PreferenceKey.DOT_RADIUS_SQUARE_SEC_MC.title),
+                defaultValue = DEFAULT_DOT_RADIUS_SQUARE_SECONDS_MC,
                 valueRange = 8F..16F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_SPACING_SQUARE_SEC_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_SPACING_SQUARE_SEC_MATRIX_CLOCK.title),
-                defaultValue = DEFAULT_DOT_SPACING_SQUARE_SECONDS,
+                key = PreferenceKey.DOT_SPACING_SQUARE_SEC_MC.key,
+                title = stringResource(PreferenceKey.DOT_SPACING_SQUARE_SEC_MC.title),
+                defaultValue = DEFAULT_DOT_SPACING_SQUARE_SECONDS_MC,
                 valueRange = 2F..8F,
             )
         }
@@ -91,14 +91,14 @@ fun drawDigitalMatrixClockPrefs(
         prefsItem {
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.SHOW_SECONDS_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.SHOW_SECONDS_MATRIX_CLOCK.title),
-                defaultChecked = DEFAULT_SHOW_SECONDS
+                key = PreferenceKey.SHOW_SECONDS_MC.key,
+                title = stringResource(PreferenceKey.SHOW_SECONDS_MC.title),
+                defaultChecked = DEFAULT_SHOW_SECONDS_MC
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DOT_STYLE_MATRIX_CLOCK.key,
-                title = stringResource(PreferenceKey.DOT_STYLE_MATRIX_CLOCK.title),
+                key = PreferenceKey.DOT_STYLE_MC.key,
+                title = stringResource(PreferenceKey.DOT_STYLE_MC.title),
                 defaultValue = DotStyle.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DotStyle.toMap(context),

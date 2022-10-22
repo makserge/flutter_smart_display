@@ -12,22 +12,22 @@ import com.jamal.composeprefs.ui.prefs.SliderPref
 import com.jamal.composeprefs.ui.prefs.SwitchPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_EMP_QUARTERS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_FONT_SIZE
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_POSITION
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_LEN_HOURS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_LEN_MIN
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_STYLE
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_WIDTH_HOURS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_WIDTH_MIN
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_INNER_CIRCLE_RADIUS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_SHOW_SECOND_HAND
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_LEN_HOURS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_LEN_MINUTES
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_START_HOURS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_START_MINUTES
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_STYLE_HOURS
-import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_STYLE_MINUTES
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_EMP_QUARTERS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_FONT_SIZE_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_POSITION_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_LEN_HOURS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_LEN_MIN_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_STYLE_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_WIDTH_HOURS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_HAND_WIDTH_MIN_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_INNER_CIRCLE_RADIUS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_SHOW_SECOND_HAND_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_LEN_HOURS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_LEN_MINUTES_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_START_HOURS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_START_MINUTES_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_STYLE_HOURS_ND
+import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_TICK_STYLE_MINUTES_ND
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.DigitStyle
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Font
 
@@ -71,38 +71,38 @@ fun drawDigits(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_STYLE.key,
-                title = stringResource(PreferenceKey.DIGIT_STYLE.title),
+                key = PreferenceKey.DIGIT_STYLE_ND.key,
+                title = stringResource(PreferenceKey.DIGIT_STYLE_ND.title),
                 defaultValue = DigitStyle.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitStyle.toMap(context),
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_POSITION.key,
-                title = stringResource(PreferenceKey.DIGIT_POSITION.title),
-                defaultValue = DEFAULT_DIGIT_POSITION,
+                key = PreferenceKey.DIGIT_POSITION_ND.key,
+                title = stringResource(PreferenceKey.DIGIT_POSITION_ND.title),
+                defaultValue = DEFAULT_DIGIT_POSITION_ND,
                 valueRange = 0.1F..1F,
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_EMP_QUARTERS.key,
-                title = stringResource(PreferenceKey.DIGIT_EMP_QUARTERS.title),
-                defaultChecked = DEFAULT_DIGIT_EMP_QUARTERS
+                key = PreferenceKey.DIGIT_EMP_QUARTERS_ND.key,
+                title = stringResource(PreferenceKey.DIGIT_EMP_QUARTERS_ND.title),
+                defaultChecked = DEFAULT_DIGIT_EMP_QUARTERS_ND
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_FONT.key,
-                title = stringResource(PreferenceKey.DIGIT_FONT.title),
+                key = PreferenceKey.DIGIT_FONT_ND.key,
+                title = stringResource(PreferenceKey.DIGIT_FONT_ND.title),
                 defaultValue = Font.getDefault(),
                 useSelectedAsSummary = true,
                 entries = Font.toMap(context),
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_FONT_SIZE.key,
-                title = stringResource(PreferenceKey.DIGIT_FONT_SIZE.title),
-                defaultValue = DEFAULT_DIGIT_FONT_SIZE,
+                key = PreferenceKey.DIGIT_FONT_SIZE_ND.key,
+                title = stringResource(PreferenceKey.DIGIT_FONT_SIZE_ND.title),
+                defaultValue = DEFAULT_DIGIT_FONT_SIZE_ND,
                 valueRange = 5F..20F,
             )
         }
@@ -123,45 +123,45 @@ fun drawHands(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_STYLE.key,
-                title = stringResource(PreferenceKey.HAND_STYLE.title),
-                defaultValue = DEFAULT_HAND_STYLE,
+                key = PreferenceKey.HAND_STYLE_ND.key,
+                title = stringResource(PreferenceKey.HAND_STYLE_ND.title),
+                defaultValue = DEFAULT_HAND_STYLE_ND,
                 useSelectedAsSummary = true,
                 entries = AnalogClockConfig.HandStyle.toMap(context),
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_MINUTES.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_MINUTES.title),
-                defaultValue = DEFAULT_HAND_LEN_MIN,
+                key = PreferenceKey.HAND_LENGTH_MINUTES_ND.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_MINUTES_ND.title),
+                defaultValue = DEFAULT_HAND_LEN_MIN_ND,
                 valueRange = 0.3F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_HOURS.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_HOURS.title),
-                defaultValue = DEFAULT_HAND_LEN_HOURS,
+                key = PreferenceKey.HAND_LENGTH_HOURS_ND.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_HOURS_ND.title),
+                defaultValue = DEFAULT_HAND_LEN_HOURS_ND,
                 valueRange = 0.2F..0.8F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_MINUTES.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_MINUTES.title),
-                defaultValue = DEFAULT_HAND_WIDTH_MIN,
+                key = PreferenceKey.HAND_WIDTH_MINUTES_ND.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_MINUTES_ND.title),
+                defaultValue = DEFAULT_HAND_WIDTH_MIN_ND,
                 valueRange = 3F..10F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_HOURS.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_HOURS.title),
-                defaultValue = DEFAULT_HAND_WIDTH_HOURS,
+                key = PreferenceKey.HAND_WIDTH_HOURS_ND.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_HOURS_ND.title),
+                defaultValue = DEFAULT_HAND_WIDTH_HOURS_ND,
                 valueRange = 3F..10F,
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_SHOW_SECOND_HAND.key,
-                title = stringResource(PreferenceKey.HAND_SHOW_SECOND_HAND.title),
-                defaultChecked = DEFAULT_SHOW_SECOND_HAND
+                key = PreferenceKey.HAND_SHOW_SECOND_HAND_ND.key,
+                title = stringResource(PreferenceKey.HAND_SHOW_SECOND_HAND_ND.title),
+                defaultChecked = DEFAULT_SHOW_SECOND_HAND_ND
             )
         }
     }
@@ -181,46 +181,46 @@ fun drawTicks(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.TICK_STYLE_MINUTES.key,
-                title = stringResource(PreferenceKey.TICK_STYLE_MINUTES.title),
-                defaultValue = DEFAULT_TICK_STYLE_MINUTES,
+                key = PreferenceKey.TICK_STYLE_MINUTES_ND.key,
+                title = stringResource(PreferenceKey.TICK_STYLE_MINUTES_ND.title),
+                defaultValue = DEFAULT_TICK_STYLE_MINUTES_ND,
                 useSelectedAsSummary = true,
                 entries = AnalogClockConfig.TickStyle.toMap(context),
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.TICK_START_MINUTES.key,
-                title = stringResource(PreferenceKey.TICK_START_MINUTES.title),
-                defaultValue = DEFAULT_TICK_START_MINUTES,
+                key = PreferenceKey.TICK_START_MINUTES_ND.key,
+                title = stringResource(PreferenceKey.TICK_START_MINUTES_ND.title),
+                defaultValue = DEFAULT_TICK_START_MINUTES_ND,
                 valueRange = 0.2F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.TICK_LEN_MINUTES.key,
-                title = stringResource(PreferenceKey.TICK_LEN_MINUTES.title),
-                defaultValue = DEFAULT_TICK_LEN_MINUTES,
+                key = PreferenceKey.TICK_LEN_MINUTES_ND.key,
+                title = stringResource(PreferenceKey.TICK_LEN_MINUTES_ND.title),
+                defaultValue = DEFAULT_TICK_LEN_MINUTES_ND,
                 valueRange = 1F..15F,
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.TICK_STYLE_HOURS.key,
-                title = stringResource(PreferenceKey.TICK_STYLE_HOURS.title),
-                defaultValue = DEFAULT_TICK_STYLE_HOURS,
+                key = PreferenceKey.TICK_STYLE_HOURS_ND.key,
+                title = stringResource(PreferenceKey.TICK_STYLE_HOURS_ND.title),
+                defaultValue = DEFAULT_TICK_STYLE_HOURS_ND,
                 useSelectedAsSummary = true,
                 entries = AnalogClockConfig.TickStyle.toMap(context),
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.TICK_START_HOURS.key,
-                title = stringResource(PreferenceKey.TICK_START_HOURS.title),
-                defaultValue = DEFAULT_TICK_START_HOURS,
+                key = PreferenceKey.TICK_START_HOURS_ND.key,
+                title = stringResource(PreferenceKey.TICK_START_HOURS_ND.title),
+                defaultValue = DEFAULT_TICK_START_HOURS_ND,
                 valueRange = 0.3F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.TICK_LEN_HOURS.key,
-                title = stringResource(PreferenceKey.TICK_LEN_HOURS.title),
-                defaultValue = DEFAULT_TICK_LEN_HOURS,
+                key = PreferenceKey.TICK_LEN_HOURS_ND.key,
+                title = stringResource(PreferenceKey.TICK_LEN_HOURS_ND.title),
+                defaultValue = DEFAULT_TICK_LEN_HOURS_ND,
                 valueRange = 2F..8F,
             )
         }
@@ -240,9 +240,9 @@ fun drawDecoration(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.INNER_CIRCLE_RADIUS.key,
-                title = stringResource(PreferenceKey.INNER_CIRCLE_RADIUS.title),
-                defaultValue = DEFAULT_INNER_CIRCLE_RADIUS,
+                key = PreferenceKey.INNER_CIRCLE_RADIUS_ND.key,
+                title = stringResource(PreferenceKey.INNER_CIRCLE_RADIUS_ND.title),
+                defaultValue = DEFAULT_INNER_CIRCLE_RADIUS_ND,
                 valueRange = 0F..0.5F,
             )
         }
@@ -262,9 +262,9 @@ fun drawDigitalFlipClockPrefs(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.FONT_SIZE_FLIP_CLOCK.key,
-                title = stringResource(PreferenceKey.FONT_SIZE_FLIP_CLOCK.title),
-                defaultValue = DEFAULT_TEXT_SIZE,
+                key = PreferenceKey.FONT_SIZE_FC.key,
+                title = stringResource(PreferenceKey.FONT_SIZE_FC.title),
+                defaultValue = DEFAULT_TEXT_SIZE_FC,
                 valueRange = 250F..450F,
             )
         }
@@ -277,15 +277,15 @@ fun drawDigitalFlipClockPrefs(
         prefsItem {
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.REVERSE_ROTATION_FLIP_CLOCK.key,
-                title = stringResource(PreferenceKey.REVERSE_ROTATION_FLIP_CLOCK.title),
-                defaultChecked = DEFAULT_REVERSE_ROTATION
+                key = PreferenceKey.REVERSE_ROTATION_FC.key,
+                title = stringResource(PreferenceKey.REVERSE_ROTATION_FC.title),
+                defaultChecked = DEFAULT_REVERSE_ROTATION_FC
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.PADDING_FLIP_CLOCK.key,
-                title = stringResource(PreferenceKey.PADDING_FLIP_CLOCK.title),
-                defaultValue = DEFAULT_PADDING,
+                key = PreferenceKey.PADDING_FC.key,
+                title = stringResource(PreferenceKey.PADDING_FC.title),
+                defaultValue = DEFAULT_PADDING_FC,
                 valueRange = 0F..15F,
             )
         }

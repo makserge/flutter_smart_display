@@ -8,10 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.smsoft.smartdisplay.getColor
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -22,7 +23,7 @@ fun NightdreamAnalogClock(
     hour: Int,
     minute: Int,
     second: Int,
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     primaryColor: Color,
     secondaryColor: Color
 ) {
@@ -33,7 +34,7 @@ fun NightdreamAnalogClock(
         initCounter()
     }
     Init(
-        dataStore = dataStore,
+        viewModel = viewModel,
         primaryColor = primaryColor,
         secondaryColor = secondaryColor
     )
@@ -506,13 +507,13 @@ private fun initCounter() {
 
 @Composable
 private fun Init(
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     primaryColor: Color,
     secondaryColor: Color
 ) {
     val current = LocalConfig.current
     current.InitDataStore(
-        dataStore = dataStore
+        viewModel = viewModel
     )
 
     current.apply {
@@ -522,8 +523,6 @@ private fun Init(
     customColorFilter = LightingColorFilter(getColor(primaryColor), 1)
     secondaryColorFilter = LightingColorFilter(getColor(secondaryColor), 1)
 }
-
-private fun getColor(value: Color) = android.graphics.Color.parseColor("#${Integer.toHexString(value.toArgb())}")
 
 private val ROMAN_DIGITS = arrayOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
 private val COS_OF_30_DEGREE = cos(Math.PI / 6.0).toFloat()

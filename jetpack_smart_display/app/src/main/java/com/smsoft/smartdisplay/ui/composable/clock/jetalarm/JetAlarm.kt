@@ -15,12 +15,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.min
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.floatPreferencesKey
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -29,7 +25,7 @@ fun JetAlarm(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .wrapContentSize(Alignment.Center),
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     primaryColor: Color,
     secondaryColor: Color,
     hour: Int,
@@ -37,59 +33,50 @@ fun JetAlarm(
     second: Int,
     milliSecond: Int
 ) {
-    val borderRadius = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_BORDER_RADIUS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.BORDER_RADIUS_JET.key)] }
-    as Float
+    val borderRadius = getStateFromFlow(
+        flow = viewModel.borderRadiusJA,
+        defaultValue = DEFAULT_BORDER_RADIUS_JA
+    ) as Float
 
-    val borderThickness = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_BORDER_THICKNESS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.BORDER_THICKNESS_JET.key)] }
-    as Float
+    val borderThickness = getStateFromFlow(
+        flow = viewModel.borderThicknessJA,
+        defaultValue = DEFAULT_BORDER_THICKNESS_JA
+    ) as Float
 
-    val secondsHandLength = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_LEN_SECONDS_JET
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_SECONDS_JET.key)] }
-    as Float
+    val secondsHandLength = getStateFromFlow(
+        flow = viewModel.secondsHandLengthJA,
+        defaultValue = DEFAULT_HAND_LEN_SECONDS_JA
+    ) as Float
 
-    val minutesHandLength = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_LEN_MINUTES_JET
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_MINUTES_JET.key)] }
-    as Float
+    val minutesHandLength = getStateFromFlow(
+        flow = viewModel.minutesHandLengthJA,
+        defaultValue = DEFAULT_HAND_LEN_MINUTES_JA
+    ) as Float
 
-    val secondsHandWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_WIDTH_SECONDS_JET
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_SECONDS_JET.key)] }
-    as Float
+    val secondsHandWidth = getStateFromFlow(
+        flow = viewModel.secondsHandWidthJA,
+        defaultValue = DEFAULT_HAND_WIDTH_SECONDS_JA
+    ) as Float
 
-    val minutesHandWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_WIDTH_MINUTES_JET
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_MINUTES_JET.key)] }
-    as Float
+    val minutesHandWidth = getStateFromFlow(
+        flow = viewModel.minutesHandWidthJA,
+        defaultValue = DEFAULT_HAND_WIDTH_MINUTES_JA
+    ) as Float
 
-    val hoursHandLength = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_LEN_HOURS_JET
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_HOURS_JET.key)] }
-    as Float
+    val hoursHandLength = getStateFromFlow(
+        flow = viewModel.hoursHandLengthJA,
+        defaultValue = DEFAULT_HAND_LEN_HOURS_JA
+    ) as Float
 
-    val hoursHandWidth = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_WIDTH_HOURS_JET
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_HOURS_JET.key)] }
-    as Float
+    val hoursHandWidth = getStateFromFlow(
+        flow = viewModel.hoursHandWidthJA,
+        defaultValue = DEFAULT_HAND_WIDTH_HOURS_JA
+    ) as Float
 
-    val showSecondHand = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_SECOND_HAND_JET
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.HAND_SHOW_SECOND_HAND_JET.key)] }
-    as Boolean
+    val showSecondHand = getStateFromFlow(
+        flow = viewModel.showSecondHandJA,
+        defaultValue = DEFAULT_SHOW_SECOND_HAND_JA
+    ) as Boolean
 
     OnDraw(
         modifier = modifier,
@@ -314,12 +301,12 @@ private fun Size.getRadius(
     expo: Float = 1F
 ) = expo * min(Dp(width / 2), Dp(height / 2)).value
 
-const val DEFAULT_BORDER_RADIUS = 0.9F
-const val DEFAULT_BORDER_THICKNESS = 7F
-const val DEFAULT_HAND_LEN_SECONDS_JET = 0.7F
-const val DEFAULT_HAND_LEN_MINUTES_JET = 0.6F
-const val DEFAULT_HAND_LEN_HOURS_JET = 0.45F
-const val DEFAULT_HAND_WIDTH_SECONDS_JET = 4F
-const val DEFAULT_HAND_WIDTH_MINUTES_JET = 8F
-const val DEFAULT_HAND_WIDTH_HOURS_JET = 8F
-const val DEFAULT_SHOW_SECOND_HAND_JET = true
+const val DEFAULT_BORDER_RADIUS_JA = 0.9F
+const val DEFAULT_BORDER_THICKNESS_JA = 7F
+const val DEFAULT_HAND_LEN_SECONDS_JA = 0.7F
+const val DEFAULT_HAND_LEN_MINUTES_JA = 0.6F
+const val DEFAULT_HAND_LEN_HOURS_JA = 0.45F
+const val DEFAULT_HAND_WIDTH_SECONDS_JA = 4F
+const val DEFAULT_HAND_WIDTH_MINUTES_JA = 8F
+const val DEFAULT_HAND_WIDTH_HOURS_JA = 8F
+const val DEFAULT_SHOW_SECOND_HAND_JA = true

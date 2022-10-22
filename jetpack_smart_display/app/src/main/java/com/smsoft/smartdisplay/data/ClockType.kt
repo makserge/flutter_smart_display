@@ -13,7 +13,7 @@ enum class ClockType(val id: String, val titleId: Int, val previewScale: Float) 
     DIGITAL_FLIPCLOCK("digitalFlipClock", R.string.digital_flipclock, 0.5F),
     DIGITAL_MATRIXCLOCK("digitalMatrixClock", R.string.digital_matrixclock, 0.5F),
     DIGITAL_CLOCK("digitalClock", R.string.digital_clock, 0.5F),
-    DIGITAL_CLOCK2("digitalClock2", R.string.digital_clock2, 1F);
+    DIGITAL_CLOCK2("digitalClock2", R.string.digital_clock2, 0.5F);
 
     companion object {
         fun toMap(context: Context): Map<String, String> {
@@ -22,20 +22,12 @@ enum class ClockType(val id: String, val titleId: Int, val previewScale: Float) 
             }
         }
 
-        fun getTitleIdById(id: String): Int {
-            return getById(id).titleId
-        }
-
         fun getDefault(): ClockType {
             return ANALOG_NIGHTDREAM
         }
 
         fun getDefaultId(): String {
             return getDefault().id
-        }
-
-        fun getDefaultTitleId(): Int {
-            return getDefault().titleId
         }
 
         fun getById(id: String): ClockType {

@@ -20,20 +20,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
 fun AnalogClockRectangular(
     modifier: Modifier = Modifier,
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     scale: Float,
     primaryColor: Color,
     secondaryColor: Color,
@@ -42,18 +38,15 @@ fun AnalogClockRectangular(
     second: Int,
     millisecond: Int
 ) {
-    val fontRes = getParam(
-        dataStore = dataStore,
+    val fontRes = getStateFromFlow(
+        flow = viewModel.fontResAR,
         defaultValue = com.smsoft.smartdisplay.data.Font.getDefault()
-    ) { preferences ->
-        com.smsoft.smartdisplay.data.Font.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT_RECT.key)] ?: com.smsoft.smartdisplay.data.Font.getDefault().toString()).font
-    } as Int
+    ) as Int
 
-    val fontSize = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DIGIT_FONT_SIZE
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_FONT_SIZE_RECT.key)] }
-    as Float
+    val fontSize = scale * getStateFromFlow(
+        flow = viewModel.fontSizeAR,
+        defaultValue = DEFAULT_DIGIT_FONT_SIZE_AR
+    ) as Float
 
     val font = FontFamily(
         Font(
@@ -62,29 +55,25 @@ fun AnalogClockRectangular(
         )
     )
 
-    val minutesHandLength = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_LEN_MINUTES
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_MINUTES_RECT.key)] }
-    as Float
+    val minutesHandLength = scale * getStateFromFlow(
+        flow = viewModel.minutesHandLengthAR,
+        defaultValue = DEFAULT_HAND_LEN_MINUTES_AR
+    ) as Float
 
-    val minutesHandWidth = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_WIDTH_MINUTES
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_MINUTES_RECT.key)] }
-    as Float
+    val minutesHandWidth = scale * getStateFromFlow(
+        flow = viewModel.minutesHandWidthAR,
+        defaultValue = DEFAULT_HAND_WIDTH_MINUTES_AR
+    ) as Float
 
-    val hoursHandLength = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_LEN_HOURS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_HOURS_RECT.key)] }
-    as Float
+    val hoursHandLength = scale * getStateFromFlow(
+        flow = viewModel.hoursHandLengthAR,
+        defaultValue = DEFAULT_HAND_LEN_HOURS_AR
+    ) as Float
 
-    val hoursHandWidth = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_HAND_WIDTH_HOURS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_HOURS_RECT.key)] }
-    as Float
+    val hoursHandWidth = scale * getStateFromFlow(
+        flow = viewModel.hoursHandWidthAR,
+        defaultValue = DEFAULT_HAND_WIDTH_HOURS_AR
+    ) as Float
 
     Box(
         modifier = Modifier
@@ -304,8 +293,8 @@ private fun Size.getRadius(
     return expo * min(Dp(width / 2), Dp(height / 2)).value
 }
 
-const val DEFAULT_DIGIT_FONT_SIZE = 80F
-const val DEFAULT_HAND_LEN_MINUTES = 0.7F
-const val DEFAULT_HAND_LEN_HOURS = 0.4F
-const val DEFAULT_HAND_WIDTH_MINUTES = 16F
-const val DEFAULT_HAND_WIDTH_HOURS = 8F
+const val DEFAULT_DIGIT_FONT_SIZE_AR = 80F
+const val DEFAULT_HAND_LEN_MINUTES_AR = 0.7F
+const val DEFAULT_HAND_LEN_HOURS_AR = 0.4F
+const val DEFAULT_HAND_WIDTH_MINUTES_AR = 16F
+const val DEFAULT_HAND_WIDTH_HOURS_AR = 8F

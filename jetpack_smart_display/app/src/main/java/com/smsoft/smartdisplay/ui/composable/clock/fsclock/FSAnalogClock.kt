@@ -12,8 +12,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import com.smsoft.smartdisplay.R
 
 @Composable
@@ -21,7 +19,6 @@ fun FSAnalogClock(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .wrapContentSize(Alignment.Center),
-    dataStore: DataStore<Preferences>,
     primaryColor: Color,
     secondaryColor: Color,
     hour: Int,

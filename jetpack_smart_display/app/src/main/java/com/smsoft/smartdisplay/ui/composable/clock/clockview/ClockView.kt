@@ -13,17 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getColor
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -32,7 +28,7 @@ import kotlin.math.sin
 fun ClockView(
     modifier: Modifier = Modifier
         .fillMaxSize(),
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     scale: Float,
     primaryColor: Color,
     secondaryColor: Color,
@@ -45,77 +41,60 @@ fun ClockView(
 
     val context = LocalContext.current
 
-    val font = getParam(
-        dataStore = dataStore,
+    val font = getStateFromFlow(
+        flow = viewModel.fontCV,
         defaultValue = Font.getDefault().font
-    ) { preferences ->
-        Font.getById((preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT_CLOCKVIEW.key)] ?: Font.getDefaultId())).font }
-    as Int
+    ) as Int
 
-    val digitStyle = getParam(
-        dataStore = dataStore,
+    val digitStyle = getStateFromFlow(
+        flow = viewModel.digitStyleCV,
         defaultValue = DigitStyle.getDefault()
-    ) { preferences -> DigitStyle.getById(preferences[stringPreferencesKey(
-        PreferenceKey.DIGIT_STYLE_CLOCKVIEW.key)] ?: DigitStyle.getDefaultId()) }
-    as DigitStyle
+    ) as DigitStyle
 
-    val showHoursValues = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_HOURS
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_SHOW_HOURS_CLOCKVIEW.key)] }
-    as Boolean
+    val showHoursValues = getStateFromFlow(
+        flow = viewModel.showHoursValuesCV,
+        defaultValue = DEFAULT_SHOW_HOURS_CV
+    ) as Boolean
 
-    val showMinutesValues = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_MINUTES
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_SHOW_MINUTES_CLOCKVIEW.key)] }
-    as Boolean
+    val showMinutesValues = getStateFromFlow(
+        flow = viewModel.showMinutesValuesCV,
+        defaultValue = DEFAULT_SHOW_MINUTES_CV
+    ) as Boolean
 
-    val showDegrees = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_DEGREES
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_SHOW_DEGREES_CLOCKVIEW.key)] }
-    as Boolean
+    val showDegrees = getStateFromFlow(
+        flow = viewModel.showDegreesCV,
+        defaultValue = DEFAULT_SHOW_DEGREES_CV
+    ) as Boolean
 
-    val digitDisposition = getParam(
-        dataStore = dataStore,
+    val digitDisposition = getStateFromFlow(
+        flow = viewModel.digitDispositionCV,
         defaultValue = DigitDisposition.getDefault()
-    ) { preferences -> DigitDisposition.getById(preferences[stringPreferencesKey(
-        PreferenceKey.DIGIT_DISPOSITION_CLOCKVIEW.key)] ?: DigitDisposition.getDefaultId()) }
-    as DigitDisposition
+    ) as DigitDisposition
 
-    val digitStep = getParam(
-        dataStore = dataStore,
+    val digitStep = getStateFromFlow(
+        flow = viewModel.digitStepCV,
         defaultValue = DigitStep.getDefault()
-    ) { preferences -> DigitStep.getById(preferences[stringPreferencesKey(
-        PreferenceKey.DIGIT_STEP_CLOCKVIEW.key)] ?: DigitStep.getDefaultId()) }
-    as DigitStep
+    ) as DigitStep
 
-    val degreesType = getParam(
-        dataStore = dataStore,
+    val degreesType = getStateFromFlow(
+        flow = viewModel.degreesTypeCV,
         defaultValue = DegreeType.getDefault()
-    ) { preferences -> DegreeType.getById(preferences[stringPreferencesKey(
-        PreferenceKey.DEGREE_TYPE_CLOCKVIEW.key)] ?: DegreeType.getDefaultId()) }
-    as DegreeType
+    ) as DegreeType
 
-    val degreesStep = getParam(
-        dataStore = dataStore,
+    val degreesStep = getStateFromFlow(
+        flow = viewModel.degreesStepCV,
         defaultValue = DegreesStep.getDefault()
-    ) { preferences -> DegreesStep.getById(preferences[stringPreferencesKey(
-        PreferenceKey.DEGREE_STEP_CLOCKVIEW.key)] ?: DegreesStep.getDefaultId()) }
-    as DegreesStep
+    ) as DegreesStep
 
-    val showCenter = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_CENTER
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_CENTER_CLOCKVIEW.key)] }
-    as Boolean
+    val showCenter = getStateFromFlow(
+        flow = viewModel.showCenterCV,
+        defaultValue = DEFAULT_SHOW_CENTER_CV
+    ) as Boolean
 
-    val showSecondsHand = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_SECOND_HAND
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_SECOND_HAND_CLOCKVIEW.key)] }
-    as Boolean
+    val showSecondsHand = getStateFromFlow(
+        flow = viewModel.showSecondsHandCV,
+        defaultValue = DEFAULT_SHOW_SECOND_HAND_CV
+    ) as Boolean
 
     OnDraw(
         modifier = modifier,
@@ -698,10 +677,8 @@ enum class Font(val id: String, val font: Int, val titleId: Int) {
     }
 }
 
-private fun getColor(value: Color) = android.graphics.Color.parseColor("#${Integer.toHexString(value.toArgb())}")
-
-const val DEFAULT_SHOW_HOURS = true
-const val DEFAULT_SHOW_MINUTES = true
-const val DEFAULT_SHOW_DEGREES = true
-const val DEFAULT_SHOW_CENTER = true
-const val DEFAULT_SHOW_SECOND_HAND = true
+const val DEFAULT_SHOW_HOURS_CV = true
+const val DEFAULT_SHOW_MINUTES_CV = true
+const val DEFAULT_SHOW_DEGREES_CV = true
+const val DEFAULT_SHOW_CENTER_CV = true
+const val DEFAULT_SHOW_SECOND_HAND_CV = true

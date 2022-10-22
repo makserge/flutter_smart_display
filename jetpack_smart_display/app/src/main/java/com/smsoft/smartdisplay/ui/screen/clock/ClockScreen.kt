@@ -9,13 +9,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.ClockType
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.ClockView
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.ClockView2
 import com.smsoft.smartdisplay.ui.composable.clock.digitalclock.DigitalClock
@@ -35,31 +33,30 @@ fun ClockScreen(
     viewModel: ClockViewModel = hiltViewModel(),
     onClick: () -> Unit,
 ) {
-    val clockType = viewModel.clockType.collectAsStateWithLifecycle(
-        initialValue = ClockType.getDefault()
-    ).value
+    val clockType = getStateFromFlow(
+        flow = viewModel.clockType,
+        defaultValue = ClockType.getDefault()
+    ) as ClockType
 
     val clockUiState: ClockUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val dataStore = viewModel.dataStore
 
     val defaultPrimaryColor = getColor(MaterialTheme.colors.primary)
     var primaryColor by remember { mutableStateOf(defaultPrimaryColor) }
-    getColorSetings(
-        key = PreferenceKey.PRIMARY_COLOR,
-        dataStore = dataStore,
-        defaultValue = MaterialTheme.colors.primary
+    getStateFromFlow(
+        flow = viewModel.primaryColor,
+        defaultValue = null
     )?.let {
-        primaryColor = Color(android.graphics.Color.parseColor(it))
+        primaryColor = Color(android.graphics.Color.parseColor(it as String))
     }
 
     val defaultSecondaryColor = getColor(MaterialTheme.colors.secondary)
     var secondaryColor by remember { mutableStateOf(defaultSecondaryColor) }
-    getColorSetings(
-        key = PreferenceKey.SECONDARY_COLOR,
-        dataStore = dataStore,
-        defaultValue = MaterialTheme.colors.secondary
+    getStateFromFlow(
+        flow = viewModel.secondaryColor,
+        defaultValue = null
     )?.let {
-        secondaryColor = Color(android.graphics.Color.parseColor(it))
+        secondaryColor = Color(android.graphics.Color.parseColor(it as String))
     }
 
     DisposableEffect(key1 = viewModel) {
@@ -80,8 +77,9 @@ fun ClockScreen(
             scale = scale,
             uiState = clockUiState,
             dataStore = dataStore,
+            viewModel = viewModel,
             primaryColor = primaryColor,
-            secondaryColor = secondaryColor,
+            secondaryColor = secondaryColor
         )
     }
 }
@@ -93,6 +91,7 @@ fun DrawClock(
     scale: Float,
     uiState: ClockUiState,
     dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     primaryColor: Color,
     secondaryColor: Color
 ) {
@@ -100,7 +99,7 @@ fun DrawClock(
         ClockType.ANALOG_NIGHTDREAM ->
             NightdreamAnalogClock(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,
@@ -110,7 +109,7 @@ fun DrawClock(
         ClockType.ANALOG_CLOCKVIEW ->
             ClockView(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
@@ -121,7 +120,7 @@ fun DrawClock(
         ClockType.ANALOG_CLOCKVIEW2 ->
             ClockView2(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,
@@ -132,7 +131,7 @@ fun DrawClock(
         ClockType.ANALOG_RECTANGULAR ->
             AnalogClockRectangular(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
@@ -144,7 +143,6 @@ fun DrawClock(
         ClockType.ANALOG_FSCLOCK ->
             FSAnalogClock(
                 modifier = modifier,
-                dataStore = dataStore,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,
@@ -155,7 +153,7 @@ fun DrawClock(
         ClockType.ANALOG_JETALARM -> {
             JetAlarm(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,
@@ -167,7 +165,7 @@ fun DrawClock(
         ClockType.DIGITAL_FLIPCLOCK -> {
             DigitalFlipClock(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
@@ -178,7 +176,7 @@ fun DrawClock(
         ClockType.DIGITAL_MATRIXCLOCK -> {
             DigitalMatrixClock(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
@@ -190,7 +188,7 @@ fun DrawClock(
         ClockType.DIGITAL_CLOCK -> {
             DigitalClock(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
                 scale = scale,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
@@ -206,29 +204,15 @@ fun DrawClock(
         ClockType.DIGITAL_CLOCK2 -> {
             DigitalClock2(
                 modifier = modifier,
-                dataStore = dataStore,
+                viewModel = viewModel,
+                scale = scale,
                 primaryColor = primaryColor,
-                secondaryColor = secondaryColor,
                 hour = uiState.hour,
                 minute = uiState.minute,
-                second = uiState.second,
-                millisecond = uiState.milliSecond
+                second = uiState.second
             )
         }
     }
-}
-
-@Composable
-private fun getColorSetings(
-    key: PreferenceKey,
-    dataStore: DataStore<Preferences>,
-    defaultValue: Color
-): String? {
-    return getParam(
-        dataStore = dataStore,
-        defaultValue = "#${Integer.toHexString(defaultValue.toArgb())}"
-    ) { preferences -> preferences[stringPreferencesKey(key.key)] }
-    as String?
 }
 
 private fun getColor(color: Color) = Color(android.graphics.Color.parseColor("#${Integer.toHexString(color.toArgb())}"))

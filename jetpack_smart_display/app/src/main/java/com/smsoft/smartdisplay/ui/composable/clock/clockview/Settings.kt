@@ -47,44 +47,44 @@ fun drawDigits(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_FONT_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_FONT_CLOCKVIEW.title),
+                key = PreferenceKey.DIGIT_FONT_CV.key,
+                title = stringResource(PreferenceKey.DIGIT_FONT_CV.title),
                 defaultValue = Font.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = Font.toMap(context)
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_STYLE_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_STYLE_CLOCKVIEW.title),
+                key = PreferenceKey.DIGIT_STYLE_CV.key,
+                title = stringResource(PreferenceKey.DIGIT_STYLE_CV.title),
                 defaultValue = DigitStyle.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitStyle.toMap(context)
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_SHOW_HOURS_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_SHOW_HOURS_CLOCKVIEW.title),
-                defaultChecked = DEFAULT_SHOW_HOURS
+                key = PreferenceKey.DIGIT_SHOW_HOURS_CV.key,
+                title = stringResource(PreferenceKey.DIGIT_SHOW_HOURS_CV.title),
+                defaultChecked = DEFAULT_SHOW_HOURS_CV
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_SHOW_MINUTES_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_SHOW_MINUTES_CLOCKVIEW.title),
-                defaultChecked = DEFAULT_SHOW_MINUTES
+                key = PreferenceKey.CV.key,
+                title = stringResource(PreferenceKey.CV.title),
+                defaultChecked = DEFAULT_SHOW_MINUTES_CV
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_STEP_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_STEP_CLOCKVIEW.title),
+                key = PreferenceKey.DIGIT_STEP_CV.key,
+                title = stringResource(PreferenceKey.DIGIT_STEP_CV.title),
                 defaultValue = DigitStep.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitStep.toMap(context)
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_DISPOSITION_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_DISPOSITION_CLOCKVIEW.title),
+                key = PreferenceKey.DIGIT_DISPOSITION_CV.key,
+                title = stringResource(PreferenceKey.DIGIT_DISPOSITION_CV.title),
                 defaultValue = DigitDisposition.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitDisposition.toMap(context)
@@ -107,22 +107,22 @@ fun drawTicks(
         prefsItem {
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_SHOW_DEGREES_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DIGIT_SHOW_DEGREES_CLOCKVIEW.title),
-                defaultChecked = DEFAULT_SHOW_DEGREES
+                key = PreferenceKey.DIGIT_SHOW_DEGREES_CV.key,
+                title = stringResource(PreferenceKey.DIGIT_SHOW_DEGREES_CV.title),
+                defaultChecked = DEFAULT_SHOW_DEGREES_CV
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DEGREE_TYPE_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DEGREE_TYPE_CLOCKVIEW.title),
+                key = PreferenceKey.DEGREE_TYPE_CV.key,
+                title = stringResource(PreferenceKey.DEGREE_TYPE_CV.title),
                 defaultValue = DegreeType.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DegreeType.toMap(context)
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DEGREE_STEP_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.DEGREE_STEP_CLOCKVIEW.title),
+                key = PreferenceKey.DEGREE_STEP_CV.key,
+                title = stringResource(PreferenceKey.DEGREE_STEP_CV.title),
                 defaultValue = DegreesStep.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DegreesStep.toMap(context)
@@ -144,15 +144,15 @@ fun drawDecoration(
         prefsItem {
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.SHOW_CENTER_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.SHOW_CENTER_CLOCKVIEW.title),
-                defaultChecked = DEFAULT_SHOW_CENTER
+                key = PreferenceKey.SHOW_CENTER_CV.key,
+                title = stringResource(PreferenceKey.SHOW_CENTER_CV.title),
+                defaultChecked = DEFAULT_SHOW_CENTER_CV
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.SHOW_SECOND_HAND_CLOCKVIEW.key,
-                title = stringResource(PreferenceKey.SHOW_SECOND_HAND_CLOCKVIEW.title),
-                defaultChecked = DEFAULT_SHOW_SECOND_HAND
+                key = PreferenceKey.SHOW_SECOND_HAND_CV.key,
+                title = stringResource(PreferenceKey.SHOW_SECOND_HAND_CV.title),
+                defaultChecked = DEFAULT_SHOW_SECOND_HAND_CV
             )
         }
     }

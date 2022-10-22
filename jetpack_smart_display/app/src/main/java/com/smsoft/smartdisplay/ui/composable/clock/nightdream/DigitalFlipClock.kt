@@ -13,20 +13,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.floatPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit.TabDigit
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 
 @Composable
 fun DigitalFlipClock(
     modifier: Modifier = Modifier
         .fillMaxSize(),
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     scale: Float,
     primaryColor: Color,
     secondaryColor: Color,
@@ -36,26 +32,23 @@ fun DigitalFlipClock(
     val primaryColor =  primaryColor.toArgb()
     val secondaryColor =  secondaryColor.toArgb()
 
-    val reverseRotation = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_REVERSE_ROTATION
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.REVERSE_ROTATION_FLIP_CLOCK.key)] }
-    as Boolean
+    val reverseRotation = getStateFromFlow(
+        flow = viewModel.reverseRotationFC,
+        defaultValue = DEFAULT_REVERSE_ROTATION_FC
+    ) as Boolean
 
     val cornerSize = DEFAULT_CORNER_SIZE
     val background = DEFAULT_BACKGROUND
 
-    val padding = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_PADDING
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.PADDING_FLIP_CLOCK.key)] }
-    as Float
+    val padding = getStateFromFlow(
+        flow = viewModel.paddingFC,
+        defaultValue = DEFAULT_PADDING_FC
+    ) as Float
 
-    val fontSize = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_TEXT_SIZE
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.FONT_SIZE_FLIP_CLOCK.key)] }
-    as Float
+    val fontSize = scale * getStateFromFlow(
+        flow = viewModel.fontSizeFC,
+        defaultValue = DEFAULT_TEXT_SIZE_FC
+    ) as Float
 
     val highHour = hour / 10
     val highMinute = minute / 10
@@ -215,8 +208,8 @@ private val LOW_HOURS24 = charArrayOf(
 )
 private val HIGH_MINUTES = charArrayOf('0', '1', '2', '3', '4', '5')
 
-const val DEFAULT_REVERSE_ROTATION = true
+const val DEFAULT_REVERSE_ROTATION_FC = true
 const val DEFAULT_CORNER_SIZE = 0F
 val DEFAULT_BACKGROUND = android.graphics.Color.parseColor("#2C2C2C")
-const val DEFAULT_TEXT_SIZE = 440F
-const val DEFAULT_PADDING = 12F
+const val DEFAULT_TEXT_SIZE_FC = 440F
+const val DEFAULT_PADDING_FC = 12F

@@ -2,150 +2,127 @@ package com.smsoft.smartdisplay.ui.composable.clock.nightdream
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 
 data class AnalogClockConfig(
     var digitStyle: DigitStyle = DigitStyle.getDefault(),
-    var digitPosition: Float = DEFAULT_DIGIT_POSITION,
-    var highlightQuarterOfHour: Boolean = DEFAULT_DIGIT_EMP_QUARTERS,
+    var digitPosition: Float = DEFAULT_DIGIT_POSITION_ND,
+    var highlightQuarterOfHour: Boolean = DEFAULT_DIGIT_EMP_QUARTERS_ND,
     var fontUri: String = "file:///android_asset/fonts/" + Font.getDefault(),
-    var fontSize: Float = DEFAULT_DIGIT_FONT_SIZE / 100,
+    var fontSize: Float = DEFAULT_DIGIT_FONT_SIZE_ND / 100,
     var handStyle: HandStyle = HandStyle.getDefault(),
-    var handLengthMinutes: Float = DEFAULT_HAND_LEN_MIN,
-    var handLengthHours: Float = DEFAULT_HAND_LEN_HOURS,
-    var handWidthMinutes: Float = DEFAULT_HAND_WIDTH_MIN / 100,
-    var handWidthHours: Float = DEFAULT_HAND_WIDTH_HOURS / 100,
-    var showSecondHand: Boolean = DEFAULT_SHOW_SECOND_HAND,
+    var handLengthMinutes: Float = DEFAULT_HAND_LEN_MIN_ND,
+    var handLengthHours: Float = DEFAULT_HAND_LEN_HOURS_ND,
+    var handWidthMinutes: Float = DEFAULT_HAND_WIDTH_MIN_ND / 100,
+    var handWidthHours: Float = DEFAULT_HAND_WIDTH_HOURS_ND / 100,
+    var showSecondHand: Boolean = DEFAULT_SHOW_SECOND_HAND_ND,
     var tickStyleMinutes: TickStyle = TickStyle.getDefault(),
-    var tickStartMinutes: Float = DEFAULT_TICK_START_MINUTES,
-    var tickLengthMinutes: Float = DEFAULT_TICK_LEN_MINUTES / 100,
+    var tickStartMinutes: Float = DEFAULT_TICK_START_MINUTES_ND,
+    var tickLengthMinutes: Float = DEFAULT_TICK_LEN_MINUTES_ND / 100,
     var tickStyleHours: TickStyle = TickStyle.CIRCLE,
-    var tickStartHours: Float = DEFAULT_TICK_START_HOURS,
-    var tickLengthHours: Float = DEFAULT_TICK_LEN_HOURS / 100,
+    var tickStartHours: Float = DEFAULT_TICK_START_HOURS_ND,
+    var tickLengthHours: Float = DEFAULT_TICK_LEN_HOURS_ND / 100,
     var emphasizeHour12: Boolean = true,
     var tickWidthHours: Float = 0.01F,
     var tickWidthMinutes: Float = 0.01F,
-    var innerCircleRadius: Float = DEFAULT_INNER_CIRCLE_RADIUS / 10
+    var innerCircleRadius: Float = DEFAULT_INNER_CIRCLE_RADIUS_ND / 10
 ) {
     @Composable
     fun InitDataStore(
-        dataStore: DataStore<Preferences>
+        viewModel: ClockViewModel,
     ) {
-        digitStyle = getParam(
-            dataStore = dataStore,
+        digitStyle = getStateFromFlow(
+            flow = viewModel.digitStyleND,
             defaultValue = DigitStyle.getDefault()
-        ) { preferences -> DigitStyle.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_STYLE.key)] ?: DigitStyle.getDefaultId()) }
-        as DigitStyle
+        ) as DigitStyle
 
-        digitPosition = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_DIGIT_POSITION
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_POSITION.key)] }
-        as Float
+        digitPosition = getStateFromFlow(
+            flow = viewModel.digitPositionND,
+            defaultValue = DEFAULT_DIGIT_POSITION_ND
+        ) as Float
 
-        highlightQuarterOfHour = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_DIGIT_EMP_QUARTERS
-        ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.DIGIT_EMP_QUARTERS.key)] }
-        as Boolean
+        highlightQuarterOfHour = getStateFromFlow(
+            flow = viewModel.highlightQuarterOfHourND,
+            defaultValue = DEFAULT_DIGIT_EMP_QUARTERS_ND
+        ) as Boolean
 
-        fontUri = "file:///android_asset/fonts/" + getParam(
-            dataStore = dataStore,
+        fontUri = "file:///android_asset/fonts/" + getStateFromFlow(
+            flow = viewModel.fontUriND,
             defaultValue = Font.getDefault()
-        ) { preferences ->
-            Font.getById(preferences[stringPreferencesKey(PreferenceKey.DIGIT_FONT.key)] ?: Font.getDefault()).font
-        }
+        )
 
-        fontSize = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_DIGIT_FONT_SIZE
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_FONT_SIZE.key)] }
-        as Float / 100
+        fontSize = getStateFromFlow(
+            flow = viewModel.fontSizeND,
+            defaultValue = DEFAULT_DIGIT_FONT_SIZE_ND
+        ) as Float / 100
 
-        handStyle = getParam(
-            dataStore = dataStore,
+        handStyle = getStateFromFlow(
+            flow = viewModel.handStyleND,
             defaultValue = HandStyle.getDefault()
-        ) { preferences -> HandStyle.getById(preferences[stringPreferencesKey(PreferenceKey.HAND_STYLE.key)] ?: HandStyle.getDefaultStyle()) }
+        )
         as HandStyle
 
-        handLengthMinutes = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_HAND_LEN_MIN
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_MINUTES.key)] }
-        as Float
+        handLengthMinutes = getStateFromFlow(
+            flow = viewModel.handLengthMinutesND,
+            defaultValue = DEFAULT_HAND_LEN_MIN_ND
+        ) as Float
 
-        handLengthHours = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_HAND_LEN_HOURS
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_LENGTH_HOURS.key)] }
-        as Float
+        handLengthHours = getStateFromFlow(
+            flow = viewModel.handLengthHoursND,
+            defaultValue = DEFAULT_HAND_LEN_HOURS_ND
+        ) as Float
 
-        handWidthMinutes = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_HAND_WIDTH_MIN
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_MINUTES.key)] }
-        as Float / 100
+        handWidthMinutes = getStateFromFlow(
+            flow = viewModel.handWidthMinutesND,
+            defaultValue = DEFAULT_HAND_WIDTH_MIN_ND
+        ) as Float / 100
 
-        handWidthHours = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_HAND_WIDTH_HOURS
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HAND_WIDTH_HOURS.key)] }
-        as Float / 100
+        handWidthHours = getStateFromFlow(
+            flow = viewModel.handWidthHoursND,
+            defaultValue = DEFAULT_HAND_WIDTH_HOURS_ND
+        ) as Float / 100
 
-        showSecondHand = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_SHOW_SECOND_HAND
-        ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.HAND_SHOW_SECOND_HAND.key)] }
-        as Boolean
+        showSecondHand = getStateFromFlow(
+            flow = viewModel.showSecondHandND,
+            defaultValue = DEFAULT_SHOW_SECOND_HAND_ND
+        ) as Boolean
 
-        tickStyleMinutes = getParam(
-            dataStore = dataStore,
+        tickStyleMinutes = getStateFromFlow(
+            flow = viewModel.tickStyleMinutesND,
             defaultValue = TickStyle.getDefault()
-        ) { preferences -> TickStyle.getById(preferences[stringPreferencesKey(PreferenceKey.TICK_STYLE_MINUTES.key)] ?: TickStyle.getDefaultStyle()) }
-        as TickStyle
+        ) as TickStyle
 
-        tickStartMinutes = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_TICK_START_MINUTES
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_START_MINUTES.key)] }
-        as Float
+        tickStartMinutes = getStateFromFlow(
+            flow = viewModel.tickStartMinutesND,
+            defaultValue = DEFAULT_TICK_START_MINUTES_ND
+        ) as Float
 
-        tickLengthMinutes = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_TICK_LEN_MINUTES
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_LEN_MINUTES.key)] }
-        as Float / 100
+        tickLengthMinutes = getStateFromFlow(
+            flow = viewModel.tickLengthMinutesND,
+            defaultValue = DEFAULT_TICK_LEN_MINUTES_ND
+        ) as Float / 100
 
-        tickStyleHours = getParam(
-            dataStore = dataStore,
+        tickStyleHours = getStateFromFlow(
+            flow = viewModel.tickStyleHoursND,
             defaultValue = TickStyle.CIRCLE
-        ) { preferences -> TickStyle.getById(preferences[stringPreferencesKey(PreferenceKey.TICK_STYLE_HOURS.key)] ?: TickStyle.CIRCLE.style) }
-        as TickStyle
+        ) as TickStyle
 
-        tickStartHours = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_TICK_START_HOURS
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_START_HOURS.key)] }
-        as Float
+        tickStartHours = getStateFromFlow(
+            flow = viewModel.tickStartHoursND,
+            defaultValue = DEFAULT_TICK_START_HOURS_ND
+        ) as Float
 
-        tickLengthHours = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_TICK_LEN_HOURS
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TICK_LEN_HOURS.key)] }
-        as Float / 100
+        tickLengthHours = getStateFromFlow(
+            flow = viewModel.tickLengthHoursND,
+            defaultValue = DEFAULT_TICK_LEN_HOURS_ND
+        ) as Float / 100
 
-        innerCircleRadius = getParam(
-            dataStore = dataStore,
-            defaultValue = DEFAULT_INNER_CIRCLE_RADIUS
-        ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.INNER_CIRCLE_RADIUS.key)] }
-        as Float / 10
+        innerCircleRadius = getStateFromFlow(
+            flow = viewModel.innerCircleRadiusND,
+            defaultValue = DEFAULT_INNER_CIRCLE_RADIUS_ND
+        ) as Float / 10
     }
 
     enum class DigitStyle(val id: Int, val titleId: Int) {
@@ -260,21 +237,21 @@ data class AnalogClockConfig(
     }
 
     companion object {
-        const val DEFAULT_DIGIT_POSITION = 0.85F
-        const val DEFAULT_DIGIT_EMP_QUARTERS = true
-        const val DEFAULT_DIGIT_FONT_SIZE = 8F
-        val DEFAULT_HAND_STYLE = HandStyle.getDefaultStyle()
-        const val DEFAULT_HAND_LEN_MIN = 0.9F
-        const val DEFAULT_HAND_LEN_HOURS = 0.7F
-        const val DEFAULT_HAND_WIDTH_MIN = 4F
-        const val DEFAULT_HAND_WIDTH_HOURS = 4F
-        const val DEFAULT_SHOW_SECOND_HAND = true
-        val DEFAULT_TICK_STYLE_MINUTES = TickStyle.getDefaultStyle()
-        val DEFAULT_TICK_STYLE_HOURS = TickStyle.CIRCLE.style
-        const val DEFAULT_TICK_START_MINUTES = 0.9F
-        const val DEFAULT_TICK_LEN_MINUTES = 4F
-        const val DEFAULT_TICK_START_HOURS = 0.9F
-        const val DEFAULT_TICK_LEN_HOURS = 4F
-        const val DEFAULT_INNER_CIRCLE_RADIUS = 0.45F
+        const val DEFAULT_DIGIT_POSITION_ND = 0.85F
+        const val DEFAULT_DIGIT_EMP_QUARTERS_ND = true
+        const val DEFAULT_DIGIT_FONT_SIZE_ND = 8F
+        val DEFAULT_HAND_STYLE_ND = HandStyle.getDefaultStyle()
+        const val DEFAULT_HAND_LEN_MIN_ND = 0.9F
+        const val DEFAULT_HAND_LEN_HOURS_ND = 0.7F
+        const val DEFAULT_HAND_WIDTH_MIN_ND = 4F
+        const val DEFAULT_HAND_WIDTH_HOURS_ND = 4F
+        const val DEFAULT_SHOW_SECOND_HAND_ND = true
+        val DEFAULT_TICK_STYLE_MINUTES_ND = TickStyle.getDefaultStyle()
+        val DEFAULT_TICK_STYLE_HOURS_ND = TickStyle.CIRCLE.style
+        const val DEFAULT_TICK_START_MINUTES_ND = 0.9F
+        const val DEFAULT_TICK_LEN_MINUTES_ND = 4F
+        const val DEFAULT_TICK_START_HOURS_ND = 0.9F
+        const val DEFAULT_TICK_LEN_HOURS_ND = 4F
+        const val DEFAULT_INNER_CIRCLE_RADIUS_ND = 0.45F
     }
 }

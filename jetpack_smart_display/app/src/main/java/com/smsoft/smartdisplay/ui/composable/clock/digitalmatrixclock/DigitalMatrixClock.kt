@@ -12,20 +12,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 
 @Composable
 fun DigitalMatrixClock(
     modifier: Modifier = Modifier
         .fillMaxSize(),
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     scale: Float,
     primaryColor: Color,
     secondaryColor: Color,
@@ -33,68 +28,55 @@ fun DigitalMatrixClock(
     minute: Int,
     second: Int
 ) {
-
-    val dotStyle = getParam(
-        dataStore = dataStore,
+    val dotStyle = getStateFromFlow(
+        flow = viewModel.dotStyleMC,
         defaultValue = DotStyle.getDefault()
-    ) { preferences ->
-        DotStyle.getById(preferences[stringPreferencesKey(PreferenceKey.DOT_STYLE_MATRIX_CLOCK.key)] ?: DotStyle.getDefaultId())
-    }
-   as DotStyle
+    ) as DotStyle
 
-    val isShowSeconds = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_SECONDS
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_SECONDS_MATRIX_CLOCK.key)] }
-    as Boolean
+    val isShowSeconds = getStateFromFlow(
+        flow = viewModel.isShowSecondsMC,
+        defaultValue = DEFAULT_SHOW_SECONDS_MC
+    ) as Boolean
 
-    val dotRadiusRound = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_RADIUS_ROUND
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_RADIUS_ROUND_MATRIX_CLOCK.key)] }
-    as Float
+    val dotRadiusRound = scale * getStateFromFlow(
+        flow = viewModel.dotRadiusRoundMC,
+        defaultValue = DEFAULT_DOT_RADIUS_ROUND_MC
+    ) as Float
 
-    val dotSpacingRound = (scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_SPACING_ROUND
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_SPACING_ROUND_MATRIX_CLOCK.key)] }
-    as Float).toInt()
+    val dotSpacingRound = (scale * getStateFromFlow(
+        flow = viewModel.dotSpacingRoundMC,
+        defaultValue = DEFAULT_DOT_SPACING_ROUND_MC
+    ) as Float).toInt()
 
-    val dotRadiusRoundSec = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_RADIUS_ROUND_SECONDS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_RADIUS_ROUND_SEC_MATRIX_CLOCK.key)] }
-    as Float
+    val dotRadiusRoundSec = scale * getStateFromFlow(
+        flow = viewModel.dotRadiusRoundSecMC,
+        defaultValue = DEFAULT_DOT_RADIUS_ROUND_SECONDS_MC
+    ) as Float
 
-    val dotSpacingRoundSec = (scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_SPACING_ROUND_SECONDS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_SPACING_ROUND_SEC_MATRIX_CLOCK.key)] }
-    as Float).toInt()
+    val dotSpacingRoundSec = (scale * getStateFromFlow(
+        flow = viewModel.dotSpacingRoundSecMC,
+        defaultValue = DEFAULT_DOT_SPACING_ROUND_SECONDS_MC
+    ) as Float).toInt()
 
-    val dotRadiusSquare = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_RADIUS_SQUARE
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_RADIUS_SQUARE_MATRIX_CLOCK.key)] }
-    as Float
+    val dotRadiusSquare = scale * getStateFromFlow(
+        flow = viewModel.dotRadiusSquareMC,
+        defaultValue = DEFAULT_DOT_RADIUS_SQUARE_MC
+    ) as Float
 
-    val dotSpacingSquare = (scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_SPACING_SQUARE
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_SPACING_SQUARE_MATRIX_CLOCK.key)] }
-    as Float).toInt()
+    val dotSpacingSquare = (scale * getStateFromFlow(
+        flow = viewModel.dotSpacingSquareMC,
+        defaultValue = DEFAULT_DOT_SPACING_SQUARE_MC
+    ) as Float).toInt()
 
-    val dotRadiusSquareSec = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_RADIUS_SQUARE_SECONDS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_RADIUS_SQUARE_SEC_MATRIX_CLOCK.key)] }
-    as Float
+    val dotRadiusSquareSec = scale * getStateFromFlow(
+        flow = viewModel.dotRadiusSquareSecMC,
+        defaultValue = DEFAULT_DOT_RADIUS_SQUARE_SECONDS_MC
+    ) as Float
 
-    val dotSpacingSquareSec = (scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DOT_SPACING_SQUARE_SECONDS
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DOT_SPACING_SQUARE_SEC_MATRIX_CLOCK.key)] }
-    as Float).toInt()
+    val dotSpacingSquareSec = (scale * getStateFromFlow(
+        flow = viewModel.dotSpacingSquareSecMC,
+        defaultValue = DEFAULT_DOT_SPACING_SQUARE_SECONDS_MC
+    ) as Float).toInt()
 
     val configuration = LocalConfiguration.current
 
@@ -315,14 +297,14 @@ private var model = Grid()
 private lateinit var coordsX: Array<IntArray>
 private lateinit var coordsY: Array<IntArray>
 
-const val DEFAULT_SHOW_SECONDS = false
+const val DEFAULT_SHOW_SECONDS_MC = false
 
-const val DEFAULT_DOT_SPACING_ROUND = 7F
-const val DEFAULT_DOT_RADIUS_ROUND = 14F
-const val DEFAULT_DOT_SPACING_ROUND_SECONDS = 5F
-const val DEFAULT_DOT_RADIUS_ROUND_SECONDS = 10F
+const val DEFAULT_DOT_SPACING_ROUND_MC = 7F
+const val DEFAULT_DOT_RADIUS_ROUND_MC = 14F
+const val DEFAULT_DOT_SPACING_ROUND_SECONDS_MC = 5F
+const val DEFAULT_DOT_RADIUS_ROUND_SECONDS_MC = 10F
 
-const val DEFAULT_DOT_SPACING_SQUARE = 12F
-const val DEFAULT_DOT_RADIUS_SQUARE = 24F
-const val DEFAULT_DOT_SPACING_SQUARE_SECONDS = 8F
-const val DEFAULT_DOT_RADIUS_SQUARE_SECONDS = 16F
+const val DEFAULT_DOT_SPACING_SQUARE_MC = 12F
+const val DEFAULT_DOT_RADIUS_SQUARE_MC = 24F
+const val DEFAULT_DOT_SPACING_SQUARE_SECONDS_MC = 8F
+const val DEFAULT_DOT_RADIUS_SQUARE_SECONDS_MC = 16F

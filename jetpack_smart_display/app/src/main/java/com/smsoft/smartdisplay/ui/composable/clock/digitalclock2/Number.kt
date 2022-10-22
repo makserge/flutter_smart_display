@@ -12,10 +12,10 @@ import androidx.compose.ui.graphics.nativeCanvas
 class Number(
     startX: Int,
     startY: Int,
-    private val lineLength: Int,
-    private val initialColor: Int = Color.parseColor("#66CCFF"),
-    private val shadowRadius: Int,
-    private val animationDuration: Int
+    val lineLength: Int,
+    var initialColor: Int = Color.parseColor("#66CCFF"),
+    var shadowRadius: Int,
+    val animationDuration: Int
 ) {
     private var margin = 2
     private val offset = 10
@@ -39,7 +39,12 @@ class Number(
     init {
         paint.apply{
             isAntiAlias = true
-            setShadowLayer(shadowRadius.toFloat(), 0f, 0f, color)
+            setShadowLayer(
+                shadowRadius.toFloat(),
+                0F,
+                0F,
+                color
+            )
             color = initialColor
             strokeWidth = (lineLength / 25).toFloat()
         }
@@ -97,18 +102,22 @@ class Number(
         margin = 2 + ((1 - process) * 10).toInt()
     }
 
-    private fun getProcessIndex(lineIndex: Int, subLineIndex: Int): Float {
+    private fun getProcessIndex(
+        lineIndex: Int,
+        subLineIndex: Int
+    ): Float {
         var trueProcess = if (subLineIndex == 1) process - 0.2F else process
         if (trueProcess > 1.0F) trueProcess = 1.0F
         if (trueProcess < 0F) trueProcess = 0F
         val from = numbers[currentStatus][lineIndex]
         val to = numbers[nextStatus][lineIndex]
-        trueProcess = from + (to - from) * trueProcess
-        return trueProcess
+        return from + (to - from) * trueProcess
     }
 
-    fun updateNumber(status: Int) {
-        var newStatus = status
+    fun updateNumber(
+        value: Int
+    ) {
+        var newStatus = value
         newStatus %= 10
         nextStatus = newStatus
         if (nextStatus != currentStatus) {

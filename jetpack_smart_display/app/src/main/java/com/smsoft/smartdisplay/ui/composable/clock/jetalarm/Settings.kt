@@ -23,16 +23,16 @@ fun drawAnalogJetAlarmPrefs(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.BORDER_RADIUS_JET.key,
-                title = stringResource(PreferenceKey.BORDER_RADIUS_JET.title),
-                defaultValue = DEFAULT_BORDER_RADIUS,
+                key = PreferenceKey.BORDER_RADIUS_JA.key,
+                title = stringResource(PreferenceKey.BORDER_RADIUS_JA.title),
+                defaultValue = DEFAULT_BORDER_RADIUS_JA,
                 valueRange = 0.5F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.BORDER_THICKNESS_JET.key,
-                title = stringResource(PreferenceKey.BORDER_THICKNESS_JET.title),
-                defaultValue = DEFAULT_BORDER_THICKNESS,
+                key = PreferenceKey.BORDER_THICKNESS_JA.key,
+                title = stringResource(PreferenceKey.BORDER_THICKNESS_JA.title),
+                defaultValue = DEFAULT_BORDER_THICKNESS_JA,
                 valueRange = 5F..15F,
             )
         }
@@ -45,51 +45,51 @@ fun drawAnalogJetAlarmPrefs(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_SECONDS_JET.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_SECONDS_JET.title),
-                defaultValue = DEFAULT_HAND_LEN_SECONDS_JET,
+                key = PreferenceKey.HAND_LENGTH_SECONDS_JA.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_SECONDS_JA.title),
+                defaultValue = DEFAULT_HAND_LEN_SECONDS_JA,
                 valueRange = 0.3F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_MINUTES_JET.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_MINUTES_JET.title),
-                defaultValue = DEFAULT_HAND_LEN_MINUTES_JET,
+                key = PreferenceKey.HAND_LENGTH_MINUTES_JA.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_MINUTES_JA.title),
+                defaultValue = DEFAULT_HAND_LEN_MINUTES_JA,
                 valueRange = 0.3F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_HOURS_JET.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_HOURS_JET.title),
-                defaultValue = DEFAULT_HAND_LEN_HOURS_JET,
+                key = PreferenceKey.HAND_LENGTH_HOURS_JA.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_HOURS_JA.title),
+                defaultValue = DEFAULT_HAND_LEN_HOURS_JA,
                 valueRange = 0.2F..0.8F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_SECONDS_JET.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_SECONDS_JET.title),
-                defaultValue = DEFAULT_HAND_WIDTH_SECONDS_JET,
+                key = PreferenceKey.HAND_WIDTH_SECONDS_JA.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_SECONDS_JA.title),
+                defaultValue = DEFAULT_HAND_WIDTH_SECONDS_JA,
                 valueRange = 4F..10F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_MINUTES_JET.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_MINUTES_JET.title),
-                defaultValue = DEFAULT_HAND_WIDTH_MINUTES_JET,
+                key = PreferenceKey.HAND_WIDTH_MINUTES_JA.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_MINUTES_JA.title),
+                defaultValue = DEFAULT_HAND_WIDTH_MINUTES_JA,
                 valueRange = 5F..10F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_HOURS_JET.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_HOURS_JET.title),
-                defaultValue = DEFAULT_HAND_WIDTH_HOURS_JET,
+                key = PreferenceKey.HAND_WIDTH_HOURS_JA.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_HOURS_JA.title),
+                defaultValue = DEFAULT_HAND_WIDTH_HOURS_JA,
                 valueRange = 5F..10F,
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_SHOW_SECOND_HAND_JET.key,
-                title = stringResource(PreferenceKey.HAND_SHOW_SECOND_HAND_JET.title),
-                defaultChecked = DEFAULT_SHOW_SECOND_HAND_JET
+                key = PreferenceKey.HAND_SHOW_SECOND_HAND_JA.key,
+                title = stringResource(PreferenceKey.HAND_SHOW_SECOND_HAND_JA.title),
+                defaultChecked = DEFAULT_SHOW_SECOND_HAND_JA
             )
         }
     }

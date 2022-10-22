@@ -50,25 +50,25 @@ fun drawDigits(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_FONT_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.DIGIT_FONT_CLOCKVIEW2.title),
+                key = PreferenceKey.DIGIT_FONT_CV2.key,
+                title = stringResource(PreferenceKey.DIGIT_FONT_CV2.title),
                 defaultValue = Font.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = Font.toMap(context)
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_STYLE_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.DIGIT_STYLE_CLOCKVIEW2.title),
+                key = PreferenceKey.DIGIT_STYLE_CV2.key,
+                title = stringResource(PreferenceKey.DIGIT_STYLE_CV2.title),
                 defaultValue = DigitStyle.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitStyle.toMap(context)
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_TEXT_SIZE_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.DIGIT_TEXT_SIZE_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_DIGIT_TEXT_SIZE,
+                key = PreferenceKey.DIGIT_TEXT_SIZE_CV2.key,
+                title = stringResource(PreferenceKey.DIGIT_TEXT_SIZE_CV2.title),
+                defaultValue = DEFAULT_DIGIT_TEXT_SIZE_CV2,
                 valueRange = 15F..35F,
             )
         }
@@ -88,23 +88,23 @@ fun drawHands(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.MINUTE_HAND_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.MINUTE_HAND_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_MINUTE_HAND_WIDTH,
+                key = PreferenceKey.MINUTE_HAND_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.MINUTE_HAND_WIDTH_CV2.title),
+                defaultValue = DEFAULT_MINUTE_HAND_WIDTH_CV2,
                 valueRange = 1F..5F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HOUR_HAND_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.HOUR_HAND_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_HOUR_HAND_WIDTH,
+                key = PreferenceKey.HOUR_HAND_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.HOUR_HAND_WIDTH_CV2.title),
+                defaultValue = DEFAULT_HOUR_HAND_WIDTH_CV2,
                 valueRange = 3F..5F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.SECOND_HAND_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.SECOND_HAND_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_SECOND_HAND_WIDTH,
+                key = PreferenceKey.SECOND_HAND_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.SECOND_HAND_WIDTH_CV2.title),
+                defaultValue = DEFAULT_SECOND_HAND_WIDTH_CV2,
                 valueRange = 1F..3F,
             )
         }
@@ -124,30 +124,30 @@ fun drawTicks(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.OUTER_RIM_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.OUTER_RIM_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_OUTER_RIM_WIDTH,
+                key = PreferenceKey.OUTER_RIM_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.OUTER_RIM_WIDTH_CV2.title),
+                defaultValue = DEFAULT_OUTER_RIM_WIDTH_CV2,
                 valueRange = 1F..5F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.INNER_RIM_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.INNER_RIM_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_INNER_RIM_WIDTH,
+                key = PreferenceKey.INNER_RIM_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.INNER_RIM_WIDTH_CV2.title),
+                defaultValue = DEFAULT_INNER_RIM_WIDTH_CV2,
                 valueRange = 1F..5F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.THICK_MARKER_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.THICK_MARKER_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_THICK_MARKER_WIDTH,
+                key = PreferenceKey.THICK_MARKER_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.THICK_MARKER_WIDTH_CV2.title),
+                defaultValue = DEFAULT_THICK_MARKER_WIDTH_CV2,
                 valueRange = 1F..5F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.THIN_MARKER_WIDTH_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.THIN_MARKER_WIDTH_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_THIN_MARKER_WIDTH,
+                key = PreferenceKey.THIN_MARKER_WIDTH_CV2.key,
+                title = stringResource(PreferenceKey.THIN_MARKER_WIDTH_CV2.title),
+                defaultValue = DEFAULT_THIN_MARKER_WIDTH_CV2,
                 valueRange = 1F..5F,
             )
         }
@@ -167,9 +167,9 @@ fun drawDecoration(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.CENTER_CIRCLE_RADIUS_CLOCKVIEW2.key,
-                title = stringResource(PreferenceKey.CENTER_CIRCLE_RADIUS_CLOCKVIEW2.title),
-                defaultValue = DEFAULT_CENTER_CIRCLE_RADIUS,
+                key = PreferenceKey.CENTER_CIRCLE_RADIUS_CV2.key,
+                title = stringResource(PreferenceKey.CENTER_CIRCLE_RADIUS_CV2.title),
+                defaultValue = DEFAULT_CENTER_CIRCLE_RADIUS_CV2,
                 valueRange = 1F..10F,
             )
         }

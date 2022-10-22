@@ -13,21 +13,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParam
+import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import java.util.*
 
 @Composable
 fun DigitalClock(
     modifier: Modifier = Modifier
         .fillMaxSize(),
-    dataStore: DataStore<Preferences>,
+    viewModel: ClockViewModel,
     scale: Float,
     primaryColor: Color,
     secondaryColor: Color,
@@ -40,55 +35,49 @@ fun DigitalClock(
     second: Int
 ) {
 
-    val isShowSeconds = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_SECONDS
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_SECONDS_DIGITAL_CLOCK.key)] }
-    as Boolean
+    val isShowSeconds = getStateFromFlow(
+        flow = viewModel.isShowSecondsDC,
+        defaultValue = DEFAULT_SHOW_SECONDS_DC
+    ) as Boolean
 
-    val isShowDate = getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SHOW_DATE
-    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.SHOW_DATE_DIGITAL_CLOCK.key)] }
-    as Boolean
+    val isShowDate = getStateFromFlow(
+        flow = viewModel.isShowDateDC,
+        defaultValue = DEFAULT_SHOW_DATE_DC
+    ) as Boolean
 
-    val spaceHeight = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_SPACE_HEIGHT
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.SPACE_HEIGHT_DIGITAL_CLOCK.key)] }
-    as Float
+    val spaceHeight = scale * getStateFromFlow(
+        flow = viewModel.spaceHeightDC,
+        defaultValue = DEFAULT_SPACE_HEIGHT_DC
+    ) as Float
 
-    val timeFontRes = getParam(
-        dataStore = dataStore,
+    val timeFontRes = getStateFromFlow(
+        flow = viewModel.timeFontResDC,
         defaultValue = DigitFont.getDefault().font
-    ) { preferences -> DigitFont.getById((preferences[stringPreferencesKey(PreferenceKey.TIME_FONT_DIGITAL_CLOCK.key)] ?: DigitFont.getDefaultId())).font }
-    as Int
+    ) as Int
 
     val timeFont = FontFamily(
         Font(timeFontRes, weight = FontWeight.Normal)
     )
 
-    val timeFontSize = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_TIME_FONT_SIZE
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.TIME_FONT_SIZE_DIGITAL_CLOCK.key)] }
+    val timeFontSize = scale * getStateFromFlow(
+        flow = viewModel.timeFontSizeDC,
+        defaultValue = DEFAULT_TIME_FONT_SIZE_DC
+    )
     as Float
 
-    val dateFontRes = getParam(
-        dataStore = dataStore,
+    val dateFontRes = getStateFromFlow(
+        flow = viewModel.dateFontResDC,
         defaultValue = DigitFont.getDefault().font
-    ) { preferences -> DigitFont.getById((preferences[stringPreferencesKey(PreferenceKey.DATE_FONT_DIGITAL_CLOCK.key)] ?: DigitFont.getDefaultId())).font }
-    as Int
+    ) as Int
 
     val dateFont = FontFamily(
         Font(dateFontRes, weight = FontWeight.Normal)
     )
 
-    val dateFontSize = scale * getParam(
-        dataStore = dataStore,
-        defaultValue = DEFAULT_DATE_FONT_SIZE
-    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DATE_FONT_SIZE_DIGITAL_CLOCK.key)] }
-    as Float
+    val dateFontSize = scale * getStateFromFlow(
+        flow = viewModel.dateFontSizeDC,
+        defaultValue = DEFAULT_DATE_FONT_SIZE_DC
+    ) as Float
 
     val time = addLeadingZeros(
         hour = hour,
@@ -215,8 +204,8 @@ enum class DigitFont(val id: String, val font: Int, val titleId: Int) {
     }
 }
 
-const val DEFAULT_SHOW_SECONDS = false
-const val DEFAULT_SHOW_DATE = true
-const val DEFAULT_TIME_FONT_SIZE = 270F
-const val DEFAULT_DATE_FONT_SIZE = 72F
-const val DEFAULT_SPACE_HEIGHT = 70F
+const val DEFAULT_SHOW_SECONDS_DC = false
+const val DEFAULT_SHOW_DATE_DC = true
+const val DEFAULT_TIME_FONT_SIZE_DC = 270F
+const val DEFAULT_DATE_FONT_SIZE_DC = 68F
+const val DEFAULT_SPACE_HEIGHT_DC = 70F

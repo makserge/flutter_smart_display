@@ -43,32 +43,32 @@ fun drawDigits(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.TIME_FONT_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.TIME_FONT_DIGITAL_CLOCK.title),
+                key = PreferenceKey.TIME_FONT_DC.key,
+                title = stringResource(PreferenceKey.TIME_FONT_DC.title),
                 defaultValue = DigitFont.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitFont.toMap(context)
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.TIME_FONT_SIZE_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.TIME_FONT_SIZE_DIGITAL_CLOCK.title),
-                defaultValue = DEFAULT_TIME_FONT_SIZE,
+                key = PreferenceKey.TIME_FONT_SIZE_DC.key,
+                title = stringResource(PreferenceKey.TIME_FONT_SIZE_DC.title),
+                defaultValue = DEFAULT_TIME_FONT_SIZE_DC,
                 valueRange = 100F..330F,
             )
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DATE_FONT_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.DATE_FONT_DIGITAL_CLOCK.title),
+                key = PreferenceKey.DATE_FONT_DC.key,
+                title = stringResource(PreferenceKey.DATE_FONT_DC.title),
                 defaultValue = DigitFont.getDefaultId(),
                 useSelectedAsSummary = true,
                 entries = DigitFont.toMap(context)
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DATE_FONT_SIZE_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.DATE_FONT_SIZE_DIGITAL_CLOCK.title),
-                defaultValue = DEFAULT_DATE_FONT_SIZE,
+                key = PreferenceKey.DATE_FONT_SIZE_DC.key,
+                title = stringResource(PreferenceKey.DATE_FONT_SIZE_DC.title),
+                defaultValue = DEFAULT_DATE_FONT_SIZE_DC,
                 valueRange = 20F..80F,
             )
         }
@@ -88,21 +88,21 @@ fun drawDecoration(
         prefsItem {
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.SHOW_SECONDS_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.SHOW_SECONDS_DIGITAL_CLOCK.title),
-                defaultChecked = DEFAULT_SHOW_SECONDS
+                key = PreferenceKey.SHOW_SECONDS_DC.key,
+                title = stringResource(PreferenceKey.SHOW_SECONDS_DC.title),
+                defaultChecked = DEFAULT_SHOW_SECONDS_DC
             )
             SwitchPref(
                 modifier = modifier,
-                key = PreferenceKey.SHOW_DATE_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.SHOW_DATE_DIGITAL_CLOCK.title),
-                defaultChecked = DEFAULT_SHOW_DATE
+                key = PreferenceKey.SHOW_DATE_DC.key,
+                title = stringResource(PreferenceKey.SHOW_DATE_DC.title),
+                defaultChecked = DEFAULT_SHOW_DATE_DC
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.SPACE_HEIGHT_DIGITAL_CLOCK.key,
-                title = stringResource(PreferenceKey.SPACE_HEIGHT_DIGITAL_CLOCK.title),
-                defaultValue = DEFAULT_SPACE_HEIGHT,
+                key = PreferenceKey.SPACE_HEIGHT_DC.key,
+                title = stringResource(PreferenceKey.SPACE_HEIGHT_DC.title),
+                defaultValue = DEFAULT_SPACE_HEIGHT_DC,
                 valueRange = 0F..100F,
             )
         }

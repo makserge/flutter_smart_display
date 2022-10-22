@@ -43,8 +43,8 @@ fun drawDigitsRectangular(
         prefsItem {
             ListPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_FONT_RECT.key,
-                title = stringResource(PreferenceKey.DIGIT_FONT_RECT.title),
+                key = PreferenceKey.DIGIT_FONT_AR.key,
+                title = stringResource(PreferenceKey.DIGIT_FONT_AR.title),
                 defaultValue = Font.getDefault().toString(),
                 useSelectedAsSummary = true,
                 entries = Font.toMap(context),
@@ -53,9 +53,9 @@ fun drawDigitsRectangular(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.DIGIT_FONT_SIZE_RECT.key,
-                title = stringResource(PreferenceKey.DIGIT_FONT_SIZE_RECT.title),
-                defaultValue = DEFAULT_DIGIT_FONT_SIZE,
+                key = PreferenceKey.DIGIT_FONT_SIZE_AR.key,
+                title = stringResource(PreferenceKey.DIGIT_FONT_SIZE_AR.title),
+                defaultValue = DEFAULT_DIGIT_FONT_SIZE_AR,
                 valueRange = 60F..120F,
             )
         }
@@ -75,30 +75,30 @@ fun drawHandsRectangular(
         prefsItem {
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_MINUTES_RECT.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_MINUTES_RECT.title),
-                defaultValue = DEFAULT_HAND_LEN_MINUTES,
+                key = PreferenceKey.HAND_LENGTH_MINUTES_AR.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_MINUTES_AR.title),
+                defaultValue = DEFAULT_HAND_LEN_MINUTES_AR,
                 valueRange = 0.3F..1F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_LENGTH_HOURS_RECT.key,
-                title = stringResource(PreferenceKey.HAND_LENGTH_HOURS_RECT.title),
-                defaultValue = DEFAULT_HAND_LEN_HOURS,
+                key = PreferenceKey.HAND_LENGTH_HOURS_AR.key,
+                title = stringResource(PreferenceKey.HAND_LENGTH_HOURS_AR.title),
+                defaultValue = DEFAULT_HAND_LEN_HOURS_AR,
                 valueRange = 0.2F..0.8F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_MINUTES_RECT.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_MINUTES_RECT.title),
-                defaultValue = DEFAULT_HAND_WIDTH_MINUTES,
+                key = PreferenceKey.HAND_WIDTH_MINUTES_AR.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_MINUTES_AR.title),
+                defaultValue = DEFAULT_HAND_WIDTH_MINUTES_AR,
                 valueRange = 8F..20F,
             )
             SliderPref(
                 modifier = modifier,
-                key = PreferenceKey.HAND_WIDTH_HOURS_RECT.key,
-                title = stringResource(PreferenceKey.HAND_WIDTH_HOURS_RECT.title),
-                defaultValue = DEFAULT_HAND_WIDTH_HOURS,
+                key = PreferenceKey.HAND_WIDTH_HOURS_AR.key,
+                title = stringResource(PreferenceKey.HAND_WIDTH_HOURS_AR.title),
+                defaultValue = DEFAULT_HAND_WIDTH_HOURS_AR,
                 valueRange = 5F..15F,
             )
         }

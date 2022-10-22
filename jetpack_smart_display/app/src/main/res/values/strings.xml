@@ -113,4 +113,7 @@
     <string name="date_font_size_digital_clock">Date text size</string>
     <string name="space_height_matrix_clock">Space between time and clock</string>
     <string name="show_seconds_digital_clock">Show seconds</string>
+    <string name="shadow_radius_digital_clock2">Shadow radius</string>
+    <string name="animation_duration_digital_clock2">Animation duration</string>
+    <string name="font_size_digital_clock2">Font size</string>
 </resources>
