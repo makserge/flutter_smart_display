@@ -17,8 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.getColor
-import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.utils.getColor
+import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.cos
 import kotlin.math.min
@@ -161,7 +161,7 @@ fun OnDraw(
                 modifier = modifier
                     .fillMaxSize()
                     .absolutePadding(
-                        left = if (scale == 1F) 220.dp else 0.dp,
+                        left = if (scale == 1F) 220.dp else 0.dp, //60.dp for 480 x 480
                         top = 20.dp,
                         bottom = 20.dp
                     )

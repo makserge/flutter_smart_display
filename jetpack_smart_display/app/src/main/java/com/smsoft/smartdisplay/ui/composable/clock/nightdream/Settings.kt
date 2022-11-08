@@ -265,7 +265,7 @@ fun drawDigitalFlipClockPrefs(
                 key = PreferenceKey.FONT_SIZE_FC.key,
                 title = stringResource(PreferenceKey.FONT_SIZE_FC.title),
                 defaultValue = DEFAULT_TEXT_SIZE_FC,
-                valueRange = 250F..450F,
+                valueRange = 200F..450F,
             )
         }
     }

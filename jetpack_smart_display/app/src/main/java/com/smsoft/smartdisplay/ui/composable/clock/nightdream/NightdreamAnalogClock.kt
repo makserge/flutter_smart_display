@@ -9,9 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import com.smsoft.smartdisplay.getColor
+import com.smsoft.smartdisplay.utils.getColor
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.abs
 import kotlin.math.cos

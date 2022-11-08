@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.getParamFlow
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.*
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.*
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.DigitStyle
@@ -25,6 +24,7 @@ import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DEFAULT_PADDING_FC
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DEFAULT_REVERSE_ROTATION_FC
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DEFAULT_TEXT_SIZE_FC
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.*
+import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -13,7 +13,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.ClockType
-import com.smsoft.smartdisplay.getStateFromFlow
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.ClockView
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.ClockView2
 import com.smsoft.smartdisplay.ui.composable.clock.digitalclock.DigitalClock
@@ -24,6 +23,7 @@ import com.smsoft.smartdisplay.ui.composable.clock.jetalarm.JetAlarm
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DigitalFlipClock
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.NightdreamAnalogClock
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.AnalogClockRectangular
+import com.smsoft.smartdisplay.utils.getStateFromFlow
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable

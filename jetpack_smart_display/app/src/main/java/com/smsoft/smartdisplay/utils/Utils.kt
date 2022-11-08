@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay
+package com.smsoft.smartdisplay.utils
 
 import android.graphics.Color
 import androidx.compose.runtime.Composable

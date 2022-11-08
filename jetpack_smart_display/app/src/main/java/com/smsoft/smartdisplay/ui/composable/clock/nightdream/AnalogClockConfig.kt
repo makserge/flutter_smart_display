@@ -3,7 +3,7 @@ package com.smsoft.smartdisplay.ui.composable.clock.nightdream
 import android.content.Context
 import androidx.compose.runtime.Composable
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 
 data class AnalogClockConfig(

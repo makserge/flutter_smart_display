@@ -16,3 +16,6 @@ https://github.com/xenione/tab-digit
 Fonts from
 https://github.com/keshikan/DSEG
 
+M3U parser from
+https://github.com/BjoernPetersen/m3u-parser
+

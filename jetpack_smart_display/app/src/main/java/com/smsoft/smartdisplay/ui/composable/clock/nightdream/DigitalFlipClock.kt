@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.getStateFromFlow
+import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit.TabDigit
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 
