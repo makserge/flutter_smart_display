@@ -84,5 +84,9 @@ enum class PreferenceKey(val key: String, val title: Int) {
     FONT_SIZE_DC2("fontSizeDigitalClock2", R.string.font_size_digital_clock2),
     SHOW_SECONDS_DC2("showSecondsDigitalClock2", R.string.show_seconds_digital_clock),
     SHADOW_RADIUS_DC2("shadowRadiusDigitalClock2", R.string.shadow_radius_digital_clock2),
-    ANIMATION_DURATION_DC2("animationDuationDigitalClock2", R.string.animation_duration_digital_clock2);
+    ANIMATION_DURATION_DC2("animationDuationDigitalClock2", R.string.animation_duration_digital_clock2),
+    MQTT_BROKER_HOST("mqttServerHost", R.string.mqtt_broker_host),
+    MQTT_BROKER_PORT("mqttServerPort", R.string.mqtt_broker_port),
+    MQTT_BROKER_USERNAME("mqttServerUsername", R.string.mqtt_broker_username),
+    MQTT_BROKER_PASSWORD("mqttServerPassword", R.string.mqtt_broker_password);
 }

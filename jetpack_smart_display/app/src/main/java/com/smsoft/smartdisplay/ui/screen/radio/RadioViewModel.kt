@@ -1,9 +1,11 @@
 package com.smsoft.smartdisplay.ui.screen.radio
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.text.Html
 import androidx.compose.runtime.*
+import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -18,6 +20,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.smsoft.smartdisplay.service.MediaState
 import com.smsoft.smartdisplay.service.PlayerEvent
+import com.smsoft.smartdisplay.service.RadioMediaService
 import com.smsoft.smartdisplay.service.RadioMediaServiceHandler
 import com.smsoft.smartdisplay.ui.screen.clocksettings.ClockSettingsViewModel
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
@@ -36,18 +39,18 @@ class RadioViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val radioMediaServiceHandler: RadioMediaServiceHandler,
     savedStateHandle: SavedStateHandle,
-    userPreferencesRepository: ClockSettingsViewModel.UserPreferencesRepository
+    preferencesRepository: PreferencesRepository
 ) : ViewModel() {
 
-    val dataStore = userPreferencesRepository.dataStore
-
-    class UserPreferencesRepository @Inject constructor(
+    class PreferencesRepository @Inject constructor(
         val dataStore: DataStore<Preferences>
     )
 
+    val dataStore = preferencesRepository.dataStore
+
     var presetTitle by savedStateHandle.saveable { mutableStateOf("") }
     var duration by savedStateHandle.saveable { mutableStateOf(0L) }
-    var progress by savedStateHandle.saveable { mutableStateOf(0f) }
+    var progress by savedStateHandle.saveable { mutableStateOf(0F) }
     var progressString by savedStateHandle.saveable { mutableStateOf("00:00") }
     var isPlaying by savedStateHandle.saveable { mutableStateOf(false) }
     var metaTitle by savedStateHandle.saveable { mutableStateOf("") }
@@ -154,7 +157,7 @@ class RadioViewModel @Inject constructor(
 
         viewModelScope.launch {
             prefs.collect { data ->
-                var position = 1
+                var position = 0
                 data.get(intPreferencesKey(PLAYLIST_POSITION))?.let {
                     position = it
                 }
@@ -177,6 +180,15 @@ class RadioViewModel @Inject constructor(
             }.toString()
         }
         return data
+    }
+
+    internal fun onStartService() {
+        val intent = Intent(context, RadioMediaService::class.java)
+        ContextCompat.startForegroundService(context, intent)
+    }
+
+    internal fun onStopService() {
+        context.stopService(Intent(context, RadioMediaService::class.java))
     }
 }
 

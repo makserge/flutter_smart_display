@@ -11,13 +11,17 @@ import com.smsoft.smartdisplay.ui.screen.clocksettings.ClockSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.dashboard.DashboardScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
+import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
+import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.Radio.route) {
+    NavHost(navController = navController, startDestination = Screen.Sensors.route) {
         composable(Screen.Dashboard.route) {
-            DashboardScreen()
+            DashboardScreen(
+                navController = navController
+            )
         }
 
         composable(Screen.Doorbell.route) {
@@ -41,6 +45,16 @@ fun AppNavigation() {
 
         composable(Screen.Radio.route) {
             RadioScreen()
+        }
+
+        composable(Screen.Sensors.route) {
+            SensorsScreen(
+                navController = navController
+            )
+        }
+
+        composable(Screen.SensorsSettings.route) {
+            SensorsSettingsScreen()
         }
     }
 }

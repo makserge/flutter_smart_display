@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.utils
 
+import android.content.Context
 import android.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
@@ -44,3 +45,15 @@ fun getParamFlow(
 }
 
 fun getColor(value: androidx.compose.ui.graphics.Color) = Color.parseColor("#${Integer.toHexString(value.toArgb())}")
+
+fun getIcon(
+    context: Context,
+    item: String
+): Int {
+    val res = if (item.isEmpty()) {
+        "empty"
+    } else {
+        item
+    }
+    return context.resources.getIdentifier("outline_" + res + "_24", "drawable", context.packageName)
+}

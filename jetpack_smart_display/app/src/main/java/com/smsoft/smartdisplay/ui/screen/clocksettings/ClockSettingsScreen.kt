@@ -14,15 +14,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import com.godaddy.android.colorpicker.toColorInt
@@ -47,6 +47,7 @@ import com.smsoft.smartdisplay.ui.composable.clock.rectangular.drawAnalogRectang
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun ClockSettingsScreen(
     modifier: Modifier = Modifier
@@ -60,7 +61,9 @@ fun ClockSettingsScreen(
 
     val dataStore = viewModel.dataStore
 
-    val prefs by remember { dataStore.data }.collectAsState(initial = null)
+    val prefs by remember { dataStore.data }.collectAsStateWithLifecycle(
+        initialValue = null
+    )
     prefs?.get(stringPreferencesKey(PreferenceKey.CLOCK_TYPE.key))?.also {
         clockType = it
     }
@@ -82,7 +85,7 @@ fun ClockSettingsScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                DrawPrefs(
+                Preferences(
                     modifier = Modifier,
                     context = context,
                     dataStore = dataStore,
@@ -109,7 +112,7 @@ fun ClockSettingsScreen(
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun DrawPrefs(
+fun Preferences(
     modifier: Modifier,
     context: Context,
     dataStore: DataStore<Preferences>,
@@ -223,7 +226,9 @@ fun drawClockTypePrefs(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
+    ExperimentalLifecycleComposeApi::class
+)
 @Composable
 fun ColorPickerPref(
     modifier: Modifier,
@@ -236,8 +241,8 @@ fun ColorPickerPref(
     val scope = rememberCoroutineScope()
 
     val datastore = LocalPrefsDataStore.current
-    val prefs by remember { datastore.data }.collectAsState(
-        initial = null
+    val prefs by remember { datastore.data }.collectAsStateWithLifecycle(
+        initialValue = null
     )
 
     var selected = defaultValue
@@ -322,9 +327,7 @@ fun SettingsTopBar(
         title = {
             Text(
                 modifier = Modifier,
-                text = stringResource(R.string.settings),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                text = stringResource(R.string.settings)
             )
         }
     )

@@ -1,9 +1,13 @@
 package com.smsoft.smartdisplay.ui.screen.dashboard
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -11,27 +15,55 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.DashboardItems
 
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = hiltViewModel(),
+    navController: NavHostController
 ) {
-    Surface(
-        modifier = Modifier.fillMaxSize()
+    val list = DashboardItems.values()
+    LazyVerticalGrid(
+        modifier = Modifier
+            .fillMaxSize(),
+        columns = GridCells.Fixed(2),
+
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 16.dp,
+            end = 16.dp,
+            bottom = 16.dp
+        )
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            DashboardItems.values().forEach {
-                Item(
-                    iconId = it.iconId,
-                    textId = it.textId,
-                    isSelected = true
+        items(
+            count = list.size,
+            key = { it }
+        ) { index ->
+            val item = list[index]
+            Card(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .fillMaxWidth()
+                    .clickable(
+                        onClick = {
+                            if (item.route.isNotEmpty()) {
+                                navController.navigate(item.route)
+                            }
+                        }
+                    ),
+                elevation = 8.dp,
+                shape = RoundedCornerShape(10.dp),
+                backgroundColor = MaterialTheme.colors.surface,
+            ) {
+                DrawItem(
+                    modifier = Modifier,
+                    iconId = item.iconId,
+                    textId = item.textId
                 )
             }
         }
@@ -39,49 +71,28 @@ fun DashboardScreen(
 }
 
 @Composable
-fun Item(
-    iconId: Int,
-    textId: Int,
-    isSelected: Boolean,
+fun DrawItem(
     modifier: Modifier = Modifier,
+    iconId: Int,
+    textId: Int
 ) {
     Column(
+        modifier = Modifier
+            .padding(15.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
+            modifier = Modifier
+                .padding(dimensionResource(R.dimen.main_padding)),
             painter = painterResource(iconId),
             contentDescription = null,
-            modifier = Modifier
-                .padding(dimensionResource(R.dimen.main_padding)))
+        )
         Text(
+            modifier = Modifier,
             text = stringResource(textId),
-            color = if (isSelected) MaterialTheme.colors.secondary else MaterialTheme.colors.primary,
+            color = MaterialTheme.colors.primary,
             style = MaterialTheme.typography.body1
         )
     }
 }
-/*
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Greetings
-        val greetings by viewModel.greetingsRes.collectAsState()
-        Text(
-            text = stringResource(id = greetings),
-            style = MaterialTheme.typography.h3
-        )
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        // Action : Click Me
-        Button(onClick = {
-            viewModel.onClickMeClicked()
-        }) {
-            Text(text = stringResource(id = R.string.action_click_me))
-        }
-    }
-
- */

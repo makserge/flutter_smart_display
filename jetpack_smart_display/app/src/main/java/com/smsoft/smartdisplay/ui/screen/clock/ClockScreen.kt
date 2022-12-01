@@ -7,8 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,7 +37,6 @@ fun ClockScreen(
     ) as ClockType
 
     val clockUiState: ClockUiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val dataStore = viewModel.dataStore
 
     val defaultPrimaryColor = getColor(MaterialTheme.colors.primary)
     var primaryColor by remember { mutableStateOf(defaultPrimaryColor) }
@@ -76,7 +73,6 @@ fun ClockScreen(
             clockType = clockType,
             scale = scale,
             uiState = clockUiState,
-            dataStore = dataStore,
             viewModel = viewModel,
             primaryColor = primaryColor,
             secondaryColor = secondaryColor
@@ -90,7 +86,6 @@ fun DrawClock(
     clockType: ClockType,
     scale: Float,
     uiState: ClockUiState,
-    dataStore: DataStore<Preferences>,
     viewModel: ClockViewModel,
     primaryColor: Color,
     secondaryColor: Color

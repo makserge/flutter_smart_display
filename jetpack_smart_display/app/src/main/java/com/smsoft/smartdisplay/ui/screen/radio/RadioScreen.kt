@@ -2,8 +2,6 @@ package com.smsoft.smartdisplay.ui.screen.radio
 
 //noinspection SuspiciousImport
 import android.R
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,30 +10,31 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startForegroundService
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.smsoft.smartdisplay.service.RadioMediaService
+import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun RadioScreen(
     modifier: Modifier = Modifier,
     viewModel: RadioViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-
-    val state = viewModel.uiState.collectAsState()
+    val state = viewModel.uiState.collectAsStateWithLifecycle()
     val presetTitle = viewModel.presetTitle
 
+    DisposableEffect(key1 = viewModel) {
+        onDispose {
+            viewModel.onStopService()
+        }
+    }
     Text(
         modifier = Modifier
             .fillMaxWidth()
@@ -45,14 +44,15 @@ fun RadioScreen(
         text = presetTitle
     )
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when (state.value) {
             UIState.Initial -> CircularProgressIndicator()
             is UIState.Ready -> {
-                onStartService(context)
+                viewModel.onStartService()
                 fadeInVolume(viewModel)
                 RadioMediaPlayerUI(
                     metaTitle = viewModel.metaTitle,
@@ -94,7 +94,7 @@ fun RadioMediaPlayerUI(
             ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if ("".equals(durationString)) {
+        if ("" == durationString) {
             Text(
                 text = progressString
             )
@@ -179,7 +179,7 @@ private fun RadioMediaPlayerControls(
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_media_previous),
-            contentDescription = "Previous Button",
+            contentDescription = stringResource(com.smsoft.smartdisplay.R.string.previous_button),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable(onClick = {
@@ -190,7 +190,7 @@ private fun RadioMediaPlayerControls(
         )
         Image(
             painter = painterResource(id = playResourceProvider()),
-            contentDescription = "Play/Pause Button",
+            contentDescription = stringResource(com.smsoft.smartdisplay.R.string.play_pause_button),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable(onClick = {
@@ -201,7 +201,7 @@ private fun RadioMediaPlayerControls(
         )
         Icon(
             painter = painterResource(R.drawable.ic_media_next),
-            contentDescription = "Next Button",
+            contentDescription = stringResource(com.smsoft.smartdisplay.R.string.next_button),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable(onClick = {
@@ -211,9 +211,4 @@ private fun RadioMediaPlayerControls(
                 .size(34.dp)
         )
     }
-}
-
-private fun onStartService(context: Context) {
-    val intent = Intent(context, RadioMediaService::class.java)
-    startForegroundService(context, intent)
 }
