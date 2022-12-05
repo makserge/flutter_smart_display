@@ -17,7 +17,7 @@ import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.Sensors.route) {
+    NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 navController = navController

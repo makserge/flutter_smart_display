@@ -59,7 +59,7 @@ fun ClockScreen(
     DisposableEffect(key1 = viewModel) {
         viewModel.onStart()
         onDispose {
-            viewModel.onStop()
+           // viewModel.onStop()
         }
     }
     Box(
