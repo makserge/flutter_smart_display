@@ -51,7 +51,7 @@ fun RadioScreen(
     ) {
         when (state.value) {
             UIState.Initial -> CircularProgressIndicator()
-            is UIState.Ready -> {
+            UIState.Ready -> {
                 viewModel.onStartService()
                 fadeInVolume(viewModel)
                 RadioMediaPlayerUI(

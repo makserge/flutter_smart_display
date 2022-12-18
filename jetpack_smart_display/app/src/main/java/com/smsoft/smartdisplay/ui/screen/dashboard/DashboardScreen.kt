@@ -14,6 +14,7 @@ import com.smsoft.smartdisplay.data.Screen
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
+import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -62,12 +63,19 @@ fun RenderScreen(
 ) {
     when (DashboardItem.getItem(index)) {
         DashboardItem.CLOCK -> ClockScreen(
-            onClick = {
+            onSettingsClick = {
                 navController.navigate(Screen.ClockSettings.route)
             }
         )
+        DashboardItem.WEATHER -> WeatherScreen(
+            onSettingsClick = {
+                navController.navigate(Screen.WeatherSettings.route)
+            }
+        )
         DashboardItem.SENSORS -> SensorsScreen(
-            navController = navController
+            onSettingsClick = {
+                navController.navigate(Screen.SensorsSettings.route)
+            }
         )
         else -> RadioScreen()
     }

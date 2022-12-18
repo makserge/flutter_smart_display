@@ -86,13 +86,6 @@ class RadioViewModel @Inject constructor(
                 }
             }
         }
-        viewModelScope.launch {
-            radioMediaServiceHandler.mediaMetadata.collect { mediaMetadata ->
-                mediaMetadata.title?.let {
-                    metaTitle = convertCharset(it as String)
-                }
-            }
-        }
     }
 
     private fun saveCurrentPreset(currentMediaItemIndex: Int) {
@@ -139,8 +132,7 @@ class RadioViewModel @Inject constructor(
 
     private fun loadData(playlist: String) {
         val m3uStream = context.getAssets().open(playlist)
-        val m3uReader: InputStreamReader = m3uStream.reader()
-        val streamEntries = M3uParser.parse(m3uReader)
+        val streamEntries = M3uParser.parse(m3uStream.reader())
         val mediaItemList = mutableListOf<MediaItem>()
         streamEntries.forEach {
             mediaItemList.add(

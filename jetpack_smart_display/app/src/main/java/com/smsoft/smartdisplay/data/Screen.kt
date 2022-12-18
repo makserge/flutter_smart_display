@@ -8,4 +8,6 @@ sealed class Screen(val route: String) {
     object Radio : Screen("radio")
     object Sensors : Screen("sensors")
     object SensorsSettings : Screen("sensors-settings")
+    object Weather : Screen("weather")
+    object WeatherSettings : Screen("weather-settings")
 }

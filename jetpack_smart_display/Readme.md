@@ -19,3 +19,5 @@ https://github.com/keshikan/DSEG
 M3U parser from
 https://github.com/BjoernPetersen/m3u-parser
 
+Weather screen based on
+https://github.com/ramzan/Atmostate

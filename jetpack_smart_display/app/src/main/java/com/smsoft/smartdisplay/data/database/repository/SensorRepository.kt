@@ -1,14 +1,14 @@
 package com.smsoft.smartdisplay.data.database.repository
 
 import androidx.annotation.WorkerThread
-import com.smsoft.smartdisplay.data.database.SensorDatabase
+import com.smsoft.smartdisplay.data.database.SmartDisplayDatabase
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 import javax.inject.Inject
 
 class SensorRepository @Inject constructor(
-    sensorDatabase: SensorDatabase
+    smartDisplayDatabase: SmartDisplayDatabase
 ) {
-    private val sensorDao = sensorDatabase.sensorDao()
+    private val sensorDao = smartDisplayDatabase.sensorDao()
 
     val getAll = sensorDao.getAll()
 

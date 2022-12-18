@@ -136,4 +136,17 @@
     <string name="icon">Icon</string>
     <string name="search">Search</string>
     <string name="add_sensor_unit">Unit</string>
+    <string name="weather_city">City</string>
+    <string name="weather_city_lat">Lat</string>
+    <string name="weather_city_lon">Lon</string>
+    <string name="weather_icon_url">https://openweathermap.org/img/wn/%s@4x.png</string>
+    <string name="weather_degrees_unit">%s°C</string>
+    <string name="weather_humidity">Humidity: %s%%</string>
+    <string name="weather_wind">Wind: %d km/h %s</string>
+    <string name="weather_high_temperature">High: %s°C</string>
+    <string name="weather_low_temperature">Low: %s°C</string>
+    <string name="weather_morning_temperature">Morning: %s°C</string>
+    <string name="weather_day_temperature">Day: %s°C</string>
+    <string name="weather_evening_temperature">Evening: %s°C</string>
+    <string name="weather_night_temperature">Night: %s°C</string>
 </resources>

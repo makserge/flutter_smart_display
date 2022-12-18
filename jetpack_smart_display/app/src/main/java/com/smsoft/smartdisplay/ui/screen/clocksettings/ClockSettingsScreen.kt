@@ -103,7 +103,7 @@ fun ClockSettingsScreen(
                 ClockScreen(
                     modifier = Modifier,
                     scale = ClockType.getById(clockType).previewScale,
-                    onClick = { }
+                    onSettingsClick = { }
                 )
             }
         }

@@ -2,7 +2,7 @@ package com.smsoft.smartdisplay.di
 
 import android.content.Context
 import androidx.room.Room
-import com.smsoft.smartdisplay.data.database.SensorDatabase
+import com.smsoft.smartdisplay.data.database.SmartDisplayDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,7 +13,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    private val SENSOR_DATABASE = "sensor_database"
+    private const val DATABASE = "smartdisplay_database"
 
     @Singleton
     @Provides
@@ -21,10 +21,13 @@ object DatabaseModule {
         @ApplicationContext context: Context
     ) = Room.databaseBuilder(
         context,
-        SensorDatabase::class.java,
-        SENSOR_DATABASE)
+        SmartDisplayDatabase::class.java,
+        DATABASE)
         .build()
 
     @Provides
-    fun providesSensorDao(database: SensorDatabase) = database.sensorDao()
+    fun providesSensorDao(database: SmartDisplayDatabase) = database.sensorDao()
+
+    @Provides
+    fun providesWeatherDao(database: SmartDisplayDatabase) = database.weatherCurrentDao()
 }

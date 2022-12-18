@@ -13,6 +13,8 @@ import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
+import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
+import com.smsoft.smartdisplay.ui.screen.weathersettings.WeatherSettingsScreen
 
 @Composable
 fun AppNavigation() {
@@ -33,7 +35,7 @@ fun AppNavigation() {
 
         composable(Screen.Clock.route) {
             ClockScreen(
-                onClick = {
+                onSettingsClick = {
                     navController.navigate(Screen.ClockSettings.route)
                 }
             )
@@ -49,12 +51,26 @@ fun AppNavigation() {
 
         composable(Screen.Sensors.route) {
             SensorsScreen(
-                navController = navController
+                onSettingsClick = {
+                    navController.navigate(Screen.SensorsSettings.route)
+                }
             )
         }
 
         composable(Screen.SensorsSettings.route) {
             SensorsSettingsScreen()
+        }
+
+        composable(Screen.Weather.route) {
+            WeatherScreen(
+                onSettingsClick = {
+                    navController.navigate(Screen.WeatherSettings.route)
+                }
+            )
+        }
+
+        composable(Screen.WeatherSettings.route) {
+            WeatherSettingsScreen()
         }
     }
 }

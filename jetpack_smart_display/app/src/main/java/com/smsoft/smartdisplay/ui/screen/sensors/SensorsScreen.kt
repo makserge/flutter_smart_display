@@ -7,9 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.smsoft.smartdisplay.data.MQTTData
-import com.smsoft.smartdisplay.data.Screen
 import com.smsoft.smartdisplay.data.database.entity.emptySensor
 import com.smsoft.smartdisplay.ui.composable.sensors.*
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +17,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SensorsScreen(
     modifier: Modifier = Modifier,
-    navController: NavHostController,
+    onSettingsClick: () -> Unit,
     viewModel: SensorsViewModel = hiltViewModel()
 ) {
     val items by viewModel.getAll.collectAsStateWithLifecycle(
@@ -34,7 +32,7 @@ fun SensorsScreen(
         withContext(Dispatchers.IO) {
             if (viewModel.onStart()) {
                 withContext(Dispatchers.Main) {
-                    navController.navigate(Screen.SensorsSettings.route)
+                    onSettingsClick()
                 }
             }
         }
@@ -53,9 +51,7 @@ fun SensorsScreen(
                 onEditClick = {
                     isModifyItems = !isModifyItems
                 },
-                onSettingsClick = {
-                    navController.navigate(Screen.SensorsSettings.route)
-                },
+                onSettingsClick = onSettingsClick
             )
         },
         content = { padding ->

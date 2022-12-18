@@ -246,7 +246,9 @@ class SensorsViewModel @Inject constructor(
     }
 
     fun onStop() {
-        mqttAndroidClient?.disconnect()
+        if ((mqttAndroidClient != null) && (mqttAndroidClient!!.isConnected)) {
+            mqttAndroidClient?.disconnect()
+        }
     }
 
     private suspend fun getMQTTServerCredentials() : MQTTServer {

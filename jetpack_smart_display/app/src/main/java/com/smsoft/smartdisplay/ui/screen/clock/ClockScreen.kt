@@ -29,7 +29,7 @@ fun ClockScreen(
     modifier: Modifier = Modifier,
     scale: Float = 1F,
     viewModel: ClockViewModel = hiltViewModel(),
-    onClick: () -> Unit,
+    onSettingsClick: () -> Unit,
 ) {
     val clockType = getStateFromFlow(
         flow = viewModel.clockType,
@@ -65,7 +65,7 @@ fun ClockScreen(
     Box(
         modifier = Modifier
             .clickable(
-                onClick = onClick
+                onClick = onSettingsClick
             ),
     ) {
         DrawClock(
