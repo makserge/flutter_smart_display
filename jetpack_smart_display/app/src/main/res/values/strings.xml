@@ -109,7 +109,6 @@
     <string name="shadow_radius_digital_clock2">Shadow radius</string>
     <string name="animation_duration_digital_clock2">Animation duration</string>
     <string name="font_size_digital_clock2">Font size</string>
-    <string name="sensors">Sensors</string>
     <string name="previous_button">Previous Button</string>
     <string name="play_pause_button">Play/Pause Button</string>
     <string name="next_button">Next Button</string>
@@ -141,12 +140,16 @@
     <string name="weather_city_lon">Lon</string>
     <string name="weather_icon_url">https://openweathermap.org/img/wn/%s@4x.png</string>
     <string name="weather_degrees_unit">%s°C</string>
-    <string name="weather_humidity">Humidity: %s%%</string>
-    <string name="weather_wind">Wind: %d km/h %s</string>
-    <string name="weather_high_temperature">High: %s°C</string>
-    <string name="weather_low_temperature">Low: %s°C</string>
-    <string name="weather_morning_temperature">Morning: %s°C</string>
-    <string name="weather_day_temperature">Day: %s°C</string>
-    <string name="weather_evening_temperature">Evening: %s°C</string>
-    <string name="weather_night_temperature">Night: %s°C</string>
+    <string name="weather_humidity"> </string>
+    <string name="weather_humidity_value">%s%%</string>
+    <string name="weather_wind"> </string>
+    <string name="weather_wind_value">%d km/h %s</string>
+    <string name="weather_morning_temperature">Morning:</string>
+    <string name="weather_morning_temperature_value">%s°C</string>
+    <string name="weather_day_temperature">Day:</string>
+    <string name="weather_day_temperature_value">%s°C</string>
+    <string name="weather_evening_temperature">Evening:</string>
+    <string name="weather_evening_temperature_value">%s°C</string>
+    <string name="weather_night_temperature">Night:</string>
+    <string name="weather_night_temperature_value">%s°C</string>
 </resources>

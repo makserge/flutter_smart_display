@@ -1,6 +1,7 @@
 package com.smsoft.smartdisplay.ui.screen.sensors
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,7 +14,7 @@ import com.smsoft.smartdisplay.ui.composable.sensors.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
+@OptIn(ExperimentalLifecycleComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun SensorsScreen(
     modifier: Modifier = Modifier,
@@ -23,9 +24,9 @@ fun SensorsScreen(
     val items by viewModel.getAll.collectAsStateWithLifecycle(
         initialValue = emptyList()
     )
-    var isModifyItems by mutableStateOf(false)
-    var isOpenEditItemDialog by mutableStateOf(false)
-    var currentEditItem by mutableStateOf(emptySensor)
+    var isModifyItems by remember { mutableStateOf(false) }
+    var isOpenEditItemDialog by remember { mutableStateOf(false) }
+    var currentEditItem by remember { mutableStateOf(emptySensor) }
     val itemsData: MQTTData by viewModel.mqttTopicData.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -44,16 +45,13 @@ fun SensorsScreen(
     }
 
     Scaffold(
-        modifier = Modifier,
-        topBar = {
-            TopBar(
-                modifier = Modifier,
-                onEditClick = {
+        modifier = Modifier
+            .combinedClickable(
+                onClick = onSettingsClick,
+                onLongClick = {
                     isModifyItems = !isModifyItems
-                },
-                onSettingsClick = onSettingsClick
-            )
-        },
+                }
+            ),
         content = { padding ->
             ItemsList(
                 modifier = Modifier,
