@@ -77,6 +77,10 @@ fun RenderScreen(
                 navController.navigate(Screen.SensorsSettings.route)
             }
         )
-        else -> RadioScreen()
+        else -> RadioScreen(
+            onSettingsClick = {
+                navController.navigate(Screen.RadioSettings.route)
+            }
+        )
     }
 }

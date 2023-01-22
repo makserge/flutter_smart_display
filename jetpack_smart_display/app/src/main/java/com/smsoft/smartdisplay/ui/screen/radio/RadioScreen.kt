@@ -6,10 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
-import androidx.compose.material.Slider
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,13 +15,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun RadioScreen(
     modifier: Modifier = Modifier,
+    onSettingsClick: () -> Unit,
     viewModel: RadioViewModel = hiltViewModel()
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
@@ -35,17 +31,12 @@ fun RadioScreen(
             viewModel.onStopService()
         }
     }
-    Text(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                top = 16.dp
-            ),
-        text = presetTitle
-    )
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .clickable(
+                onClick = onSettingsClick
+            ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -55,13 +46,15 @@ fun RadioScreen(
                 viewModel.onStartService()
                 fadeInVolume(viewModel)
                 RadioMediaPlayerUI(
+                    presetTitle = presetTitle,
                     metaTitle = viewModel.metaTitle,
-                    durationString = if (viewModel.duration > 0) viewModel.formatDuration(viewModel.duration) else "",
+                    durationString = if (viewModel.duration > 0) viewModel.formatDuration(
+                        viewModel.duration
+                    ) else "",
                     playResourceProvider = {
                         if (viewModel.isPlaying) {
                             R.drawable.ic_media_pause
-                        }
-                        else {
+                        } else {
                             R.drawable.ic_media_play
                         }
                     },
@@ -80,6 +73,7 @@ fun fadeInVolume(viewModel: RadioViewModel) {
 @Composable
 fun RadioMediaPlayerUI(
     modifier: Modifier = Modifier,
+    presetTitle: String,
     metaTitle: String,
     durationString: String,
     playResourceProvider: () -> Int,
@@ -92,11 +86,24 @@ fun RadioMediaPlayerUI(
             .padding(
                 horizontal = 16.dp
             ),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            modifier = modifier,
+            text = presetTitle,
+            style = MaterialTheme.typography.h5,
+            color = MaterialTheme.colors.primary
+        )
+        Spacer(
+            modifier = Modifier
+                .padding(20.dp)
+        )
         if ("" == durationString) {
             Text(
-                text = progressString
+                text = progressString,
+                style = MaterialTheme.typography.h6,
+                color = MaterialTheme.colors.primary
             )
         } else {
             RadioMediaPlayerBar(
@@ -112,8 +119,15 @@ fun RadioMediaPlayerUI(
             playResourceProvider = playResourceProvider,
             onUiEvent = onUiEvent
         )
+        Spacer(
+            modifier = Modifier
+                .padding(20.dp)
+        )
         Text(
-            text = metaTitle
+            modifier = modifier,
+            text = metaTitle,
+            style = MaterialTheme.typography.h6,
+            color = MaterialTheme.colors.primary
         )
     }
 }
@@ -157,11 +171,15 @@ private fun RadioMediaPlayerBar(
         ) {
             Text(
                 modifier = Modifier,
-                text = progressString
+                text = progressString,
+                style = MaterialTheme.typography.h6,
+                color = MaterialTheme.colors.primary
             )
             Text(
                 modifier = Modifier,
-                text = durationString
+                text = durationString,
+                style = MaterialTheme.typography.h6,
+                color = MaterialTheme.colors.primary
             )
         }
     }

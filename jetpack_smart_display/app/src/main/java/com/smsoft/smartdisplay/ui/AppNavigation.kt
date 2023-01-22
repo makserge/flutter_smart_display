@@ -11,6 +11,7 @@ import com.smsoft.smartdisplay.ui.screen.clocksettings.ClockSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.dashboard.DashboardScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
+import com.smsoft.smartdisplay.ui.screen.radiosettings.RadioSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
@@ -46,7 +47,15 @@ fun AppNavigation() {
         }
 
         composable(Screen.Radio.route) {
-            RadioScreen()
+            RadioScreen(
+                onSettingsClick = {
+                    navController.navigate(Screen.RadioSettings.route)
+                }
+            )
+        }
+
+        composable(Screen.RadioSettings.route) {
+            RadioSettingsScreen()
         }
 
         composable(Screen.Sensors.route) {

@@ -10,7 +10,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jamal.composeprefs.ui.GroupHeader
 import com.jamal.composeprefs.ui.PrefsScreen
@@ -18,7 +17,6 @@ import com.jamal.composeprefs.ui.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun WeatherSettingsScreen(
     modifier: Modifier = Modifier

@@ -127,7 +127,7 @@
     <string name="add_sensor_update_button">Update</string>
     <string name="edit">Edit</string>
     <string name="sensor_settings_update_button">Update</string>
-    <string name="mqtt_broker">Broker</string>
+    <string name="mqtt_broker">MQTT broker</string>
     <string name="mqtt_broker_host">Host</string>
     <string name="mqtt_broker_port">Port</string>
     <string name="mqtt_broker_username">Username</string>
@@ -152,4 +152,12 @@
     <string name="weather_evening_temperature_value">%s°C</string>
     <string name="weather_night_temperature">Night:</string>
     <string name="weather_night_temperature_value">%s°C</string>
+    <string name="mpd_server">MPD server</string>
+    <string name="mpd_server_host">Host</string>
+    <string name="mpd_server_port">Port</string>
+    <string name="mpd_server_username">Username</string>
+    <string name="mpd_server_password">Password</string>
+    <string name="radio_type">Radio type</string>
+    <string name="radio_type_internal">Internal</string>
+    <string name="radio_type_mpd">MPD</string>
 </resources>

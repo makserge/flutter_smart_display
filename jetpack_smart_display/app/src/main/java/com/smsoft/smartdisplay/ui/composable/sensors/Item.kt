@@ -173,7 +173,7 @@ fun TextWithIcon(
             text = text,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
-            color = MaterialTheme.colors.secondary,
+            color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )
     }
@@ -217,7 +217,7 @@ fun TextWithUnitIcon(
             text = text,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = MaterialTheme.colors.secondary,
+            color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )
         Text(
@@ -225,7 +225,7 @@ fun TextWithUnitIcon(
             text = unit,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = MaterialTheme.colors.secondary,
+            color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )
     }

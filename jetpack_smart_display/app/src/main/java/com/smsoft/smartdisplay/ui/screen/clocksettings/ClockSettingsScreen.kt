@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.ui.screen.clocksettings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
@@ -21,7 +22,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
@@ -47,13 +47,13 @@ import com.smsoft.smartdisplay.ui.composable.clock.rectangular.drawAnalogRectang
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun ClockSettingsScreen(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colors.background),
-    viewModel: ClockSettingsViewModel = hiltViewModel(),
+    viewModel: ClockSettingsViewModel = hiltViewModel()
 ) {
     var clockType by remember { mutableStateOf(ClockType.getDefaultId()) }
 
@@ -226,9 +226,7 @@ fun drawClockTypePrefs(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
-    ExperimentalLifecycleComposeApi::class
-)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ColorPickerPref(
     modifier: Modifier,

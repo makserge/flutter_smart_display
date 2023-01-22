@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.database.entity.WeatherCurrent
 import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
@@ -21,7 +20,6 @@ import com.smsoft.smartdisplay.ui.composable.weather.Forecast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun WeatherScreen(
     modifier: Modifier = Modifier,

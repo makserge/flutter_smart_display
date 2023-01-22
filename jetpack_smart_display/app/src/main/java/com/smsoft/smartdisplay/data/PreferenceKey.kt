@@ -90,5 +90,10 @@ enum class PreferenceKey(val key: String, val title: Int) {
     MQTT_BROKER_USERNAME("mqttServerUsername", R.string.mqtt_broker_username),
     MQTT_BROKER_PASSWORD("mqttServerPassword", R.string.mqtt_broker_password),
     WEATHER_CITY_LAT("weatherCityLat", R.string.weather_city_lat),
-    WEATHER_CITY_LON("weatherCityLon", R.string.weather_city_lon);
+    WEATHER_CITY_LON("weatherCityLon", R.string.weather_city_lon),
+    RADIO_TYPE("radioType", R.string.radio_type),
+    MPD_SERVER_HOST("mpdServerHost", R.string.mpd_server_host),
+    MPD_SERVER_PORT("mpdServerPort", R.string.mpd_server_port),
+    MPD_SERVER_USERNAME("mpdServerUsername", R.string.mpd_server_username),
+    MPD_SERVER_PASSWORD("mpdServerPassword", R.string.mpd_server_password);
 }

@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.ClockView
@@ -23,7 +22,6 @@ import com.smsoft.smartdisplay.ui.composable.clock.nightdream.NightdreamAnalogCl
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.AnalogClockRectangular
 import com.smsoft.smartdisplay.utils.getStateFromFlow
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun ClockScreen(
     modifier: Modifier = Modifier,
