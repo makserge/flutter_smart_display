@@ -35,51 +35,51 @@ fun AppNavigation() {
         }
 
         composable(Screen.Clock.route) {
-            ClockScreen(
-                onSettingsClick = {
-                    navController.navigate(Screen.ClockSettings.route)
-                }
-            )
+            ClockScreen {
+                navController.navigate(Screen.ClockSettings.route)
+            }
         }
 
         composable(Screen.ClockSettings.route) {
-            ClockSettingsScreen()
+            ClockSettingsScreen {
+                navController.navigateUp()
+            }
         }
 
         composable(Screen.Radio.route) {
-            RadioScreen(
-                onSettingsClick = {
-                    navController.navigate(Screen.RadioSettings.route)
-                }
-            )
+            RadioScreen {
+                navController.navigate(Screen.RadioSettings.route)
+            }
         }
 
         composable(Screen.RadioSettings.route) {
-            RadioSettingsScreen()
+            RadioSettingsScreen {
+                navController.navigateUp()
+            }
         }
 
         composable(Screen.Sensors.route) {
-            SensorsScreen(
-                onSettingsClick = {
-                    navController.navigate(Screen.SensorsSettings.route)
-                }
-            )
+            SensorsScreen {
+                navController.navigate(Screen.SensorsSettings.route)
+            }
         }
 
         composable(Screen.SensorsSettings.route) {
-            SensorsSettingsScreen()
+            SensorsSettingsScreen {
+                navController.navigateUp()
+            }
         }
 
         composable(Screen.Weather.route) {
-            WeatherScreen(
-                onSettingsClick = {
-                    navController.navigate(Screen.WeatherSettings.route)
-                }
-            )
+            WeatherScreen {
+                navController.navigate(Screen.WeatherSettings.route)
+            }
         }
 
         composable(Screen.WeatherSettings.route) {
-            WeatherSettingsScreen()
+            WeatherSettingsScreen {
+                navController.navigateUp()
+            }
         }
     }
 }

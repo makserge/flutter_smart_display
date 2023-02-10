@@ -1,6 +1,7 @@
 package com.smsoft.smartdisplay.ui.screen.weather
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -19,11 +20,12 @@ import com.smsoft.smartdisplay.ui.composable.weather.Forecast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WeatherScreen(
     modifier: Modifier = Modifier,
     viewModel: WeatherViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
     val currentForecast = viewModel.currentForecast.collectAsStateWithLifecycle(
@@ -52,9 +54,15 @@ fun WeatherScreen(
     }
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .combinedClickable(
+                onLongClick = {
+                    onSettingsClick()
+                },
+                onClick = {  }
+            ),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         when (state.value) {
             UIState.Initial -> CircularProgressIndicator()
@@ -63,8 +71,7 @@ fun WeatherScreen(
                 viewModel = viewModel,
                 currentListState = currentListState,
                 currentForecast = currentForecast.value,
-                weatherForecast = weatherForecast.value,
-                onSettingsClick = onSettingsClick
+                weatherForecast = weatherForecast.value
             )
         }
     }
@@ -76,15 +83,11 @@ fun Weather(
     viewModel: WeatherViewModel,
     currentListState: LazyListState,
     currentForecast: WeatherCurrent?,
-    weatherForecast: List<WeatherForecast>,
-    onSettingsClick: () -> Unit,
+    weatherForecast: List<WeatherForecast>
 ) {
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .clickable(
-                onClick = onSettingsClick
-            ),
+            .fillMaxSize(),
         state = currentListState
     ) {
         currentForecast?.run {

@@ -19,8 +19,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SensorsScreen(
     modifier: Modifier = Modifier,
-    onSettingsClick: () -> Unit,
-    viewModel: SensorsViewModel = hiltViewModel()
+    viewModel: SensorsViewModel = hiltViewModel(),
+    onSettingsClick: () -> Unit
 ) {
     val items by viewModel.getAll.collectAsStateWithLifecycle(
         initialValue = emptyList()

@@ -1,6 +1,7 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
@@ -22,12 +23,13 @@ import com.smsoft.smartdisplay.ui.composable.clock.nightdream.NightdreamAnalogCl
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.AnalogClockRectangular
 import com.smsoft.smartdisplay.utils.getStateFromFlow
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ClockScreen(
     modifier: Modifier = Modifier,
     scale: Float = 1F,
     viewModel: ClockViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     val clockType = getStateFromFlow(
         flow = viewModel.clockType,
@@ -54,17 +56,17 @@ fun ClockScreen(
         secondaryColor = Color(android.graphics.Color.parseColor(it as String))
     }
 
-    DisposableEffect(key1 = viewModel) {
+    LaunchedEffect(key1 = viewModel) {
         viewModel.onStart()
-        onDispose {
-           // viewModel.onStop()
-        }
     }
     Box(
         modifier = Modifier
-            .clickable(
-                onClick = onSettingsClick
-            ),
+            .combinedClickable(
+                onLongClick = {
+                    onSettingsClick()
+                },
+                onClick = {  }
+            )
     ) {
         DrawClock(
             modifier = Modifier,

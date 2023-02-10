@@ -1,11 +1,14 @@
 package com.smsoft.smartdisplay.ui.screen.weathersettings
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -17,12 +20,14 @@ import com.jamal.composeprefs.ui.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun WeatherSettingsScreen(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colors.background),
-    viewModel: WeatherSettingsViewModel = hiltViewModel()
+    viewModel: WeatherSettingsViewModel = hiltViewModel(),
+    onBack: () -> Unit
 ) {
     val dataStore = viewModel.dataStore
     val cityLat by viewModel.cityLat.collectAsStateWithLifecycle(
@@ -33,7 +38,15 @@ fun WeatherSettingsScreen(
     )
 
     Scaffold(
-        modifier = Modifier,
+        modifier = Modifier
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    if (dragAmount.y > 0) {
+                        onBack()
+                    }
+                }
+            },
         topBar = {
             SettingsTopBar(
                 modifier = Modifier,

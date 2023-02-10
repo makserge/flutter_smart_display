@@ -20,8 +20,8 @@ import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
 @Composable
 fun RadioScreen(
     modifier: Modifier = Modifier,
-    onSettingsClick: () -> Unit,
-    viewModel: RadioViewModel = hiltViewModel()
+    viewModel: RadioViewModel = hiltViewModel(),
+    onSettingsClick: () -> Unit
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
     val isShowVolume = remember { mutableStateOf(false) }
@@ -44,7 +44,7 @@ fun RadioScreen(
             .fillMaxSize()
             .pointerInput(Unit){
                 detectTapGestures(
-                    onTap = {
+                    onDoubleTap = {
                         onSettingsClick()
                     },
                     onLongPress = {
@@ -87,12 +87,12 @@ fun RadioScreen(
                 value = (viewModel.volume * 100).toInt(),
                 onValueChange = {
                     viewModel.setVolume(it.toFloat() / 100)
-                    viewModel.reStartVolumeHideTimer() {
+                    viewModel.reStartVolumeHideTimer {
                         isShowVolume.value = false
                     }
                 }
             )
-            viewModel.reStartVolumeHideTimer() {
+            viewModel.reStartVolumeHideTimer {
                 isShowVolume.value = false
             }
         }

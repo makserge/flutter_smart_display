@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -52,7 +54,8 @@ fun ClockSettingsScreen(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colors.background),
-    viewModel: ClockSettingsViewModel = hiltViewModel()
+    viewModel: ClockSettingsViewModel = hiltViewModel(),
+    onBack: () -> Unit
 ) {
     var clockType by remember { mutableStateOf(ClockType.getDefaultId()) }
 
@@ -68,7 +71,15 @@ fun ClockSettingsScreen(
     }
 
     Scaffold(
-        modifier = Modifier,
+        modifier = Modifier
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    if (dragAmount.y > 0) {
+                        onBack()
+                    }
+                }
+            },
         topBar = {
             SettingsTopBar(
                 modifier = Modifier,

@@ -2,11 +2,13 @@ package com.smsoft.smartdisplay.ui.screen.sensorssettings
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -26,7 +28,8 @@ fun SensorsSettingsScreen(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colors.background),
-    viewModel: SensorsSettingsViewModel = hiltViewModel()
+    viewModel: SensorsSettingsViewModel = hiltViewModel(),
+    onBack: () -> Unit
 ) {
     val dataStore = viewModel.dataStore
     val host by viewModel.host.collectAsStateWithLifecycle(
@@ -43,7 +46,15 @@ fun SensorsSettingsScreen(
     )
 
     Scaffold(
-        modifier = Modifier,
+        modifier = Modifier
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    if (dragAmount.y > 0) {
+                        onBack()
+                    }
+                }
+            },
         topBar = {
             SettingsTopBar(
                 modifier = Modifier

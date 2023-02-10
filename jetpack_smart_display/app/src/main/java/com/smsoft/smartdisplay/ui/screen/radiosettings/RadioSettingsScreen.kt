@@ -3,11 +3,13 @@ package com.smsoft.smartdisplay.ui.screen.radiosettings
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.datastore.core.DataStore
@@ -31,7 +33,8 @@ fun RadioSettingsScreen(
     modifier: Modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colors.background),
-    viewModel: RadioSettingsViewModel = hiltViewModel()
+    viewModel: RadioSettingsViewModel = hiltViewModel(),
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -47,7 +50,15 @@ fun RadioSettingsScreen(
     )
 
     Scaffold(
-        modifier = Modifier,
+        modifier = Modifier
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    if (dragAmount.y > 0) {
+                        onBack()
+                    }
+                }
+            },
         topBar = {
             SettingsTopBar(
                 modifier = Modifier
