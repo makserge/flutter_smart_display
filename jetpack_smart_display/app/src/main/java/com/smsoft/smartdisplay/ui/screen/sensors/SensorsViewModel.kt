@@ -22,7 +22,6 @@ import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.database.repository.SensorRepository
 import com.smsoft.smartdisplay.ui.screen.MainActivity
 import com.smsoft.smartdisplay.ui.screen.sensorssettings.MQTT_DEFAULT_PORT
-import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
@@ -38,15 +37,9 @@ import javax.inject.Inject
 @HiltViewModel
 class SensorsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    preferencesRepository: SensorsSettingsViewModel.PreferencesRepository,
+    val dataStore: DataStore<Preferences>,
     private val sensorRepository: SensorRepository
 ) : ViewModel() {
-
-    class PreferencesRepository @Inject constructor(
-        val dataStore: DataStore<Preferences>
-    )
-
-    val dataStore = preferencesRepository.dataStore
 
     private var mqttAndroidClient: MqttAndroidClient? = null
 
@@ -172,7 +165,7 @@ class SensorsViewModel @Inject constructor(
                 isPersistBuffer = false
                 isDeleteOldestMessages = false
             }
-            mqttAndroidClient!!.setBufferOpts(disconnectedBufferOptions)
+            mqttAndroidClient?.setBufferOpts(disconnectedBufferOptions)
         }
 
         override fun onFailure(

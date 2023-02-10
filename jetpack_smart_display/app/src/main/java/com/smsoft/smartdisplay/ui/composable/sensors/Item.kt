@@ -17,10 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.accompanist.flowlayout.FlowRow
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.database.entity.Sensor
@@ -42,7 +40,7 @@ fun Item(
             .padding(4.dp)
             .fillMaxWidth()
             .defaultMinSize(
-                minHeight = 140.dp
+                minHeight = 120.dp
             ),
         elevation = 8.dp,
         shape = RoundedCornerShape(10.dp),
@@ -63,7 +61,7 @@ fun Item(
                     icon = item.titleIcon,
                 )
                 Spacer(
-                    modifier = Modifier.height(20.dp)
+                    modifier = Modifier.height(16.dp)
                 )
                 FlowRow(
                     modifier = Modifier
@@ -111,7 +109,7 @@ fun Item(
                     Icon(
                         modifier = Modifier
                             .padding(
-                                top = 10.dp,
+                                top = 20.dp,
                                 end = 10.dp
                             )
                             .clickable(
@@ -171,9 +169,8 @@ fun TextWithIcon(
         Text(
             modifier = Modifier,
             text = text,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            color = MaterialTheme.colors.primary,
+            style = MaterialTheme.typography.subtitle1,
+            color = MaterialTheme.colors.secondary,
             textAlign = TextAlign.Center
         )
     }
@@ -190,7 +187,7 @@ fun TextWithUnitIcon(
     Row(
         modifier = Modifier
             .defaultMinSize(
-                minWidth = 80.dp
+                minWidth = 90.dp
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -210,21 +207,16 @@ fun TextWithUnitIcon(
             )
         }
         Text(
-            modifier = Modifier
-                .padding(
-                    end = 3.dp
-                ),
+            modifier = Modifier,
             text = text,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.subtitle2,
             color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )
         Text(
             modifier = Modifier,
             text = unit,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.subtitle2,
             color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )

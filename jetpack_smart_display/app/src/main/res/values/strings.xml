@@ -155,9 +155,12 @@
     <string name="mpd_server">MPD server</string>
     <string name="mpd_server_host">Host</string>
     <string name="mpd_server_port">Port</string>
-    <string name="mpd_server_username">Username</string>
     <string name="mpd_server_password">Password</string>
     <string name="radio_type">Radio type</string>
     <string name="radio_type_internal">Internal</string>
     <string name="radio_type_mpd">MPD</string>
+    <string name="radio_preset">Radio preset</string>
+    <string name="duration_unknown">--:--</string>
+    <string name="duration_format" formatted="false">%d:%02d</string>
+    <string name="duration_format_hours" formatted="false">%d:%02d:%02d</string>
 </resources>

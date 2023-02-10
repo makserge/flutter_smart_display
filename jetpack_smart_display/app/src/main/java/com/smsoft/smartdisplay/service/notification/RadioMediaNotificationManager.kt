@@ -9,6 +9,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -20,6 +21,7 @@ private const val NOTIFICATION_ID = 200
 private const val NOTIFICATION_CHANNEL_NAME = "radio player channel 1"
 private const val NOTIFICATION_CHANNEL_ID = "radio player channel id 1"
 
+@RequiresApi(Build.VERSION_CODES.O)
 class RadioMediaNotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val player: ExoPlayer
@@ -30,6 +32,7 @@ class RadioMediaNotificationManager @Inject constructor(
         createNotificationChannel()
     }
 
+    @UnstableApi
     fun startNotificationService(
         mediaSessionService: MediaSessionService,
         mediaSession: MediaSession
@@ -38,6 +41,8 @@ class RadioMediaNotificationManager @Inject constructor(
         startForegroundNotification(mediaSessionService)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    @UnstableApi
     private fun buildNotification(mediaSession: MediaSession) {
         PlayerNotificationManager.Builder(context, NOTIFICATION_ID, NOTIFICATION_CHANNEL_ID)
             .setMediaDescriptionAdapter(

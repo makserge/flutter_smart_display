@@ -1,7 +1,10 @@
-package com.smsoft.smartdisplay.service
+package com.smsoft.smartdisplay.service.radio
 
 import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -18,6 +21,8 @@ class RadioMediaService : MediaSessionService() {
     @Inject
     lateinit var notificationManager: RadioMediaNotificationManager
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         notificationManager.startNotificationService(
             mediaSessionService = this,

@@ -46,7 +46,7 @@ fun SensorsSettingsScreen(
         modifier = Modifier,
         topBar = {
             SettingsTopBar(
-                modifier = Modifier,
+                modifier = Modifier
             )
         }
     ) {

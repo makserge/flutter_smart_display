@@ -11,14 +11,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WeatherSettingsViewModel @Inject constructor(
-    preferencesRepository: PreferencesRepository
+    val dataStore: DataStore<Preferences>
 ) : ViewModel() {
-
-    class PreferencesRepository @Inject constructor(
-        val dataStore: DataStore<Preferences>
-    )
-
-    val dataStore = preferencesRepository.dataStore
 
     val cityLat = getParamFlow(
         dataStore = dataStore,
@@ -29,5 +23,4 @@ class WeatherSettingsViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = ""
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LON.key)] ?: "" }
-
 }

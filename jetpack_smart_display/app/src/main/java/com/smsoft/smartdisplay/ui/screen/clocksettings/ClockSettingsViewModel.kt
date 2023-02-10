@@ -8,11 +8,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ClockSettingsViewModel @Inject constructor(
-    preferencesRepository: PreferencesRepository
+    val dataStore: DataStore<Preferences>
 ) : ViewModel() {
-    class PreferencesRepository @Inject constructor(
-        val dataStore: DataStore<Preferences>
-    )
 
-    val dataStore = preferencesRepository.dataStore
 }

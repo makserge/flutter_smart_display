@@ -1,21 +1,21 @@
 package com.smsoft.smartdisplay.ui.screen.radio
 
-//noinspection SuspiciousImport
-import android.R
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerBar
+import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerControls
+import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
 
 @Composable
 fun RadioScreen(
@@ -24,50 +24,79 @@ fun RadioScreen(
     viewModel: RadioViewModel = hiltViewModel()
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
-    val presetTitle = viewModel.presetTitle
+    val isShowVolume = remember { mutableStateOf(false) }
+
+    if (state.value is UIState.Error) {
+        LaunchedEffect(Unit) {
+            viewModel.resetState()
+            onSettingsClick()
+        }
+    }
 
     DisposableEffect(key1 = viewModel) {
+        viewModel.onStart()
         onDispose {
             viewModel.onStopService()
         }
     }
-    Column(
+    Box (
         modifier = Modifier
             .fillMaxSize()
-            .clickable(
-                onClick = onSettingsClick
-            ),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        when (state.value) {
-            UIState.Initial -> CircularProgressIndicator()
-            UIState.Ready -> {
-                viewModel.onStartService()
-                fadeInVolume(viewModel)
-                RadioMediaPlayerUI(
-                    presetTitle = presetTitle,
-                    metaTitle = viewModel.metaTitle,
-                    durationString = if (viewModel.duration > 0) viewModel.formatDuration(
-                        viewModel.duration
-                    ) else "",
-                    playResourceProvider = {
-                        if (viewModel.isPlaying) {
-                            R.drawable.ic_media_pause
-                        } else {
-                            R.drawable.ic_media_play
-                        }
+            .pointerInput(Unit){
+                detectTapGestures(
+                    onTap = {
+                        onSettingsClick()
                     },
-                    progressProvider = { Pair(viewModel.progress, viewModel.progressString) },
-                    onUiEvent = viewModel::onUIEvent
+                    onLongPress = {
+                        isShowVolume.value = true
+                    }
                 )
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            when (state.value) {
+                UIState.Initial -> CircularProgressIndicator()
+                UIState.Ready -> {
+                    RadioMediaPlayerUI(
+                        presetTitle = viewModel.presetTitle,
+                        metaTitle = viewModel.metaTitle,
+                        durationString = if (viewModel.duration > 0) viewModel.formatDuration(viewModel.duration) else "",
+                        playResourceProvider = {
+                            if (viewModel.isPlaying) {
+                                R.drawable.pause_48
+                            } else {
+                                R.drawable.play_arrow_48
+                            }
+                        },
+                        progressProvider = { Pair(viewModel.progress, viewModel.progressString) },
+                        onUiEvent = viewModel::onUIEvent
+                    )
+                }
+                UIState.Error -> {}
+            }
+
+            }
+        if (isShowVolume.value) {
+            VolumeControl(
+                modifier = Modifier,
+                value = (viewModel.volume * 100).toInt(),
+                onValueChange = {
+                    viewModel.setVolume(it.toFloat() / 100)
+                    viewModel.reStartVolumeHideTimer() {
+                        isShowVolume.value = false
+                    }
+                }
+            )
+            viewModel.reStartVolumeHideTimer() {
+                isShowVolume.value = false
             }
         }
     }
-}
-
-fun fadeInVolume(viewModel: RadioViewModel) {
-    viewModel.fadeInVolume()
 }
 
 @Composable
@@ -128,105 +157,6 @@ fun RadioMediaPlayerUI(
             text = metaTitle,
             style = MaterialTheme.typography.h6,
             color = MaterialTheme.colors.primary
-        )
-    }
-}
-
-@Composable
-private fun RadioMediaPlayerBar(
-    modifier: Modifier = Modifier,
-    progress: Float,
-    durationString: String,
-    progressString: String,
-    onUiEvent: (UIEvent) -> Unit
-) {
-    val newProgressValue = remember { mutableStateOf(0f) }
-    val useNewProgressValue = remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Slider(
-            modifier = Modifier
-                .padding(
-                    horizontal = 8.dp
-                ),
-            value = if (useNewProgressValue.value) newProgressValue.value else progress,
-            onValueChange = { newValue ->
-                useNewProgressValue.value = true
-                newProgressValue.value = newValue
-                onUiEvent(UIEvent.UpdateProgress(newProgress = newValue))
-            },
-            onValueChangeFinished = {
-                useNewProgressValue.value = false
-            }
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 16.dp
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                modifier = Modifier,
-                text = progressString,
-                style = MaterialTheme.typography.h6,
-                color = MaterialTheme.colors.primary
-            )
-            Text(
-                modifier = Modifier,
-                text = durationString,
-                style = MaterialTheme.typography.h6,
-                color = MaterialTheme.colors.primary
-            )
-        }
-    }
-}
-
-@Composable
-private fun RadioMediaPlayerControls(
-    modifier: Modifier = Modifier,
-    playResourceProvider: () -> Int,
-    onUiEvent: (UIEvent) -> Unit
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(35.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_media_previous),
-            contentDescription = stringResource(com.smsoft.smartdisplay.R.string.previous_button),
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(onClick = {
-                    onUiEvent(UIEvent.Backward)
-                })
-                .padding(12.dp)
-                .size(34.dp)
-        )
-        Image(
-            painter = painterResource(id = playResourceProvider()),
-            contentDescription = stringResource(com.smsoft.smartdisplay.R.string.play_pause_button),
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(onClick = {
-                    onUiEvent(UIEvent.PlayPause)
-                })
-                .padding(8.dp)
-                .size(56.dp)
-        )
-        Icon(
-            painter = painterResource(R.drawable.ic_media_next),
-            contentDescription = stringResource(com.smsoft.smartdisplay.R.string.next_button),
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(onClick = {
-                    onUiEvent(UIEvent.Forward)
-                })
-                .padding(12.dp)
-                .size(34.dp)
         )
     }
 }

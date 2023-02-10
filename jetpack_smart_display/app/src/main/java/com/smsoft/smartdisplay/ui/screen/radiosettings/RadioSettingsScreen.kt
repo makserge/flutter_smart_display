@@ -21,8 +21,8 @@ import com.jamal.composeprefs.ui.prefs.ListPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
-import com.smsoft.smartdisplay.ui.screen.sensorssettings.RadioSettingsViewModel
 
+const val MPD_SERVER_DEFAULT_HOST = ""
 const val MPD_SERVER_DEFAULT_PORT = "6600"
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -37,13 +37,10 @@ fun RadioSettingsScreen(
 
     val dataStore = viewModel.dataStore
     val host by viewModel.host.collectAsStateWithLifecycle(
-        initialValue = ""
+        initialValue = MPD_SERVER_DEFAULT_HOST
     )
     val port by viewModel.port.collectAsStateWithLifecycle(
         initialValue = MPD_SERVER_DEFAULT_PORT
-    )
-    val userName by viewModel.userName.collectAsStateWithLifecycle(
-        initialValue = ""
     )
     val password by viewModel.password.collectAsStateWithLifecycle(
         initialValue = ""
@@ -53,7 +50,7 @@ fun RadioSettingsScreen(
         modifier = Modifier,
         topBar = {
             SettingsTopBar(
-                modifier = Modifier,
+                modifier = Modifier
             )
         }
     ) {
@@ -63,7 +60,6 @@ fun RadioSettingsScreen(
             dataStore = dataStore,
             host = host.toString(),
             port = port.toString(),
-            userName = userName.toString(),
             password = password.toString()
         )
     }
@@ -77,7 +73,6 @@ fun Prefs(
     dataStore: DataStore<Preferences>,
     host: String,
     port: String,
-    userName: String,
     password: String
 ) {
     PrefsScreen(
@@ -104,6 +99,7 @@ fun Prefs(
                     modifier = modifier,
                     key = PreferenceKey.MPD_SERVER_HOST.key,
                     title = stringResource(PreferenceKey.MPD_SERVER_HOST.title),
+                    defaultValue = MPD_SERVER_DEFAULT_HOST,
                     summary = host
                 )
                 EditTextPref(
@@ -112,12 +108,6 @@ fun Prefs(
                     title = stringResource(PreferenceKey.MPD_SERVER_PORT.title),
                     defaultValue = MPD_SERVER_DEFAULT_PORT,
                     summary = port
-                )
-                EditTextPref(
-                    modifier = modifier,
-                    key = PreferenceKey.MPD_SERVER_USERNAME.key,
-                    title = stringResource(PreferenceKey.MPD_SERVER_USERNAME.title),
-                    summary = userName
                 )
                 EditTextPref(
                     modifier = modifier,

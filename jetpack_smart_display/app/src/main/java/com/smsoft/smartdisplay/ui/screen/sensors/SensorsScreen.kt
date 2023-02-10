@@ -2,9 +2,11 @@ package com.smsoft.smartdisplay.ui.screen.sensors
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.MQTTData
@@ -45,6 +47,7 @@ fun SensorsScreen(
 
     Scaffold(
         modifier = Modifier
+            .padding(10.dp)
             .combinedClickable(
                 onClick = onSettingsClick,
                 onLongClick = {

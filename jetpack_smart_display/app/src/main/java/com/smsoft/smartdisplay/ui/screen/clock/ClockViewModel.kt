@@ -35,7 +35,7 @@ import kotlin.concurrent.fixedRateTimer
 
 @HiltViewModel
 class ClockViewModel @Inject constructor(
-    userPreferencesRepository: UserPreferencesRepository
+    val dataStore: DataStore<Preferences>
 ) : ViewModel() {
     private val TIMER_INTERVAL = 100L //100ms
 
@@ -43,11 +43,6 @@ class ClockViewModel @Inject constructor(
     val uiState = uiStatePrivate.asStateFlow()
 
     private var isTimerStarted = true
-    val dataStore = userPreferencesRepository.dataStore
-
-    class UserPreferencesRepository @Inject constructor(
-        val dataStore: DataStore<Preferences>
-    )
 
     val clockType = getParamFlow(
         dataStore = dataStore,

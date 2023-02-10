@@ -11,14 +11,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SensorsSettingsViewModel @Inject constructor(
-    preferencesRepository: PreferencesRepository
+    val dataStore: DataStore<Preferences>
 ) : ViewModel() {
-
-    class PreferencesRepository @Inject constructor(
-        val dataStore: DataStore<Preferences>
-    )
-
-    val dataStore = preferencesRepository.dataStore
 
     val host = getParamFlow(
         dataStore = dataStore,

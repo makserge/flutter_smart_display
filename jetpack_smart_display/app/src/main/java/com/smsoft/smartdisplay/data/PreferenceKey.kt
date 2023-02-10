@@ -92,8 +92,8 @@ enum class PreferenceKey(val key: String, val title: Int) {
     WEATHER_CITY_LAT("weatherCityLat", R.string.weather_city_lat),
     WEATHER_CITY_LON("weatherCityLon", R.string.weather_city_lon),
     RADIO_TYPE("radioType", R.string.radio_type),
+    RADIO_PRESET("radioPreset", R.string.radio_preset),
     MPD_SERVER_HOST("mpdServerHost", R.string.mpd_server_host),
     MPD_SERVER_PORT("mpdServerPort", R.string.mpd_server_port),
-    MPD_SERVER_USERNAME("mpdServerUsername", R.string.mpd_server_username),
     MPD_SERVER_PASSWORD("mpdServerPassword", R.string.mpd_server_password);
 }

@@ -21,3 +21,7 @@ https://github.com/BjoernPetersen/m3u-parser
 
 Weather screen based on
 https://github.com/ramzan/Atmostate
+
+MPD related code from
+https://github.com/thunderace/mpd-control
+https://github.com/20centaurifux/mpcw.client

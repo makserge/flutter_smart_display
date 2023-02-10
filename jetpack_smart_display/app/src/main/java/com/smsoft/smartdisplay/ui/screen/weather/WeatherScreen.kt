@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.database.entity.WeatherCurrent
@@ -86,9 +85,7 @@ fun Weather(
             .clickable(
                 onClick = onSettingsClick
             ),
-        state = currentListState,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        state = currentListState
     ) {
         currentForecast?.run {
             item {

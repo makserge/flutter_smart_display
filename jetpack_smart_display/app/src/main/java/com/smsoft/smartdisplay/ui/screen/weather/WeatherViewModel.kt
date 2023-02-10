@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.ui.screen.weather
 
+import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -15,24 +16,20 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
-    userPreferencesRepository: UserPreferencesRepository,
+    val dataStore: DataStore<Preferences>,
     val weatherRepository: WeatherRepository,
     private val workManager: WorkManager
 ) : ViewModel() {
-
-    val dataStore = userPreferencesRepository.dataStore
-
-    class UserPreferencesRepository @Inject constructor(
-        val dataStore: DataStore<Preferences>
-    )
 
     private val uiStateInt = MutableStateFlow<UIState>(UIState.Initial)
     val uiState = uiStateInt.asStateFlow()
@@ -84,8 +81,15 @@ class WeatherViewModel @Inject constructor(
 
     fun windDegreeToDirection(deg: Int) = windDirections[(deg % 360) / 45]
 
-    fun getDayOfWeek(date: Long, timezone: String): String = DateTimeFormatter.ofPattern("EEEE")
-        .format(Instant.ofEpochSecond(date).atZone(ZoneId.of(timezone)))
+    fun getDayOfWeek(date: Long, timezone: String): String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        DateTimeFormatter.ofPattern("EEEE")
+            .format(Instant.ofEpochSecond(date).atZone(ZoneId.of(timezone)))
+    } else {
+        val sdf = SimpleDateFormat("EEEE", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone(timezone)
+        }
+        sdf.format(date)
+    }
 
 }
 

@@ -44,7 +44,6 @@ import com.smsoft.smartdisplay.ui.composable.clock.jetalarm.drawAnalogJetAlarmPr
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.drawAnalogNightdreamPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.drawDigitalFlipClockPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.drawAnalogRectangularPrefs
-import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -93,18 +92,6 @@ fun ClockSettingsScreen(
                 ) {
                     clockType = it
                 }
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1F),
-                verticalArrangement = Arrangement.Center
-            ) {
-                ClockScreen(
-                    modifier = Modifier,
-                    scale = ClockType.getById(clockType).previewScale,
-                    onSettingsClick = { }
-                )
             }
         }
     }

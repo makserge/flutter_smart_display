@@ -1,6 +1,8 @@
 package com.smsoft.smartdisplay.utils.m3uparser
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -12,6 +14,8 @@ import java.util.*
 import kotlin.streams.asSequence
 
 /**
+ * Thanks
+ * https://github.com/BjoernPetersen/m3u-parser
  * Can be used to parse `.m3u` files.
  *
  * Accepts several input formats:
@@ -29,7 +33,8 @@ object M3uParser {
     private const val SECONDS = 1
     private const val KEY_VALUE_PAIRS = 2
     private const val TITLE = 3
-    private const val EXTENDED_INFO = """${COMMENT_START}EXTINF:([-]?\d+)(.*),(.+)"""
+    private const val EXTENDED_INFO =
+        """${COMMENT_START}EXTINF:(-?\d+)(.*),(.+)"""
 
     private val infoRegex = Regex(EXTENDED_INFO)
 
@@ -44,11 +49,9 @@ object M3uParser {
      * @throws IOException if file can't be read
      * @throws IllegalArgumentException if file is not a regular file
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     @Throws(IOException::class)
-    fun parse(
-        m3uFile: Path,
-        charset: Charset = Charsets.UTF_8
-    ): List<M3uEntry> {
+    fun parse(m3uFile: Path, charset: Charset = Charsets.UTF_8): List<M3uEntry> {
         require(Files.isRegularFile(m3uFile)) { "$m3uFile is not a file" }
         return parse(Files.lines(m3uFile, charset).asSequence(), m3uFile.parent)
     }
@@ -62,13 +65,9 @@ object M3uParser {
      * @param baseDir a base dir for resolving relative paths
      * @return a list of all parsed entries in order
      */
-    fun parse(
-        m3uContentReader: InputStreamReader,
-        baseDir: Path? = null
-    ): List<M3uEntry> {
-        return m3uContentReader.buffered().useLines {
-            parse(it, baseDir)
-        }
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun parse(m3uContentReader: InputStreamReader, baseDir: Path? = null): List<M3uEntry> {
+        return m3uContentReader.buffered().useLines { parse(it, baseDir) }
     }
 
     /**
@@ -80,10 +79,8 @@ object M3uParser {
      * @param baseDir a base dir for resolving relative paths
      * @return a list of all parsed entries in order
      */
-    fun parse(
-        m3uContent: String,
-        baseDir: Path? = null
-    ): List<M3uEntry> {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun parse(m3uContent: String, baseDir: Path? = null): List<M3uEntry> {
         return parse(m3uContent.lineSequence(), baseDir)
     }
 
@@ -95,54 +92,49 @@ object M3uParser {
      * @param entries a list of playlist entries
      * @param charset the encoding to be used to read nested playlist files, defaults to UTF-8
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     fun resolveNestedPlaylists(
         entries: List<M3uEntry>,
-        charset: Charset = Charsets.UTF_8
+        charset: Charset = Charsets.UTF_8,
     ): List<M3uEntry> {
         return resolveRecursively(entries, charset)
     }
 
-    private fun parse(
-        lines: Sequence<String>,
-        baseDir: Path?
-    ): List<M3uEntry> {
+    // TODO: fix detekt issues
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Suppress("NestedBlockDepth", "ReturnCount")
+    private fun parse(lines: Sequence<String>, baseDir: Path?): List<M3uEntry> {
         val filtered = lines
-            .filterNot {
-                it.isBlank()
-            }
-            .map {
-                it.trimEnd()
-            }
-            .dropWhile {
-                it == EXTENDED_HEADER
-            }
+            .filterNot { it.isBlank() }
+            .map { it.trimEnd() }
+            .dropWhile { it == EXTENDED_HEADER }
             .iterator()
 
-        if (!filtered.hasNext()) {
-            return emptyList()
-        }
+        if (!filtered.hasNext()) return emptyList()
+
         val entries = LinkedList<M3uEntry>()
+
         var currentLine: String
         var match: MatchResult? = null
         while (filtered.hasNext()) {
             currentLine = filtered.next()
+
             while (currentLine.startsWith(COMMENT_START)) {
                 val newMatch = infoRegex.matchEntire(currentLine)
                 if (newMatch != null) {
-                    if (match != null) {
-                        Log.d(TAG, "Ignoring info line: ${match.value}")
-                    }
+                    if (match != null) Log.d(TAG, "Ignoring info line: ${match.value}")
                     match = newMatch
                 } else {
                     Log.d(TAG, "Ignoring comment line $currentLine")
                 }
+
                 if (filtered.hasNext()) {
                     currentLine = filtered.next()
-                }
-                else {
+                } else {
                     return entries
                 }
             }
+
             val entry = if (currentLine.startsWith(COMMENT_START)) {
                 continue
             } else if (match == null) {
@@ -150,29 +142,35 @@ object M3uParser {
             } else {
                 parseExtended(match, currentLine, baseDir)
             }
+
             match = null
-            if (entry != null) entries.add(entry)
-            else {
-                Log.w(TAG, "Ignored line $currentLine")
+
+            if (entry != null) {
+                entries.add(entry)
+            } else {
+                Log.w(TAG,"Ignored line $currentLine")
             }
         }
+
         return entries
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun parseSimple(location: String, baseDir: Path?): M3uEntry? {
         return try {
             M3uEntry(MediaLocation(location, baseDir))
         } catch (e: IllegalArgumentException) {
-            Log.w(TAG,"Could not parse as location: $location")
+            Log.w(TAG, "Could not parse as location: $location")
             null
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun parseExtended(infoMatch: MatchResult, location: String, baseDir: Path?): M3uEntry? {
         val mediaLocation = try {
             MediaLocation(location, baseDir)
         } catch (e: IllegalArgumentException) {
-            Log.w(TAG,"Could not parse as location: $location")
+            Log.w(TAG, "Could not parse as location: $location")
             return null
         }
 
@@ -193,25 +191,27 @@ object M3uParser {
         val valueByKey = HashMap<String, String>()
         for (match in keyValuePattern.findAll(keyValues.trim())) {
             val key = match.groups[1]!!.value
-            val value = match.groups[2]?.value?.ifBlank {
-                null
-            }
+            val value = match.groups[2]?.value?.ifBlank { null }
             if (value == null) {
-                Log.d(TAG,"Ignoring blank value for key $key")
+                Log.d(TAG, "Ignoring blank value for key $key" )
                 continue
             }
             val overwritten = valueByKey.put(key, value)
             if (overwritten != null) {
-                Log.i(TAG, "Overwrote value for duplicate metadata key $key: '$overwritten' -> '$value'")
+                Log.i(TAG,
+                    "Overwrote value for duplicate metadata key $key: '$overwritten' -> '$value'"
+                )
             }
         }
+
         return M3uMetadata(valueByKey)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveRecursively(
         source: List<M3uEntry>,
         charset: Charset,
-        result: MutableList<M3uEntry> = LinkedList()
+        result: MutableList<M3uEntry> = LinkedList(),
     ): List<M3uEntry> {
         for (entry in source) {
             val location = entry.location
@@ -224,20 +224,23 @@ object M3uParser {
         return result
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveNestedPlaylist(
         path: Path,
         charset: Charset,
-        result: MutableList<M3uEntry>
+        result: MutableList<M3uEntry>,
     ) {
         if (!Files.isRegularFile(path)) {
             return
         }
+
         val parsed = try {
             parse(path, charset)
         } catch (e: IOException) {
-            Log.w(TAG,"Could not parse nested playlist file: $path")
+            Log.e(TAG,"Could not parse nested playlist file: $path")
             return
         }
+
         resolveRecursively(parsed, charset, result)
     }
 }

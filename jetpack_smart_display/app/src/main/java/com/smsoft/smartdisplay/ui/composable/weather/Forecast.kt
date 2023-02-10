@@ -32,7 +32,7 @@ fun Forecast(
             modifier = Modifier
                 .padding(
                     horizontal = 16.dp,
-                    vertical = 4.dp
+                    vertical = 0.dp
                 ),
             text = viewModel.getDayOfWeek(item.date, item.timezone),
             style = MaterialTheme.typography.subtitle1,
