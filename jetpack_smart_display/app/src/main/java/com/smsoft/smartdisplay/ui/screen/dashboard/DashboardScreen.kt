@@ -1,13 +1,18 @@
 package com.smsoft.smartdisplay.ui.screen.dashboard
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.google.accompanist.pager.*
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.Screen
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
@@ -15,7 +20,7 @@ import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 
-@OptIn(ExperimentalPagerApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalPagerApi::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -31,7 +36,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .weight(1F)
                 .fillMaxSize(),
-            count = pages.size,
+            pageCount = pages.size,
             state = pagerState,
         ) { index ->
             if (index == pagerState.currentPage) {
@@ -48,7 +53,8 @@ fun DashboardScreen(
                     alignment = Alignment.CenterHorizontally
                 )
                 .padding(16.dp),
-            pagerState = pagerState
+            pagerState = pagerState,
+            pageCount = pages.size
         )
     }
 }

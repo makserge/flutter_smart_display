@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import android.support.v4.media.session.MediaSessionCompat
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -47,13 +46,12 @@ class RadioMediaNotificationManager @Inject constructor(
         PlayerNotificationManager.Builder(context, NOTIFICATION_ID, NOTIFICATION_CHANNEL_ID)
             .setMediaDescriptionAdapter(
                 RadioMediaNotificationAdapter(
-                    context = context,
                     pendingIntent = mediaSession.sessionActivity
                 )
             )
             .build()
             .also {
-                it.setMediaSessionToken(mediaSession.sessionCompatToken as MediaSessionCompat.Token)
+                it.setMediaSessionToken(mediaSession.sessionCompatToken)
                 it.setUseFastForwardActionInCompactView(true)
                 it.setUseRewindActionInCompactView(true)
                 it.setUseNextActionInCompactView(false)

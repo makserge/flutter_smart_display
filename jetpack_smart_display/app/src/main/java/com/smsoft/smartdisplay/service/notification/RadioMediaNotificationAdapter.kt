@@ -1,13 +1,13 @@
 package com.smsoft.smartdisplay.service.notification
 
 import android.app.PendingIntent
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerNotificationManager
 
+@UnstableApi
 class RadioMediaNotificationAdapter(
-    private val context: Context,
     private val pendingIntent: PendingIntent?
 ) : PlayerNotificationManager.MediaDescriptionAdapter {
 

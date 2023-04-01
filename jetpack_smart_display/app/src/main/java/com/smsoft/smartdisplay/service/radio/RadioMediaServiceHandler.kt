@@ -13,8 +13,6 @@ import javax.inject.Inject
 class RadioMediaServiceHandler @Inject constructor(
     private val player: ExoPlayer
 ) : Listener {
-    private val FADE_IN_DELAY = 200L //2s fade in
-
     private val playerStateInt = MutableStateFlow(PlayerState(volume = player.volume))
     val playerState = playerStateInt.asStateFlow()
 

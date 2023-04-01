@@ -2,6 +2,7 @@ package com.smsoft.smartdisplay.ui
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -17,6 +18,7 @@ import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 import com.smsoft.smartdisplay.ui.screen.weathersettings.WeatherSettingsScreen
 
+@UnstableApi
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()

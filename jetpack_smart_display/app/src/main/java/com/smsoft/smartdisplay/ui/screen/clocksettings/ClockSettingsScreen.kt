@@ -224,7 +224,7 @@ fun drawClockTypePrefs(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ColorPickerPref(
     modifier: Modifier,
@@ -286,8 +286,9 @@ fun ColorPickerPref(
                 ClassicColorPicker(
                     modifier = Modifier
                         .padding(10.dp),
-                    onColorChanged = {
-                        edit(it)
+                    color = HsvColor.from(selected),
+                    onColorChanged = { color: HsvColor ->
+                        edit(color)
                     }
                 )
             },

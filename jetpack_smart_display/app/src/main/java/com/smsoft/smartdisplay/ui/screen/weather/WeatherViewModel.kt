@@ -76,7 +76,7 @@ class WeatherViewModel @Inject constructor(
         val work = PeriodicWorkRequestBuilder<WeatherUpdateTaskWorker>(WEATHER_UPDATE_PERIOD, TimeUnit.MINUTES)
             .setInputData(data)
             .build()
-        workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.REPLACE, work)
+        workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, work)
     }
 
     fun windDegreeToDirection(deg: Int) = windDirections[(deg % 360) / 45]

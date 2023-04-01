@@ -5,7 +5,6 @@ enum class DashboardItem {
     WEATHER,
     SENSORS,
     INTERNET_RADIO;
-
     companion object {
         fun getItem(index: Int): DashboardItem {
             return when (index) {
