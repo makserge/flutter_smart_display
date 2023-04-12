@@ -2,24 +2,20 @@ package com.smsoft.smartdisplay.ui.screen.doorbell
 
 import android.net.Uri
 import android.util.Log
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.rtsp.RtspMediaSource
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerView
+import androidx.media3.common.util.UnstableApi
+import org.videolan.libvlc.LibVLC
+import org.videolan.libvlc.Media
+import org.videolan.libvlc.MediaPlayer
+import org.videolan.libvlc.util.VLCVideoLayout
+import java.io.IOException
 
+@UnstableApi
 @Composable
 fun DoorbellScreen (
     modifier: Modifier = Modifier,
@@ -27,41 +23,48 @@ fun DoorbellScreen (
     uri: Uri
 ) {
     val context = LocalContext.current
+    val libVlc = LibVLC(context, ArrayList<String>().apply {
+        add("--rtsp-tcp")
+        add("--verbose=-1")
+    })
+    val listener = MediaPlayer.EventListener {
+        Log.d("DoorbellScreen", it.toString())
+        if (it.type == MediaPlayer.Event.Buffering && it.buffering == 100f) {
+        } else if (it.type == MediaPlayer.Event.EndReached) {
+        }
+    }
+    val mediaPlayer = MediaPlayer(libVlc)
+    mediaPlayer.setEventListener(listener)
 
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context)
-            .build()
-            .apply {
-                addListener(object : Player.Listener {
-                    override fun onPlayerError(error: PlaybackException) {
-                        Log.d("DoorbellScreen", error.message!!)
-                    }
-                })
-                val source = RtspMediaSource.Factory()
-                    .createMediaSource(MediaItem.fromUri(uri))
-                setMediaSource(source)
-                prepare()
-            }
-    }.apply {
-        playWhenReady = true
-        videoScalingMode = C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
-        repeatMode = Player.REPEAT_MODE_ONE
+    try {
+        val media = Media(libVlc, uri)
+
+        media.apply {
+            setHWDecoderEnabled(true, false)
+            addOption(":network-caching=500")
+
+            mediaPlayer.media = this
+        }.release()
+    } catch (e: IOException) {
+        e.printStackTrace()
     }
 
     DisposableEffect(
-        AndroidView(factory = {
-            PlayerView(context).apply {
-                hideController()
-                useController = false
-                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-
-                player = exoPlayer
-                layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            }
-        })
+        mediaPlayer.play()
     ) {
         onDispose {
-            exoPlayer.release()
+            mediaPlayer.apply {
+                stop()
+                detachViews()
+                release()
+            }
+            libVlc.release()
         }
     }
+
+    AndroidView(factory = {
+        VLCVideoLayout(context).apply {
+            mediaPlayer.attachViews(this, null, false, false)
+        }
+    })
 }

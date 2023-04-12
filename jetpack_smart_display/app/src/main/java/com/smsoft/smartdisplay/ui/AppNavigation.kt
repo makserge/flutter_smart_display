@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.ui
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.media3.common.util.UnstableApi
@@ -18,6 +19,7 @@ import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 import com.smsoft.smartdisplay.ui.screen.weathersettings.WeatherSettingsScreen
 
+@SuppressLint("AuthLeak")
 @UnstableApi
 @Composable
 fun AppNavigation() {
@@ -31,8 +33,11 @@ fun AppNavigation() {
 
         composable(Screen.Doorbell.route) {
             //DoorbellScreen(uri = Uri.parse("rtsp://a:a@192.168.8.110:8080/h264_pcm.sdp"))
+            //"rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4"
+            //adb shell am start -n org.videolan.vlc/.StartActivity -a android.intent.action.VIEW -d rtsp://camera:Camera12@192.168.8.130/live/ch00_1
+            //adb shell am start -n com.vladpen.cams/com.vladpen.cams.MainActivity
             DoorbellScreen(
-                uri = Uri.parse("rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4")
+                uri = Uri.parse("rtsp://***")
             )
         }
 
