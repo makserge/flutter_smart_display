@@ -78,7 +78,7 @@ fun UpdateItem(
                     onTopicChange = { value ->
                         title = value
                     },
-                    onUnitChange = { value ->
+                    onUnitChange = {
                     },
                     onIconChange = { value ->
                         titleIcon = value
