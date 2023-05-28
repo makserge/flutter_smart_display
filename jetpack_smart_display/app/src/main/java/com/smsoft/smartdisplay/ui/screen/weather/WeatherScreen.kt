@@ -17,8 +17,6 @@ import com.smsoft.smartdisplay.data.database.entity.WeatherCurrent
 import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
 import com.smsoft.smartdisplay.ui.composable.weather.CurrentWeather
 import com.smsoft.smartdisplay.ui.composable.weather.Forecast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -44,12 +42,8 @@ fun WeatherScreen(
     val currentListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            if (viewModel.onStart()) {
-                withContext(Dispatchers.Main) {
-                    onSettingsClick()
-                }
-            }
+        viewModel.onStart {
+            onSettingsClick()
         }
     }
     Column(

@@ -138,7 +138,7 @@
     <string name="weather_city">City</string>
     <string name="weather_city_lat">Lat</string>
     <string name="weather_city_lon">Lon</string>
-    <string name="weather_icon_url">https://openweathermap.org/img/wn/%s@4x.png</string>
+    <string name="weather_icon_url">http://openweathermap.org/img/wn/%s@4x.png</string>
     <string name="weather_degrees_unit">%s°C</string>
     <string name="weather_humidity"> </string>
     <string name="weather_humidity_value">%s%%</string>

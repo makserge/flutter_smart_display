@@ -1,31 +1,43 @@
 package com.smsoft.smartdisplay.ui.screen.weather
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.database.repository.WeatherRepository
 import com.smsoft.smartdisplay.service.workers.WeatherUpdateTaskWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-
+@SuppressLint("StaticFieldLeak")
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     val dataStore: DataStore<Preferences>,
     val weatherRepository: WeatherRepository,
     private val workManager: WorkManager
@@ -58,26 +70,56 @@ class WeatherViewModel @Inject constructor(
         return Pair(lat, lon)
     }
 
-    suspend fun onStart(): Boolean {
-        val city = getWeatherCity()
-        if ((city.first == 0.0) || (city.second == 0.0)) {
-            return true
+    fun onStart(callback: () -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val city = getWeatherCity()
+            if ((city.first == 0.0) || (city.second == 0.0)) {
+                withContext(Dispatchers.Main) {
+                    callback()
+                }
+            } else {
+                val data = Data.Builder()
+                    .putDouble(PreferenceKey.WEATHER_CITY_LAT.key, city.first)
+                    .putDouble(PreferenceKey.WEATHER_CITY_LON.key, city.second)
+                    .build()
+                val request = OneTimeWorkRequestBuilder<WeatherUpdateTaskWorker>()
+                    .setInputData(data)
+                    .build()
+                CoroutineScope(Dispatchers.Default).launch {
+                    val liveData =
+                        WorkManager.getInstance(context).getWorkInfoByIdLiveData(request.id)
+                    withContext(Dispatchers.Main) {
+                        liveData.observeForever(object : Observer<WorkInfo> {
+                            override fun onChanged(value: WorkInfo) {
+                                if (value.state == WorkInfo.State.SUCCEEDED) {
+                                    liveData.removeObserver(this)
+
+                                    uiStateInt.value = UIState.Ready
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        startPeriodicalUpdate(data)
+                                    }
+                                }
+                            }
+                        })
+                    }
+                }
+                WorkManager.getInstance(context).enqueue(request)
+            }
         }
-        startPeriodicalUpdate(city)
-        uiStateInt.value = UIState.Ready
-        return false
     }
 
-    private fun startPeriodicalUpdate(city: Pair<Double, Double>) {
-        val data = Data.Builder()
-            .putDouble(PreferenceKey.WEATHER_CITY_LAT.key, city.first)
-            .putDouble(PreferenceKey.WEATHER_CITY_LON.key, city.second)
-            .build()
-        val work = PeriodicWorkRequestBuilder<WeatherUpdateTaskWorker>(WEATHER_UPDATE_PERIOD, TimeUnit.MINUTES)
+    private fun startPeriodicalUpdate(data: Data) {
+        val work = PeriodicWorkRequestBuilder<WeatherUpdateTaskWorker>(
+            WEATHER_UPDATE_PERIOD,
+            TimeUnit.MINUTES,
+            WEATHER_UPDATE_PERIOD,
+            TimeUnit.MINUTES
+        )
             .setInputData(data)
             .build()
         workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, work)
     }
+
 
     fun windDegreeToDirection(deg: Int) = windDirections[(deg % 360) / 45]
 
