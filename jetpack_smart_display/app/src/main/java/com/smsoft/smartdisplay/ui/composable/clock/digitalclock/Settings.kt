@@ -13,7 +13,7 @@ import com.jamal.composeprefs.ui.prefs.SwitchPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
-fun drawDigitalClockPrefs(
+fun digitalClockPrefs(
     modifier: Modifier,
     scope: PrefsScope,
     context: Context

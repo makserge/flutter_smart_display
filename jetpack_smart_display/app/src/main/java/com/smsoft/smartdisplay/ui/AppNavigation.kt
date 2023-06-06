@@ -9,15 +9,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.smsoft.smartdisplay.data.Screen
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
-import com.smsoft.smartdisplay.ui.screen.clocksettings.ClockSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.dashboard.DashboardScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
-import com.smsoft.smartdisplay.ui.screen.radiosettings.RadioSettingsScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
-import com.smsoft.smartdisplay.ui.screen.sensorssettings.SensorsSettingsScreen
+import com.smsoft.smartdisplay.ui.screen.settings.SettingsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
-import com.smsoft.smartdisplay.ui.screen.weathersettings.WeatherSettingsScreen
 
 @SuppressLint("AuthLeak")
 @UnstableApi
@@ -27,7 +24,10 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                navController = navController
+                navController = navController,
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
+                }
             )
         }
 
@@ -42,50 +42,30 @@ fun AppNavigation() {
         }
 
         composable(Screen.Clock.route) {
-            ClockScreen {
-                navController.navigate(Screen.ClockSettings.route)
-            }
+            ClockScreen()
         }
 
-        composable(Screen.ClockSettings.route) {
-            ClockSettingsScreen {
+        composable(Screen.Settings.route) {
+            SettingsScreen {
                 navController.navigateUp()
             }
         }
 
         composable(Screen.Radio.route) {
             RadioScreen {
-                navController.navigate(Screen.RadioSettings.route)
-            }
-        }
-
-        composable(Screen.RadioSettings.route) {
-            RadioSettingsScreen {
-                navController.navigateUp()
+                navController.navigate(Screen.Settings.route)
             }
         }
 
         composable(Screen.Sensors.route) {
             SensorsScreen {
-                navController.navigate(Screen.SensorsSettings.route)
-            }
-        }
-
-        composable(Screen.SensorsSettings.route) {
-            SensorsSettingsScreen {
-                navController.navigateUp()
+                navController.navigate(Screen.Settings.route)
             }
         }
 
         composable(Screen.Weather.route) {
             WeatherScreen {
-                navController.navigate(Screen.WeatherSettings.route)
-            }
-        }
-
-        composable(Screen.WeatherSettings.route) {
-            WeatherSettingsScreen {
-                navController.navigateUp()
+                navController.navigate(Screen.Settings.route)
             }
         }
     }

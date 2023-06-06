@@ -12,7 +12,7 @@ import com.jamal.composeprefs.ui.prefs.SliderPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
-fun drawAnalogClockView2Prefs(
+fun analogClockView2Prefs(
     modifier: Modifier,
     scope: PrefsScope,
     context: Context

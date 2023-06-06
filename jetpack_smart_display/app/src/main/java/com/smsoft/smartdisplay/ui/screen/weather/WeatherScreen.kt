@@ -1,7 +1,6 @@
 package com.smsoft.smartdisplay.ui.screen.weather
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -48,13 +47,7 @@ fun WeatherScreen(
     }
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .combinedClickable(
-                onLongClick = {
-                    onSettingsClick()
-                },
-                onClick = {  }
-            ),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

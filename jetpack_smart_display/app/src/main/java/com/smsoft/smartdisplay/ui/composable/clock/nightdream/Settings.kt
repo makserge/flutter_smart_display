@@ -31,7 +31,7 @@ import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.DigitStyle
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Font
 
-fun drawAnalogNightdreamPrefs(
+fun analogNightdreamPrefs(
     modifier: Modifier,
     scope: PrefsScope,
     context: Context
@@ -250,7 +250,7 @@ fun drawDecoration(
 }
 
 @OptIn(ExperimentalMaterialApi::class)
-fun drawDigitalFlipClockPrefs(
+fun digitalFlipClockPrefs(
     modifier: Modifier,
     scope: PrefsScope
 ) {

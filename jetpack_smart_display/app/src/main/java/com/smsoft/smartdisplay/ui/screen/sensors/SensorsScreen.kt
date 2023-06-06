@@ -49,7 +49,7 @@ fun SensorsScreen(
         modifier = Modifier
             .padding(10.dp)
             .combinedClickable(
-                onClick = onSettingsClick,
+                onClick = { },
                 onLongClick = {
                     isModifyItems = !isModifyItems
                 }

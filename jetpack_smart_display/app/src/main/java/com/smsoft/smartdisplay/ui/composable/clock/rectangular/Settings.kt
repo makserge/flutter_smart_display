@@ -13,7 +13,7 @@ import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.Font
 import com.smsoft.smartdisplay.data.PreferenceKey
 
-fun drawAnalogRectangularPrefs(
+fun analogRectangularPrefs(
     modifier: Modifier,
     scope: PrefsScope,
     context: Context

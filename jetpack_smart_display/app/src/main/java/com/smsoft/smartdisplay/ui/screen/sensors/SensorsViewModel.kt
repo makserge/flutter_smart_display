@@ -21,7 +21,7 @@ import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.database.repository.SensorRepository
 import com.smsoft.smartdisplay.ui.screen.MainActivity
-import com.smsoft.smartdisplay.ui.screen.sensorssettings.MQTT_DEFAULT_PORT
+import com.smsoft.smartdisplay.ui.screen.settings.MQTT_DEFAULT_PORT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
@@ -31,7 +31,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.eclipse.paho.client.mqttv3.*
+import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions
+import org.eclipse.paho.client.mqttv3.IMqttActionListener
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
+import org.eclipse.paho.client.mqttv3.IMqttToken
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
 @HiltViewModel

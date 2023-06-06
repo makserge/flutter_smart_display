@@ -14,7 +14,7 @@ import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
-fun drawDigitalMatrixClockPrefs(
+fun digitalMatrixClockPrefs(
     modifier: Modifier,
     scope: PrefsScope,
     context: Context

@@ -1,7 +1,6 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
@@ -28,8 +27,7 @@ import com.smsoft.smartdisplay.utils.getStateFromFlow
 fun ClockScreen(
     modifier: Modifier = Modifier,
     scale: Float = 1F,
-    viewModel: ClockViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit
+    viewModel: ClockViewModel = hiltViewModel()
 ) {
     val clockType = getStateFromFlow(
         flow = viewModel.clockType,
@@ -61,12 +59,6 @@ fun ClockScreen(
     }
     Box(
         modifier = Modifier
-            .combinedClickable(
-                onLongClick = {
-                    onSettingsClick()
-                },
-                onClick = {  }
-            )
     ) {
         DrawClock(
             modifier = Modifier,

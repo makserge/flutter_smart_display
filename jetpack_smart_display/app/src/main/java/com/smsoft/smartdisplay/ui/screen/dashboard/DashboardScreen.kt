@@ -1,6 +1,7 @@
 package com.smsoft.smartdisplay.ui.screen.dashboard
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -24,13 +25,20 @@ import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
-    navController: NavHostController
+    navController: NavHostController,
+    onSettingsClick: () -> Unit
 ) {
     val pagerState = rememberPagerState()
     val pages = DashboardItem.values()
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .combinedClickable(
+                onLongClick = {
+                    onSettingsClick()
+                },
+                onClick = {  }
+            )
     ) {
         HorizontalPager(
             modifier = Modifier
@@ -43,7 +51,9 @@ fun DashboardScreen(
                 RenderScreen(
                     modifier = Modifier,
                     index = index,
-                    navController = navController
+                    onSettingsClick = {
+                        navController.navigate(Screen.Settings.route)
+                    }
                 )
             }
         }
@@ -63,20 +73,18 @@ fun DashboardScreen(
 fun RenderScreen(
     modifier: Modifier,
     index: Int,
-    navController: NavHostController
+    onSettingsClick: () -> Unit
 ) {
     when (DashboardItem.getItem(index)) {
-        DashboardItem.CLOCK -> ClockScreen {
-            navController.navigate(Screen.ClockSettings.route)
-        }
+        DashboardItem.CLOCK -> ClockScreen()
         DashboardItem.WEATHER -> WeatherScreen {
-            navController.navigate(Screen.WeatherSettings.route)
+            onSettingsClick()
         }
         DashboardItem.SENSORS -> SensorsScreen {
-            navController.navigate(Screen.SensorsSettings.route)
+            onSettingsClick()
         }
         else -> RadioScreen {
-            navController.navigate(Screen.RadioSettings.route)
+            onSettingsClick()
         }
     }
 }

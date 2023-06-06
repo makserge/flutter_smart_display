@@ -11,8 +11,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
-import com.smsoft.smartdisplay.ui.screen.radiosettings.MPD_SERVER_DEFAULT_HOST
-import com.smsoft.smartdisplay.ui.screen.radiosettings.MPD_SERVER_DEFAULT_PORT
+import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_HOST
+import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

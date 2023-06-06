@@ -11,7 +11,7 @@ import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
 @OptIn(ExperimentalMaterialApi::class)
-fun drawAnalogJetAlarmPrefs(
+fun analogJetAlarmPrefs(
     modifier: Modifier,
     scope: PrefsScope
 ) {
