@@ -63,6 +63,16 @@ class SettingsViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = ""
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MPD_SERVER_PASSWORD.key)] ?: "" }
+
+    val doorbellAlarmTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ""
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)] ?: "" }
+
+    val doorbellStreamURL = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ""
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)] ?: "" }
 }
 
 const val MQTT_DEFAULT_PORT = "1883"

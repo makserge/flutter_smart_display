@@ -16,6 +16,7 @@ import com.jamal.composeprefs.ui.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
+import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
 import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
 import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
 import com.smsoft.smartdisplay.ui.composable.settings.weatherSettings
@@ -67,6 +68,13 @@ fun SettingsScreen(
         initialValue = ""
     )
 
+    val doorbellAlarmTopic by viewModel.doorbellAlarmTopic.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+    val doorbellStreamURL by viewModel.doorbellStreamURL.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
     Scaffold(
         modifier = Modifier
             .pointerInput(Unit) {
@@ -91,13 +99,13 @@ fun SettingsScreen(
                 modifier = modifier,
                 scope = this,
                 context = context,
-                clockType = ClockType.getById(clockType as String)
+                clockType = ClockType.getById(clockType.toString())
             )
             weatherSettings(
                 modifier = Modifier,
                 scope = this,
-                cityLat = cityLat as String,
-                cityLon = cityLon as String
+                cityLat = cityLat.toString(),
+                cityLon = cityLon.toString()
             )
             sensorsSettings(
                 modifier = Modifier,
@@ -114,6 +122,12 @@ fun SettingsScreen(
                 host = mpdHost.toString(),
                 port = mpdPort.toString(),
                 password = mpdPassword.toString()
+            )
+            doorbellSettings (
+                modifier = Modifier,
+                scope = this,
+                alarmTopic = doorbellAlarmTopic.toString(),
+                streamURL = doorbellStreamURL.toString()
             )
         }
     }

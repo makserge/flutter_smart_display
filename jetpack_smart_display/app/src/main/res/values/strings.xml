@@ -165,4 +165,7 @@
     <string name="duration_format" formatted="false">%d:%02d</string>
     <string name="duration_format_hours" formatted="false">%d:%02d:%02d</string>
     <string name="radio">Radio</string>
+    <string name="doorbell">Doorbell</string>
+    <string name="doorbell_alarm_topic">MQTT alarm topic</string>
+    <string name="doorbell_stream_url">RTSP stream URL</string>
 </resources>
