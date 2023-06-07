@@ -97,5 +97,6 @@ enum class PreferenceKey(val key: String, val title: Int) {
     MPD_SERVER_PORT("mpdServerPort", R.string.mpd_server_port),
     MPD_SERVER_PASSWORD("mpdServerPassword", R.string.mpd_server_password),
     DOORBELL_ALARM_TOPIC("doorbellAlarmTopic", R.string.doorbell_alarm_topic),
-    DOORBELL_STREAM_URL("doorbellStreamUrl", R.string.doorbell_stream_url);
+    DOORBELL_STREAM_URL("doorbellStreamUrl", R.string.doorbell_stream_url),
+    PUSH_BUTTON_TOPIC("pushButtonTopic", R.string.push_button_topic);
 }

@@ -17,6 +17,7 @@ import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
 import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
+import com.smsoft.smartdisplay.ui.composable.settings.pushButtonSettings
 import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
 import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
 import com.smsoft.smartdisplay.ui.composable.settings.weatherSettings
@@ -75,6 +76,10 @@ fun SettingsScreen(
         initialValue = ""
     )
 
+    val pushButtonTopic by viewModel.pushButtonTopic.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
     Scaffold(
         modifier = Modifier
             .pointerInput(Unit) {
@@ -128,6 +133,11 @@ fun SettingsScreen(
                 scope = this,
                 alarmTopic = doorbellAlarmTopic.toString(),
                 streamURL = doorbellStreamURL.toString()
+            )
+            pushButtonSettings (
+                modifier = Modifier,
+                scope = this,
+                topic = pushButtonTopic.toString(),
             )
         }
     }

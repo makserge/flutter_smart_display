@@ -73,6 +73,12 @@ class SettingsViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = ""
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)] ?: "" }
+
+    val pushButtonTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ""
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)] ?: "" }
+
 }
 
 const val MQTT_DEFAULT_PORT = "1883"

@@ -168,4 +168,6 @@
     <string name="doorbell">Doorbell</string>
     <string name="doorbell_alarm_topic">MQTT alarm topic</string>
     <string name="doorbell_stream_url">RTSP stream URL</string>
+    <string name="push_button">Push button</string>
+    <string name="push_button_topic">MQTT topic</string>
 </resources>
