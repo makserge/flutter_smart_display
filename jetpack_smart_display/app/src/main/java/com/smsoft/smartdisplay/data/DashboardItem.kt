@@ -4,14 +4,16 @@ enum class DashboardItem {
     CLOCK,
     WEATHER,
     SENSORS,
-    INTERNET_RADIO;
+    INTERNET_RADIO,
+    DOORBELL;
     companion object {
         fun getItem(index: Int): DashboardItem {
             return when (index) {
                 0 -> CLOCK
                 1 -> WEATHER
                 2 -> SENSORS
-                else -> INTERNET_RADIO
+                3 -> INTERNET_RADIO
+                else -> DOORBELL
             }
         }
     }

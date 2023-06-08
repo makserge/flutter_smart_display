@@ -11,21 +11,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
+import androidx.media3.common.util.UnstableApi
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
-import com.smsoft.smartdisplay.data.Screen
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
+import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalPagerApi::class)
+@UnstableApi
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
-    navController: NavHostController,
     onSettingsClick: () -> Unit
 ) {
     val pagerState = rememberPagerState()
@@ -37,7 +37,7 @@ fun DashboardScreen(
                 onLongClick = {
                     onSettingsClick()
                 },
-                onClick = {  }
+                onClick = { }
             )
     ) {
         HorizontalPager(
@@ -52,7 +52,7 @@ fun DashboardScreen(
                     modifier = Modifier,
                     index = index,
                     onSettingsClick = {
-                        navController.navigate(Screen.Settings.route)
+                        onSettingsClick()
                     }
                 )
             }
@@ -69,6 +69,7 @@ fun DashboardScreen(
     }
 }
 
+@UnstableApi
 @Composable
 fun RenderScreen(
     modifier: Modifier,
@@ -83,8 +84,9 @@ fun RenderScreen(
         DashboardItem.SENSORS -> SensorsScreen {
             onSettingsClick()
         }
-        else -> RadioScreen {
+        DashboardItem.INTERNET_RADIO -> RadioScreen {
             onSettingsClick()
         }
+        else -> DoorbellScreen()
     }
 }

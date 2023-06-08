@@ -84,3 +84,4 @@ class SettingsViewModel @Inject constructor(
 const val MQTT_DEFAULT_PORT = "1883"
 const val MPD_SERVER_DEFAULT_HOST = ""
 const val MPD_SERVER_DEFAULT_PORT = "6600"
+const val DOORBELL_STREAM_DEFAULT_URL = "rtsp://*"

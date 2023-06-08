@@ -187,7 +187,7 @@ class SensorsViewModel @Inject constructor(
     ) {
         mqttAndroidClient = MqttAndroidClient(
             context,
-            "tcp://" + mqttServer.host + ":" + mqttServer.port,
+            "tcp://" + mqttServer.host.trim() + ":" + mqttServer.port.trim(),
             clientId
         ).apply {
             setForegroundService(
@@ -197,8 +197,8 @@ class SensorsViewModel @Inject constructor(
             setCallback(mqttClientCallback)
         }
         val mqttConnectOptions = MqttConnectOptions().apply {
-            userName = mqttServer.login
-            password = mqttServer.password.toCharArray()
+            userName = mqttServer.login.trim()
+            password = mqttServer.password.trim().toCharArray()
             isAutomaticReconnect = true
             isCleanSession = false
         }

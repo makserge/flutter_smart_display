@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import androidx.compose.runtime.Composable
@@ -11,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
+import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_STREAM_DEFAULT_URL
 import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_HOST
 import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
@@ -39,14 +41,13 @@ fun getParamFlow(
 
 fun getColor(value: androidx.compose.ui.graphics.Color) = Color.parseColor("#${Integer.toHexString(value.toArgb())}")
 
+@SuppressLint("DiscouragedApi")
 fun getIcon(
     context: Context,
     item: String
 ): Int {
-    val res = if (item.isEmpty()) {
+    val res = item.ifEmpty {
         "empty"
-    } else {
-        item
     }
     return context.resources.getIdentifier("outline_" + res + "_24", "drawable", context.packageName)
 }
@@ -94,4 +95,17 @@ fun getRadioSettings(dataStore: DataStore<Preferences>): MPDCredentials {
         port = port.toInt(),
         password = password
     )
+}
+
+fun getDoorbellStreamUrl(dataStore: DataStore<Preferences>): String {
+    var url = DOORBELL_STREAM_DEFAULT_URL
+    runBlocking {
+        val data = dataStore.data.first()
+        data[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)]?.let {
+            if (it.trim().isNotEmpty()) {
+                url = it.trim()
+            }
+        }
+    }
+    return url
 }

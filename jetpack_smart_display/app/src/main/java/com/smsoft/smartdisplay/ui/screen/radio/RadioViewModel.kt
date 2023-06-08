@@ -2,11 +2,11 @@ package com.smsoft.smartdisplay.ui.screen.radio
 
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.CountDownTimer
 import android.text.Html
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi
 import androidx.lifecycle.viewmodel.compose.saveable
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
 import com.smsoft.smartdisplay.service.radio.MediaState
@@ -33,11 +34,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.*
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.concurrent.timerTask
 import kotlin.math.floor
-import com.smsoft.smartdisplay.R
 
 @OptIn(SavedStateHandleSaveableApi::class)
 @HiltViewModel
@@ -57,10 +55,6 @@ class RadioViewModel @Inject constructor(
 
     private val uiStateInt = MutableStateFlow<UIState>(UIState.Initial)
     val uiState = uiStateInt.asStateFlow()
-
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
-
-    private val prefs = dataStore.data
 
     private var volumeHideTimer: CountDownTimer? = null
 
@@ -157,19 +151,14 @@ class RadioViewModel @Inject constructor(
         progressString = formatDuration(currentProgress)
     }
 
-    @Suppress("DEPRECATION")
     private fun convertCharset(data: String): String {
         if (data.isNotEmpty()) {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Html.fromHtml(data, Html.FROM_HTML_MODE_COMPACT)
-            } else {
-                Html.fromHtml(data)
-            }.toString()
+            return Html.fromHtml(data, HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
         }
         return data
     }
 
-    internal fun onStartService() {
+    private fun onStartService() {
         val intent = Intent(context, RadioMediaService::class.java)
         ContextCompat.startForegroundService(context, intent)
     }
@@ -188,7 +177,7 @@ class RadioViewModel @Inject constructor(
             val preset = getRadioPreset(dataStore)
             val mediaItemList = mutableListOf<MediaItem>()
             if (isInternalPlayer()) {
-                val m3uStream = context.getAssets().open(PLAYLIST)
+                val m3uStream = context.assets.open(PLAYLIST)
                 val streamEntries = M3uParser.parse(m3uStream.reader())
                 streamEntries.forEach {
                     mediaItemList.add(

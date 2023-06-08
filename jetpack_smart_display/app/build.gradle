@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.smsoft.smartdisplay"
-        minSdk 21
+        minSdk 26
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -76,7 +76,7 @@ dependencies {
     implementation "androidx.media3:media3-exoplayer-rtsp:$exoplayer_media3_version"
     implementation "androidx.media3:media3-session:$exoplayer_media3_version"
 
-    implementation "org.videolan.android:libvlc-all:4.0.0-eap9"
+    implementation "org.videolan.android:libvlc-all:4.0.0-eap11"
 
     implementation "com.github.JamalMulla:ComposePrefs:1.0.6"
     implementation "androidx.datastore:datastore-preferences:1.0.0"

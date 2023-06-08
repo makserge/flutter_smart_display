@@ -72,8 +72,9 @@ fun SettingsScreen(
     val doorbellAlarmTopic by viewModel.doorbellAlarmTopic.collectAsStateWithLifecycle(
         initialValue = ""
     )
+
     val doorbellStreamURL by viewModel.doorbellStreamURL.collectAsStateWithLifecycle(
-        initialValue = ""
+        initialValue = DOORBELL_STREAM_DEFAULT_URL
     )
 
     val pushButtonTopic by viewModel.pushButtonTopic.collectAsStateWithLifecycle(
