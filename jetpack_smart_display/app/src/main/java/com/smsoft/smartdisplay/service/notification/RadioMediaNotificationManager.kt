@@ -4,8 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.media3.common.util.UnstableApi
@@ -16,11 +14,6 @@ import androidx.media3.ui.PlayerNotificationManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-private const val NOTIFICATION_ID = 200
-private const val NOTIFICATION_CHANNEL_NAME = "radio player channel 1"
-private const val NOTIFICATION_CHANNEL_ID = "radio player channel id 1"
-
-@RequiresApi(Build.VERSION_CODES.O)
 class RadioMediaNotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val player: ExoPlayer
@@ -40,7 +33,6 @@ class RadioMediaNotificationManager @Inject constructor(
         startForegroundNotification(mediaSessionService)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @UnstableApi
     private fun buildNotification(mediaSession: MediaSession) {
         PlayerNotificationManager.Builder(context, NOTIFICATION_ID, NOTIFICATION_CHANNEL_ID)
@@ -67,15 +59,16 @@ class RadioMediaNotificationManager @Inject constructor(
         mediaSessionService.startForeground(NOTIFICATION_ID, notification)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                NOTIFICATION_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            NOTIFICATION_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_LOW
+        )
+        notificationManager.createNotificationChannel(channel)
     }
 }
+
+private const val NOTIFICATION_ID = 200
+private const val NOTIFICATION_CHANNEL_NAME = "radio player channel 1"
+private const val NOTIFICATION_CHANNEL_ID = "radio player channel id 1"

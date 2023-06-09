@@ -12,15 +12,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.MQTTData
 import com.smsoft.smartdisplay.data.database.entity.emptySensor
 import com.smsoft.smartdisplay.ui.composable.sensors.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SensorsScreen(
     modifier: Modifier = Modifier,
-    viewModel: SensorsViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit
+    viewModel: SensorsViewModel = hiltViewModel()
 ) {
     val items by viewModel.getAll.collectAsStateWithLifecycle(
         initialValue = emptyList()
@@ -29,21 +26,6 @@ fun SensorsScreen(
     var isOpenEditItemDialog by remember { mutableStateOf(false) }
     var currentEditItem by remember { mutableStateOf(emptySensor) }
     val itemsData: MQTTData by viewModel.mqttTopicData.collectAsStateWithLifecycle()
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            if (viewModel.onStart()) {
-                withContext(Dispatchers.Main) {
-                    onSettingsClick()
-                }
-            }
-        }
-    }
-    DisposableEffect(key1 = viewModel) {
-        onDispose {
-            viewModel.onStop()
-        }
-    }
 
     Scaffold(
         modifier = Modifier

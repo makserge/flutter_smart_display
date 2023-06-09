@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
+import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,8 +17,8 @@ class SettingsViewModel @Inject constructor(
 
     val clockType = getParamFlow(
         dataStore = dataStore,
-        defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CLOCK_TYPE.key)] ?: "" }
+        defaultValue = ClockType.getDefaultId()
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CLOCK_TYPE.key)] ?: ClockType.getDefaultId() }
 
     val cityLat = getParamFlow(
         dataStore = dataStore,
@@ -31,13 +32,13 @@ class SettingsViewModel @Inject constructor(
 
     val mqttHost = getParamFlow(
         dataStore = dataStore,
-        defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MQTT_BROKER_HOST.key)] ?: "" }
+        defaultValue = MQTT_SERVER_DEFAULT_HOST
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MQTT_BROKER_HOST.key)] ?: MQTT_SERVER_DEFAULT_HOST }
 
     val mqttPort = getParamFlow(
         dataStore = dataStore,
-        defaultValue = MQTT_DEFAULT_PORT
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MQTT_BROKER_PORT.key)] ?: MQTT_DEFAULT_PORT }
+        defaultValue = MQTT_SERVER_DEFAULT_PORT
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MQTT_BROKER_PORT.key)] ?: MQTT_SERVER_DEFAULT_PORT }
 
     val mqttUserName = getParamFlow(
         dataStore = dataStore,
@@ -81,7 +82,8 @@ class SettingsViewModel @Inject constructor(
 
 }
 
-const val MQTT_DEFAULT_PORT = "1883"
+const val MQTT_SERVER_DEFAULT_HOST = "localhost"
+const val MQTT_SERVER_DEFAULT_PORT = "1883"
 const val MPD_SERVER_DEFAULT_HOST = ""
 const val MPD_SERVER_DEFAULT_PORT = "6600"
 const val DOORBELL_STREAM_DEFAULT_URL = "rtsp://*"

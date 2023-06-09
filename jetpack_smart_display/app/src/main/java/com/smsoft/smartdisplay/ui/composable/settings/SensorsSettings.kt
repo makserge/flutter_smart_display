@@ -9,7 +9,8 @@ import com.jamal.composeprefs.ui.PrefsScope
 import com.jamal.composeprefs.ui.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.ui.screen.settings.MQTT_DEFAULT_PORT
+import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_HOST
+import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_PORT
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 fun sensorsSettings (
@@ -30,13 +31,14 @@ fun sensorsSettings (
                 modifier = modifier,
                 key = PreferenceKey.MQTT_BROKER_HOST.key,
                 title = stringResource(PreferenceKey.MQTT_BROKER_HOST.title),
+                defaultValue = MQTT_SERVER_DEFAULT_HOST,
                 summary = host
             )
             EditTextPref(
                 modifier = modifier,
                 key = PreferenceKey.MQTT_BROKER_PORT.key,
                 title = stringResource(PreferenceKey.MQTT_BROKER_PORT.title),
-                defaultValue = MQTT_DEFAULT_PORT,
+                defaultValue = MQTT_SERVER_DEFAULT_PORT,
                 summary = port
             )
             EditTextPref(

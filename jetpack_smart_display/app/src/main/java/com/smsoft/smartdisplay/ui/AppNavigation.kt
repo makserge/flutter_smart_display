@@ -50,9 +50,7 @@ fun AppNavigation() {
         }
 
         composable(Screen.Sensors.route) {
-            SensorsScreen {
-                navController.navigate(Screen.Settings.route)
-            }
+            SensorsScreen()
         }
 
         composable(Screen.Weather.route) {

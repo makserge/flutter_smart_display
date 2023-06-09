@@ -1,53 +1,31 @@
 package com.smsoft.smartdisplay.ui.screen.sensors
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.MQTTData
-import com.smsoft.smartdisplay.data.MQTTServer
-import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.database.repository.SensorRepository
-import com.smsoft.smartdisplay.ui.screen.MainActivity
-import com.smsoft.smartdisplay.ui.screen.settings.MQTT_DEFAULT_PORT
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
 import info.mqtt.android.service.QoS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
 @HiltViewModel
 class SensorsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     val dataStore: DataStore<Preferences>,
-    private val sensorRepository: SensorRepository
+    private val sensorRepository: SensorRepository,
+    private val mqttClient: MqttAndroidClient
 ) : ViewModel() {
-
-    private var mqttAndroidClient: MqttAndroidClient? = null
 
     val getAll = sensorRepository.getAll
 
@@ -73,7 +51,7 @@ class SensorsViewModel @Inject constructor(
 
     private fun subscribeToMQTTTopic(item: Sensor) {
         if (item.topic1.isNotEmpty()) {
-            mqttAndroidClient!!.subscribe(
+            mqttClient.subscribe(
                 item.topic1,
                 QoS.AtMostOnce.value,
                 null,
@@ -81,7 +59,7 @@ class SensorsViewModel @Inject constructor(
             )
         }
         if (item.topic2.isNotEmpty()) {
-            mqttAndroidClient!!.subscribe(
+            mqttClient.subscribe(
                 item.topic2,
                 QoS.AtMostOnce.value,
                 null,
@@ -89,7 +67,7 @@ class SensorsViewModel @Inject constructor(
             )
         }
         if (item.topic3.isNotEmpty()) {
-            mqttAndroidClient!!.subscribe(
+            mqttClient.subscribe(
                 item.topic3,
                 QoS.AtMostOnce.value,
                 null,
@@ -97,7 +75,7 @@ class SensorsViewModel @Inject constructor(
             )
         }
         if (item.topic4.isNotEmpty()) {
-            mqttAndroidClient!!.subscribe(
+            mqttClient.subscribe(
                 item.topic4,
                 QoS.AtMostOnce.value,
                 null,
@@ -108,22 +86,22 @@ class SensorsViewModel @Inject constructor(
 
     private fun unSubscribeMQTTTopic(item: Sensor) {
         if (item.topic1.isNotEmpty()) {
-            mqttAndroidClient!!.unsubscribe(
+            mqttClient.unsubscribe(
                 item.topic1
             )
         }
         if (item.topic2.isNotEmpty()) {
-            mqttAndroidClient!!.unsubscribe(
+            mqttClient.unsubscribe(
                 item.topic2
             )
         }
         if (item.topic3.isNotEmpty()) {
-            mqttAndroidClient!!.unsubscribe(
+            mqttClient.unsubscribe(
                 item.topic3
             )
         }
         if (item.topic4.isNotEmpty()) {
-            mqttAndroidClient!!.unsubscribe(
+            mqttClient.unsubscribe(
                 item.topic4
             )
         }
@@ -161,123 +139,11 @@ class SensorsViewModel @Inject constructor(
         override fun deliveryComplete(token: IMqttDeliveryToken) {}
     }
 
-    private val mqttClientListener = object : IMqttActionListener {
-        override fun onSuccess(
-            asyncActionToken: IMqttToken
-        ) {
-            val disconnectedBufferOptions = DisconnectedBufferOptions().apply {
-                isBufferEnabled = true
-                bufferSize = 100
-                isPersistBuffer = false
-                isDeleteOldestMessages = false
-            }
-            mqttAndroidClient?.setBufferOpts(disconnectedBufferOptions)
-        }
-
-        override fun onFailure(
-            asyncActionToken: IMqttToken?,
-            exception: Throwable?
-        ) {
-            Log.d("MQTT", "Failed to connect")
+    init {
+        if (mqttClient.isConnected) {
+            mqttClient.addCallback(mqttClientCallback)
         }
     }
-
-    private fun initMQTTClient(
-        mqttServer: MQTTServer
-    ) {
-        mqttAndroidClient = MqttAndroidClient(
-            context,
-            "tcp://" + mqttServer.host.trim() + ":" + mqttServer.port.trim(),
-            clientId
-        ).apply {
-            setForegroundService(
-                getForegroundNotification(),
-                foregroundServiceNotificationId
-            )
-            setCallback(mqttClientCallback)
-        }
-        val mqttConnectOptions = MqttConnectOptions().apply {
-            userName = mqttServer.login.trim()
-            password = mqttServer.password.trim().toCharArray()
-            isAutomaticReconnect = true
-            isCleanSession = false
-        }
-        mqttAndroidClient!!.connect(
-            mqttConnectOptions,
-            null,
-            mqttClientListener)
-    }
-
-    private fun getForegroundNotification(): Notification {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(notificationChannel)
-        }
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, pendingIntentFlags)
-
-        val notificationCompat = NotificationCompat.Builder(context, channelName)
-            .setAutoCancel(true)
-            .setContentTitle(context.getString(R.string.app_name))
-            .setContentIntent(pendingIntent)
-            .setWhen(System.currentTimeMillis())
-            .setSmallIcon(R.mipmap.ic_launcher)
-        return notificationCompat.build()
-    }
-
-    suspend fun onStart() : Boolean {
-        val server = getMQTTServerCredentials()
-        if (server.host.isNotEmpty()) {
-            initMQTTClient(
-                mqttServer = server
-            )
-            return false
-        }
-        return true
-    }
-
-    fun onStop() {
-        if ((mqttAndroidClient != null) && (mqttAndroidClient!!.isConnected)) {
-            mqttAndroidClient?.disconnect()
-        }
-    }
-
-    private suspend fun getMQTTServerCredentials() : MQTTServer {
-        val data = dataStore.data.first()
-        var host = ""
-        data[stringPreferencesKey(PreferenceKey.MQTT_BROKER_HOST.key)]?.let {
-            host = it
-        }
-        var port = MQTT_DEFAULT_PORT
-        data[stringPreferencesKey(PreferenceKey.MQTT_BROKER_PORT.key)]?.let {
-            port = it
-        }
-        var login = ""
-        data[stringPreferencesKey(PreferenceKey.MQTT_BROKER_USERNAME.key)]?.let {
-            login = it
-        }
-        var password = ""
-        data[stringPreferencesKey(PreferenceKey.MQTT_BROKER_PASSWORD.key)]?.let {
-            password = it
-        }
-        return MQTTServer(
-            host = host,
-            port = port,
-            login = login,
-            password = password
-        )
-    }
-
-    private val channelId = "MQTTchannnel"
-    private val channelName = "MQTTchannnel"
-    private val foregroundServiceNotificationId = 3
-    private val clientId = "SmartDisplay"
 }
+
+const val MQTT_CLIENT_ID = "SmartDisplay"

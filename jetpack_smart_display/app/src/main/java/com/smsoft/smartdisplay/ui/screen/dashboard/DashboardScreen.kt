@@ -81,9 +81,7 @@ fun RenderScreen(
         DashboardItem.WEATHER -> WeatherScreen {
             onSettingsClick()
         }
-        DashboardItem.SENSORS -> SensorsScreen {
-            onSettingsClick()
-        }
+        DashboardItem.SENSORS -> SensorsScreen()
         DashboardItem.INTERNET_RADIO -> RadioScreen {
             onSettingsClick()
         }

@@ -47,10 +47,10 @@ fun SettingsScreen(
     )
 
     val mqttHost by viewModel.mqttHost.collectAsStateWithLifecycle(
-        initialValue = ""
+        initialValue = MQTT_SERVER_DEFAULT_HOST
     )
     val mqttPort by viewModel.mqttPort.collectAsStateWithLifecycle(
-        initialValue = MQTT_DEFAULT_PORT
+        initialValue = MQTT_SERVER_DEFAULT_PORT
     )
     val mqttUserName by viewModel.mqttUserName.collectAsStateWithLifecycle(
         initialValue = ""
