@@ -52,34 +52,26 @@ class SensorsViewModel @Inject constructor(
     private fun subscribeToMQTTTopic(item: Sensor) {
         if (item.topic1.isNotEmpty()) {
             mqttClient.subscribe(
-                item.topic1,
-                QoS.AtMostOnce.value,
-                null,
-                null
+                topic = item.topic1,
+                qos = QoS.AtMostOnce.value
             )
         }
         if (item.topic2.isNotEmpty()) {
             mqttClient.subscribe(
-                item.topic2,
-                QoS.AtMostOnce.value,
-                null,
-                null
+                topic = item.topic2,
+                qos = QoS.AtMostOnce.value
             )
         }
         if (item.topic3.isNotEmpty()) {
             mqttClient.subscribe(
-                item.topic3,
-                QoS.AtMostOnce.value,
-                null,
-                null
+                topic = item.topic3,
+                qos = QoS.AtMostOnce.value
             )
         }
         if (item.topic4.isNotEmpty()) {
             mqttClient.subscribe(
-                item.topic4,
-                QoS.AtMostOnce.value,
-                null,
-                null
+                topic = item.topic4,
+                qos = QoS.AtMostOnce.value
             )
         }
     }
@@ -87,22 +79,22 @@ class SensorsViewModel @Inject constructor(
     private fun unSubscribeMQTTTopic(item: Sensor) {
         if (item.topic1.isNotEmpty()) {
             mqttClient.unsubscribe(
-                item.topic1
+                topic = item.topic1
             )
         }
         if (item.topic2.isNotEmpty()) {
             mqttClient.unsubscribe(
-                item.topic2
+                topic = item.topic2
             )
         }
         if (item.topic3.isNotEmpty()) {
             mqttClient.unsubscribe(
-                item.topic3
+                topic = item.topic3
             )
         }
         if (item.topic4.isNotEmpty()) {
             mqttClient.unsubscribe(
-                item.topic4
+                topic = item.topic4
             )
         }
     }

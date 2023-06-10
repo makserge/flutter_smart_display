@@ -4,15 +4,20 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
+import info.mqtt.android.service.MqttAndroidClient
+import info.mqtt.android.service.QoS
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    val dataStore: DataStore<Preferences>
+    val dataStore: DataStore<Preferences>,
+    private val mqttClient: MqttAndroidClient
 ) : ViewModel() {
 
     val clockType = getParamFlow(
@@ -80,6 +85,30 @@ class SettingsViewModel @Inject constructor(
         defaultValue = ""
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)] ?: "" }
 
+    init {
+        updateDoorbellAlarmTopic()
+    }
+
+    private fun updateDoorbellAlarmTopic() {
+        if (!mqttClient.isConnected) {
+            return
+        }
+        viewModelScope.launch {
+            var prevValue = ""
+            doorbellAlarmTopic.collect { newValue ->
+                if (prevValue.isNotEmpty()) {
+                    mqttClient.unsubscribe(
+                        topic = prevValue
+                    )
+                }
+                mqttClient.subscribe(
+                    topic = (newValue as String).trim(),
+                    qos = QoS.AtMostOnce.value
+                )
+                prevValue = newValue.trim()
+            }
+        }
+    }
 }
 
 const val MQTT_SERVER_DEFAULT_HOST = "localhost"

@@ -1,7 +1,10 @@
 package com.smsoft.smartdisplay.ui.screen.weather
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -17,7 +20,6 @@ import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
 import com.smsoft.smartdisplay.ui.composable.weather.CurrentWeather
 import com.smsoft.smartdisplay.ui.composable.weather.Forecast
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WeatherScreen(
     modifier: Modifier = Modifier,
