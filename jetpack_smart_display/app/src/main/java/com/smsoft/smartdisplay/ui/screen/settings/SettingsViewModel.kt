@@ -77,8 +77,8 @@ class SettingsViewModel @Inject constructor(
 
     val doorbellStreamURL = getParamFlow(
         dataStore = dataStore,
-        defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)] ?: "" }
+        defaultValue = DOORBELL_STREAM_DEFAULT_URL
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)] ?: DOORBELL_STREAM_DEFAULT_URL }
 
     val pushButtonTopic = getParamFlow(
         dataStore = dataStore,

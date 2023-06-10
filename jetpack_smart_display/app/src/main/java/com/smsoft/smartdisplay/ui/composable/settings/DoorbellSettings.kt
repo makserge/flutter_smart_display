@@ -9,6 +9,7 @@ import com.jamal.composeprefs.ui.PrefsScope
 import com.jamal.composeprefs.ui.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_STREAM_DEFAULT_URL
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 fun doorbellSettings(
@@ -33,7 +34,8 @@ fun doorbellSettings(
                 modifier = modifier,
                 key = PreferenceKey.DOORBELL_STREAM_URL.key,
                 title = stringResource(PreferenceKey.DOORBELL_STREAM_URL.title),
-                summary = streamURL
+                summary = streamURL,
+                defaultValue = DOORBELL_STREAM_DEFAULT_URL
             )
         }
     }
