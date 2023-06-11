@@ -22,15 +22,15 @@ fun AppNavigation() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
-            DashboardScreen(
-                onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
-                }
-            )
+            DashboardScreen {
+                navController.navigate(Screen.Settings.route)
+            }
         }
 
         composable(Screen.Doorbell.route) {
-            DoorbellScreen()
+            DoorbellScreen {
+                navController.navigate(Screen.Settings.route)
+            }
         }
 
         composable(Screen.Clock.route) {

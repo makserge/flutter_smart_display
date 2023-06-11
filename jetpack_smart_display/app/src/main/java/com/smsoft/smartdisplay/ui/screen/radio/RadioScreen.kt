@@ -1,11 +1,20 @@
 package com.smsoft.smartdisplay.ui.screen.radio
 
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -44,11 +53,11 @@ fun RadioScreen(
             .fillMaxSize()
             .pointerInput(Unit){
                 detectTapGestures(
-                    onDoubleTap = {
-                        onSettingsClick()
+                    onTap = {
+                        isShowVolume.value = true
                     },
                     onLongPress = {
-                        isShowVolume.value = true
+                        onSettingsClick()
                     }
                 )
             }

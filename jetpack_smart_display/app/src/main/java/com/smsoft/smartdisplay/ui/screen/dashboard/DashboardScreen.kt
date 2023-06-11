@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
@@ -26,6 +27,7 @@ import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
+    viewModel: DashboardViewModel = hiltViewModel(),
     onSettingsClick: () -> Unit
 ) {
     val pagerState = rememberPagerState()
@@ -34,10 +36,10 @@ fun DashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .combinedClickable(
-                onLongClick = {
-                    onSettingsClick()
+                onClick = {
+                    viewModel.sendPressButtonEvent()
                 },
-                onClick = { }
+                onLongClick = onSettingsClick
             )
     ) {
         HorizontalPager(
@@ -51,9 +53,7 @@ fun DashboardScreen(
                 RenderScreen(
                     modifier = Modifier,
                     index = index,
-                    onSettingsClick = {
-                        onSettingsClick()
-                    }
+                    onSettingsClick = onSettingsClick
                 )
             }
         }
@@ -85,6 +85,8 @@ fun RenderScreen(
         DashboardItem.INTERNET_RADIO -> RadioScreen {
             onSettingsClick()
         }
-        else -> DoorbellScreen()
+        else -> DoorbellScreen {
+            onSettingsClick()
+        }
     }
 }

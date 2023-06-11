@@ -9,6 +9,7 @@ import com.jamal.composeprefs.ui.PrefsScope
 import com.jamal.composeprefs.ui.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_TOPIC
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
 fun pushButtonSettings(
@@ -26,7 +27,8 @@ fun pushButtonSettings(
                 modifier = modifier,
                 key = PreferenceKey.PUSH_BUTTON_TOPIC.key,
                 title = stringResource(PreferenceKey.PUSH_BUTTON_TOPIC.title),
-                summary = topic
+                summary = topic,
+                defaultValue = PUSH_BUTTON_DEFAULT_TOPIC
             )
         }
     }
