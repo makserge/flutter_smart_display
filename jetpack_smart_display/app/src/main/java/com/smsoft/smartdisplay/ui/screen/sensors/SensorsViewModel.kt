@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
+import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
@@ -99,18 +99,7 @@ class SensorsViewModel @Inject constructor(
         }
     }
 
-    private val mqttClientCallback = object : MqttCallbackExtended {
-        override fun connectComplete(
-            reconnect: Boolean,
-            serverURI: String
-        ) {
-            if (reconnect) {
-                Log.d("MQTT", "Reconnected: $serverURI")
-            } else {
-                Log.d("MQTT","Connected: $serverURI")
-            }
-        }
-
+    private val mqttClientCallback = object : MqttCallback {
         override fun connectionLost(
             cause: Throwable?
         ) {

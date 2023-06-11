@@ -11,6 +11,7 @@ import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.mqtt.android.service.MqttAndroidClient
 import info.mqtt.android.service.QoS
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -95,7 +96,10 @@ class SettingsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             var prevValue = ""
-            doorbellAlarmTopic.collect { newValue ->
+            doorbellAlarmTopic.collectLatest { newValue ->
+                if (newValue == prevValue) {
+                    return@collectLatest
+                }
                 if (prevValue.isNotEmpty()) {
                     mqttClient.unsubscribe(
                         topic = prevValue
@@ -115,5 +119,6 @@ const val MQTT_SERVER_DEFAULT_HOST = "localhost"
 const val MQTT_SERVER_DEFAULT_PORT = "1883"
 const val MPD_SERVER_DEFAULT_HOST = ""
 const val MPD_SERVER_DEFAULT_PORT = "6600"
-const val DOORBELL_STREAM_DEFAULT_URL = "rtsp://*"
 const val DOORBELL_ALARM_DEFAULT_TOPIC = "doorbell"
+const val DOORBELL_STREAM_DEFAULT_URL = "rtsp://*"
+const val DOORBELL_BACK_TIMER_DEFAULT_DELAY = 10F

@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
@@ -28,8 +30,19 @@ import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 fun DashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
+    onDoorBellAlarm: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
+    val doorBellAlarmState = viewModel.doorBellAlarmState.collectAsStateWithLifecycle()
+
+    if (doorBellAlarmState.value) {
+        viewModel.resetDoorBellAlarmState()
+        LaunchedEffect(Unit) {
+            onDoorBellAlarm()
+        }
+        return
+    }
+
     val pagerState = rememberPagerState()
     val pages = DashboardItem.values()
     Column(
@@ -85,8 +98,8 @@ fun RenderScreen(
         DashboardItem.INTERNET_RADIO -> RadioScreen {
             onSettingsClick()
         }
-        else -> DoorbellScreen {
-            onSettingsClick()
-        }
+        else -> DoorbellScreen(
+            onSettingsClick = onSettingsClick
+        )
     }
 }
