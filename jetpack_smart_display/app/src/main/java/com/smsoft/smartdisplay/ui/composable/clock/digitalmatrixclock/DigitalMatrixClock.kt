@@ -13,8 +13,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
+import com.smsoft.smartdisplay.utils.getStateFromFlow
 
 @Composable
 fun DigitalMatrixClock(
@@ -127,22 +127,26 @@ fun DigitalMatrixClock(
             color = primaryColor,
             backgroundColor = secondaryColor,
             radius = dotRadius,
-            dotStyle = dotStyle
+            dotStyle = dotStyle,
+            second = second
         )
     }
 }
 
+@Suppress("UNUSED_EXPRESSION")
 @Composable
 fun OnDraw(
     modifier: Modifier,
     color: Color,
     backgroundColor: Color,
     radius: Float,
-    dotStyle: DotStyle
+    dotStyle: DotStyle,
+    second: Int
 ) {
     Canvas(
         modifier = Modifier
     ) {
+        second
         for (row in 0 until model.rows) {
             for (column in 0 until model.columns) {
                 val state = model.getDotState(column, row)

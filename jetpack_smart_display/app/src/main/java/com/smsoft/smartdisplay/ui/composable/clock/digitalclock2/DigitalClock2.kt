@@ -4,16 +4,20 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import com.smsoft.smartdisplay.utils.getColor
 import com.smsoft.smartdisplay.utils.getStateFromFlow
-import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 
 @Composable
 fun DigitalClock2(
@@ -61,35 +65,39 @@ fun DigitalClock2(
         nums.clear()
     }
 
-    var secondVal by remember { mutableStateOf(0) }
-    if (secondVal != second) {
-        secondVal = second
-
-        initClock(
-            color = primaryColor,
-            width = (width * scale).toInt(),
-            fontSize = fontSize,
-            height = height,
-            isShowSeconds = isShowSeconds,
-            shadowRadius = shadowRadius,
-            animationDuration = animationDuration
-        )
-
-        setTime(
-            isShowSeconds = isShowSeconds,
-            hour = hour,
-            minute = minute,
-            second = secondVal
-        )
+    var isShowSecondsVal by remember { mutableStateOf(isShowSeconds) }
+    if (isShowSecondsVal != isShowSeconds) {
+        isShowSecondsVal = isShowSeconds
+        nums.clear()
     }
+
+    initClock(
+        color = primaryColor,
+        width = (width * scale).toInt(),
+        fontSize = fontSize,
+        height = height,
+        isShowSeconds = isShowSeconds,
+        shadowRadius = shadowRadius,
+        animationDuration = animationDuration
+    )
+
+    setTime(
+        isShowSeconds = isShowSeconds,
+        hour = hour,
+        minute = minute,
+        second = second
+    )
     OnDraw(
-        modifier = Modifier
+        modifier = Modifier,
+        second = second
     )
 }
 
+@Suppress("UNUSED_EXPRESSION")
 @Composable
 fun OnDraw(
-    modifier: Modifier
+    modifier: Modifier,
+    second: Int
 ) {
     Box(
         modifier = Modifier
@@ -100,6 +108,7 @@ fun OnDraw(
             modifier = modifier
                 .fillMaxSize(),
         ) {
+            second
             for (i in nums.indices) {
                 nums[i].onDraw(this)
             }
