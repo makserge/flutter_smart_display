@@ -1,8 +1,6 @@
 package com.smsoft.smartdisplay.utils.m3uparser
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -49,7 +47,6 @@ object M3uParser {
      * @throws IOException if file can't be read
      * @throws IllegalArgumentException if file is not a regular file
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     @Throws(IOException::class)
     fun parse(m3uFile: Path, charset: Charset = Charsets.UTF_8): List<M3uEntry> {
         require(Files.isRegularFile(m3uFile)) { "$m3uFile is not a file" }
@@ -65,7 +62,6 @@ object M3uParser {
      * @param baseDir a base dir for resolving relative paths
      * @return a list of all parsed entries in order
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun parse(m3uContentReader: InputStreamReader, baseDir: Path? = null): List<M3uEntry> {
         return m3uContentReader.buffered().useLines { parse(it, baseDir) }
     }
@@ -79,7 +75,6 @@ object M3uParser {
      * @param baseDir a base dir for resolving relative paths
      * @return a list of all parsed entries in order
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun parse(m3uContent: String, baseDir: Path? = null): List<M3uEntry> {
         return parse(m3uContent.lineSequence(), baseDir)
     }
@@ -92,7 +87,6 @@ object M3uParser {
      * @param entries a list of playlist entries
      * @param charset the encoding to be used to read nested playlist files, defaults to UTF-8
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun resolveNestedPlaylists(
         entries: List<M3uEntry>,
         charset: Charset = Charsets.UTF_8,
@@ -101,7 +95,6 @@ object M3uParser {
     }
 
     // TODO: fix detekt issues
-    @RequiresApi(Build.VERSION_CODES.O)
     @Suppress("NestedBlockDepth", "ReturnCount")
     private fun parse(lines: Sequence<String>, baseDir: Path?): List<M3uEntry> {
         val filtered = lines
@@ -155,7 +148,6 @@ object M3uParser {
         return entries
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun parseSimple(location: String, baseDir: Path?): M3uEntry? {
         return try {
             M3uEntry(MediaLocation(location, baseDir))
@@ -165,7 +157,6 @@ object M3uParser {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun parseExtended(infoMatch: MatchResult, location: String, baseDir: Path?): M3uEntry? {
         val mediaLocation = try {
             MediaLocation(location, baseDir)
@@ -207,7 +198,6 @@ object M3uParser {
         return M3uMetadata(valueByKey)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveRecursively(
         source: List<M3uEntry>,
         charset: Charset,
@@ -224,7 +214,6 @@ object M3uParser {
         return result
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveNestedPlaylist(
         path: Path,
         charset: Charset,

@@ -1,8 +1,6 @@
 package com.smsoft.smartdisplay.di
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.media3.common.AudioAttributes
@@ -95,7 +93,6 @@ class RadioMediaModule {
             .build()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @Provides
     @Singleton
     fun provideNotificationManager(

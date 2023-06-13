@@ -1,8 +1,6 @@
 package com.smsoft.smartdisplay.utils.m3uparser
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import java.net.MalformedURLException
 import java.net.URISyntaxException
 import java.net.URL
@@ -41,7 +39,6 @@ sealed class MediaLocation {
          * @return a MediaLocation instance, either [MediaPath] or [MediaUrl]
          * @throws IllegalArgumentException If the location does not have a valid format
          */
-        @RequiresApi(Build.VERSION_CODES.O)
         operator fun invoke(location: String, dir: Path? = null): MediaLocation {
             return tryParseFileUrl(location)?.let { MediaPath(it) }
                 ?: tryParseUrl(location)?.let { MediaUrl(it) }
@@ -49,7 +46,6 @@ sealed class MediaLocation {
                 ?: throw IllegalArgumentException("Could not parse as URL or path: $location")
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         private fun tryParsePath(location: String, dir: Path?): Path? {
             return try {
                 if (dir == null) {
@@ -63,7 +59,6 @@ sealed class MediaLocation {
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         private fun tryParseFileUrl(location: String): Path? {
             return try {
                 val url = tryParseUrl(location) ?: return null
@@ -102,7 +97,6 @@ sealed class MediaLocation {
  *
  * @param path the local file path
  */
-@RequiresApi(Build.VERSION_CODES.O)
 class MediaPath internal constructor(val path: Path) : MediaLocation() {
     override val url: URL by lazy { path.toUri().toURL() }
 
