@@ -3,7 +3,11 @@ package com.smsoft.smartdisplay.utils.mpd
 import com.smsoft.smartdisplay.utils.mpd.data.MPDState
 import com.smsoft.smartdisplay.utils.mpd.event.StatusChangeListener
 import de.dixieflatline.mpcw.client.CommunicationException
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 const val DEFAULT_STATUS_UPDATE_DELAY = 5000L
 
@@ -114,7 +118,10 @@ class MPDStatusMonitor(
                     statusChangeListener.libraryStateChanged(oldUpdating)
                 }
             } catch (e: CommunicationException) {
-                mpd.reconnect()
+                try {
+                    mpd.reconnect()
+                } catch (ignored: Exception) {
+                }
             } catch (ignored: Exception) {
             }
             delay(delay)

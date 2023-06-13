@@ -171,4 +171,5 @@
     <string name="push_button">Push button</string>
     <string name="push_button_topic">MQTT topic</string>
     <string name="doorbell_back_timer_delay">Back timer delay</string>
+    <string name="no_sensors_items">No sensors items found. Click here to add item</string>
 </resources>
