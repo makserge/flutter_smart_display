@@ -28,6 +28,7 @@ class RadioMediaService : MediaSessionService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    @UnstableApi
     override fun onDestroy() {
         super.onDestroy()
         mediaSession.run {
@@ -36,6 +37,7 @@ class RadioMediaService : MediaSessionService() {
                 player.release()
             }
         }
+        notificationManager.removeNotification()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession = mediaSession
