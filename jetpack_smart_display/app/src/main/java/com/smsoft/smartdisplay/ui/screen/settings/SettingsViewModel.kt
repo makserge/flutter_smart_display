@@ -1,25 +1,42 @@
 package com.smsoft.smartdisplay.ui.screen.settings
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
 import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
 import info.mqtt.android.service.QoS
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
+@SuppressLint("StaticFieldLeak")
+@UnstableApi
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     val dataStore: DataStore<Preferences>,
     private val mqttClient: MqttAndroidClient
 ) : ViewModel() {
+
+    private val asrPermissionsStateInt = MutableStateFlow(false)
+    val asrPermissionsState = asrPermissionsStateInt.asStateFlow()
 
     val clockType = getParamFlow(
         dataStore = dataStore,
@@ -88,6 +105,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         updateDoorbellAlarmTopic()
+        updateAsrServiceState()
     }
 
     private fun updateDoorbellAlarmTopic() {
@@ -113,6 +131,43 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+
+    @UnstableApi
+    private fun updateAsrServiceState() {
+        viewModelScope.launch {
+            val enabled = getParamFlow(
+                dataStore = dataStore,
+                defaultValue = false
+            ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.ASR_ENABLED.key)] ?: false }
+            enabled.collectLatest { newValue ->
+                if (newValue as Boolean) {
+                    asrPermissionsStateInt.value = true
+                } else {
+                    asrPermissionsStateInt.value = false
+                    context.stopService(Intent(context, SpeechRecognitionService::class.java))
+                }
+            }
+        }
+    }
+
+    fun startAsrService() {
+        asrPermissionsStateInt.value = false
+
+        viewModelScope.launch {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, SpeechRecognitionService::class.java)
+            )
+        }
+    }
+
+    fun disableAsr() {
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[booleanPreferencesKey(PreferenceKey.ASR_ENABLED.key)] = false
+            }
+        }
+    }
 }
 
 const val MQTT_SERVER_DEFAULT_HOST = "localhost"
@@ -120,5 +175,5 @@ const val MQTT_SERVER_DEFAULT_PORT = "1883"
 const val MPD_SERVER_DEFAULT_HOST = ""
 const val MPD_SERVER_DEFAULT_PORT = "6600"
 const val DOORBELL_ALARM_DEFAULT_TOPIC = "doorbell"
-const val DOORBELL_STREAM_DEFAULT_URL = "rtsp://*"
+const val DOORBELL_STREAM_DEFAULT_URL = "rtsp://camera:Camera12@192.168.8.130/live/ch00_0"
 const val DOORBELL_BACK_TIMER_DEFAULT_DELAY = 10F

@@ -12,9 +12,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import com.jamal.composeprefs.ui.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
+import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
+import com.smsoft.smartdisplay.ui.composable.settings.asrSettings
 import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
 import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
 import com.smsoft.smartdisplay.ui.composable.settings.pushButtonSettings
@@ -23,6 +26,7 @@ import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
 import com.smsoft.smartdisplay.ui.composable.settings.weatherSettings
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
+@UnstableApi
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier
@@ -80,6 +84,8 @@ fun SettingsScreen(
     val pushButtonTopic by viewModel.pushButtonTopic.collectAsStateWithLifecycle(
         initialValue = ""
     )
+
+    val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier
@@ -139,6 +145,21 @@ fun SettingsScreen(
                 modifier = Modifier,
                 scope = this,
                 topic = pushButtonTopic.toString(),
+            )
+            asrSettings (
+                modifier = Modifier,
+                scope = this
+            )
+        }
+        if (asrPermissionsState.value) {
+            CheckRecordAudioPermission(
+                modifier = Modifier,
+                onGranted = {
+                    viewModel.startAsrService()
+                },
+                onCancel = {
+                    viewModel.disableAsr()
+                }
             )
         }
     }

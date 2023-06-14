@@ -1,17 +1,27 @@
 package com.smsoft.smartdisplay.utils
 
 import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.app.NotificationCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
+import com.smsoft.smartdisplay.ui.screen.MainActivity
+import com.smsoft.smartdisplay.ui.screen.dashboard.APP_CHANNEL
 import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_HOST
 import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_HOST
@@ -113,4 +123,29 @@ fun getMQTTHostCredentials(dataStore: DataStore<Preferences>) : String {
         uri = "tcp://" + host.trim() + ":" + port.trim()
     }
     return uri
+}
+
+@UnstableApi
+fun getForegroundNotification(
+    context: Context,
+
+): Notification {
+    val channelId = APP_CHANNEL
+    val channelName = APP_CHANNEL
+    val notificationChannel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.createNotificationChannel(notificationChannel)
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+    }
+    val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    val pendingIntent = PendingIntent.getActivity(context, 0, intent, pendingIntentFlags)
+
+    val notificationCompat = NotificationCompat.Builder(context, channelName)
+        .setAutoCancel(true)
+        .setContentTitle(context.getString(R.string.app_name))
+        .setContentIntent(pendingIntent)
+        .setWhen(System.currentTimeMillis())
+        .setSmallIcon(R.mipmap.ic_launcher)
+    return notificationCompat.build()
 }
