@@ -1,26 +1,26 @@
 package com.smsoft.smartdisplay.ui.screen.dashboard
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.smsoft.smartdisplay.R
+import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.MQTTServer
 import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.ui.screen.MainActivity
+import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.utils.getForegroundNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,12 +37,18 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
 @HiltViewModel
+@UnstableApi
+@SuppressLint("StaticFieldLeak")
 class DashboardViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val dataStore: DataStore<Preferences>,
     private val mqttClient: MqttAndroidClient
 ) : ViewModel() {
     private val doorBellAlarmStateInt = MutableStateFlow(false)
     val doorBellAlarmState = doorBellAlarmStateInt.asStateFlow()
+
+    private val asrPermissionsStateInt = MutableStateFlow(false)
+    val asrPermissionsState = asrPermissionsStateInt.asStateFlow()
 
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
@@ -51,6 +57,7 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             getMQTTTopics()
             initMQTT()
+            initASR()
         }
     }
 
@@ -127,15 +134,14 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    @UnstableApi
     private fun initMQTT() {
-        CoroutineScope(Dispatchers.IO).launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val mqttServer = getMQTTServerCredentials(dataStore)
             mqttClient.apply {
                 setForegroundService(
                     notification = getForegroundNotification(
-                        context = context,
-                        channelId = MQTT_CHANNEL,
-                        channelName = MQTT_CHANNEL
+                        context = context
                     )
                 )
             }
@@ -193,31 +199,45 @@ class DashboardViewModel @Inject constructor(
             )
         }
     }
-    private fun getForegroundNotification(
-        context: Context,
-        channelId: String,
-        channelName: String
-    ): Notification {
-        val notificationChannel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(notificationChannel)
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, pendingIntentFlags)
 
-        val notificationCompat = NotificationCompat.Builder(context, channelName)
-            .setAutoCancel(true)
-            .setContentTitle(context.getString(R.string.app_name))
-            .setContentIntent(pendingIntent)
-            .setWhen(System.currentTimeMillis())
-            .setSmallIcon(R.mipmap.ic_launcher)
-        return notificationCompat.build()
+    @UnstableApi
+    private fun initASR() {
+        viewModelScope.launch {
+            val data = dataStore.data.first()
+            var isEnabled = false
+            data[booleanPreferencesKey(PreferenceKey.ASR_ENABLED.key)]?.let {
+                isEnabled = it
+            }
+            if (isEnabled) {
+                asrPermissionsStateInt.value = true
+            } else {
+                asrPermissionsStateInt.value = false
+                context.stopService(Intent(context, SpeechRecognitionService::class.java))
+            }
+        }
     }
 
-    private val MQTT_CHANNEL = "MQTTchannnel"
+    fun startAsrService() {
+        asrPermissionsStateInt.value = false
+
+        viewModelScope.launch {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, SpeechRecognitionService::class.java)
+            )
+        }
+    }
+
+    fun disableAsr() {
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[booleanPreferencesKey(PreferenceKey.ASR_ENABLED.key)] = false
+            }
+        }
+    }
+
     private val MQTT_PRESS_BUTTON_MESSAGE = "1"
 }
 
+const val APP_CHANNEL = "SmartDisplaychannnel"
 const val PUSH_BUTTON_DEFAULT_TOPIC = "pushbutton"

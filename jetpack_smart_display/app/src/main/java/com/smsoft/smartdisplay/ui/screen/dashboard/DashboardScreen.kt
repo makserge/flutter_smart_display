@@ -18,6 +18,7 @@ import androidx.media3.common.util.UnstableApi
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
+import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
@@ -42,6 +43,8 @@ fun DashboardScreen(
         }
         return
     }
+
+    val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState()
     val pages = DashboardItem.values()
@@ -79,6 +82,17 @@ fun DashboardScreen(
             pagerState = pagerState,
             pageCount = pages.size
         )
+        if (asrPermissionsState.value) {
+            CheckRecordAudioPermission(
+                modifier = Modifier,
+                onGranted = {
+                    viewModel.startAsrService()
+                },
+                onCancel = {
+                    viewModel.disableAsr()
+                }
+            )
+        }
     }
 }
 
