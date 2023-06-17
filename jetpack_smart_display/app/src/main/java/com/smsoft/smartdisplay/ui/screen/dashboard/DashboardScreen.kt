@@ -19,6 +19,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
+import com.smsoft.smartdisplay.ui.composable.asr.SpeechRecognitionAlert
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
@@ -45,6 +46,7 @@ fun DashboardScreen(
     }
 
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
+    val asrRecognitionState = viewModel.asrRecognitionState.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState()
     val pages = DashboardItem.values()
@@ -90,6 +92,15 @@ fun DashboardScreen(
                 },
                 onCancel = {
                     viewModel.disableAsr()
+                }
+            )
+        }
+        if (asrRecognitionState.value != null) {
+            SpeechRecognitionAlert(
+                modifier = Modifier,
+                text = asrRecognitionState.value!!,
+                onDismiss = {
+                    viewModel.cancelAsrAction()
                 }
             )
         }

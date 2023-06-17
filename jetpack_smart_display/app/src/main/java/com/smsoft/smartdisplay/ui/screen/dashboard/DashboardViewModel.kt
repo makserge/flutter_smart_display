@@ -55,6 +55,10 @@ class DashboardViewModel @Inject constructor(
     private val asrPermissionsStateInt = MutableStateFlow(false)
     val asrPermissionsState = asrPermissionsStateInt.asStateFlow()
 
+    private val asrRecognitionStateInt = MutableStateFlow<String?>(null)
+    val asrRecognitionState = asrRecognitionStateInt.asStateFlow()
+
+
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
 
@@ -241,10 +245,10 @@ class DashboardViewModel @Inject constructor(
 
                             }
                             is SpeechRecognitionState.Result -> {
-
+                                asrRecognitionStateInt.value = state.word
                             }
                             SpeechRecognitionState.WakeWordDetected -> {
-
+                                asrRecognitionStateInt.value = ""
                             }
                         }
                     }
@@ -270,6 +274,10 @@ class DashboardViewModel @Inject constructor(
                 preferences[booleanPreferencesKey(PreferenceKey.ASR_ENABLED.key)] = false
             }
         }
+    }
+
+    fun cancelAsrAction() {
+        asrRecognitionStateInt.value = null
     }
 
     private val MQTT_PRESS_BUTTON_MESSAGE = "1"
