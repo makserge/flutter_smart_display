@@ -15,7 +15,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.MQTTServer
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.service.asr.SpeechRecognitionHandler
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
+import com.smsoft.smartdisplay.service.asr.SpeechRecognitionState
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.utils.getForegroundNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,8 +25,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions
@@ -42,7 +46,8 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataStore: DataStore<Preferences>,
-    private val mqttClient: MqttAndroidClient
+    private val mqttClient: MqttAndroidClient,
+    private val speechRecognitionHandler: SpeechRecognitionHandler
 ) : ViewModel() {
     private val doorBellAlarmStateInt = MutableStateFlow(false)
     val doorBellAlarmState = doorBellAlarmStateInt.asStateFlow()
@@ -53,12 +58,13 @@ class DashboardViewModel @Inject constructor(
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
 
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             getMQTTTopics()
             initMQTT()
-            initASR()
         }
+        initASR()
     }
 
     fun resetDoorBellAlarmState() {
@@ -136,48 +142,46 @@ class DashboardViewModel @Inject constructor(
 
     @UnstableApi
     private fun initMQTT() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val mqttServer = getMQTTServerCredentials(dataStore)
-            mqttClient.apply {
-                setForegroundService(
-                    notification = getForegroundNotification(
-                        context = context
-                    )
+        val mqttServer = getMQTTServerCredentials(dataStore)
+        mqttClient.apply {
+            setForegroundService(
+                notification = getForegroundNotification(
+                    context = context
                 )
-            }
-            val mqttConnectOptions = MqttConnectOptions().apply {
-                userName = mqttServer.login.trim()
-                password = mqttServer.password.trim().toCharArray()
-                isAutomaticReconnect = true
-                isCleanSession = false
-            }
-            val mqttClientListener = object : IMqttActionListener {
-                override fun onSuccess(
-                    asyncActionToken: IMqttToken
-                ) {
-                    val disconnectedBufferOptions = DisconnectedBufferOptions().apply {
-                        isBufferEnabled = true
-                        bufferSize = 100
-                        isPersistBuffer = false
-                        isDeleteOldestMessages = false
-                    }
-                    mqttClient.setBufferOpts(disconnectedBufferOptions)
-                    mqttClient.addCallback(mqttClientCallback)
-                }
-
-                override fun onFailure(
-                    asyncActionToken: IMqttToken?,
-                    exception: Throwable?
-                ) {
-                    Log.d("MQTT", "Failed to connect")
-                }
-            }
-            mqttClient.connect(
-                options = mqttConnectOptions,
-                userContext = null,
-                callback = mqttClientListener
             )
         }
+        val mqttConnectOptions = MqttConnectOptions().apply {
+            userName = mqttServer.login.trim()
+            password = mqttServer.password.trim().toCharArray()
+            isAutomaticReconnect = true
+            isCleanSession = false
+        }
+        val mqttClientListener = object : IMqttActionListener {
+            override fun onSuccess(
+                asyncActionToken: IMqttToken
+            ) {
+                val disconnectedBufferOptions = DisconnectedBufferOptions().apply {
+                    isBufferEnabled = true
+                    bufferSize = 100
+                    isPersistBuffer = false
+                    isDeleteOldestMessages = false
+                }
+                mqttClient.setBufferOpts(disconnectedBufferOptions)
+                mqttClient.addCallback(mqttClientCallback)
+            }
+
+            override fun onFailure(
+                asyncActionToken: IMqttToken?,
+                exception: Throwable?
+            ) {
+                Log.d("MQTT", "Failed to connect")
+            }
+        }
+        mqttClient.connect(
+            options = mqttConnectOptions,
+            userContext = null,
+            callback = mqttClientListener
+        )
     }
 
     private fun getMQTTServerCredentials(
@@ -213,6 +217,38 @@ class DashboardViewModel @Inject constructor(
             } else {
                 asrPermissionsStateInt.value = false
                 context.stopService(Intent(context, SpeechRecognitionService::class.java))
+            }
+        }
+
+        viewModelScope.launch {
+            speechRecognitionHandler.isServiceStarted.asStateFlow().collect { isStarted ->
+                if (isStarted) {
+                    val speechRecognitionState = speechRecognitionHandler.speechRecognitionState!!.stateIn(
+                        initialValue = SpeechRecognitionState.Initial,
+                        scope = viewModelScope,
+                        started = WhileSubscribed(5000)
+                    )
+                    speechRecognitionState.collect { state ->
+                        Log.d("DashboardViewModel", state.toString())
+                        when (state) {
+                            is SpeechRecognitionState.Error -> {
+
+                            }
+                            SpeechRecognitionState.Initial -> {
+
+                            }
+                            SpeechRecognitionState.Ready -> {
+
+                            }
+                            is SpeechRecognitionState.Result -> {
+
+                            }
+                            SpeechRecognitionState.WakeWordDetected -> {
+
+                            }
+                        }
+                    }
+                }
             }
         }
     }

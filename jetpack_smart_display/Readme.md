@@ -25,3 +25,9 @@ https://github.com/ramzan/Atmostate
 MPD related code from
 https://github.com/thunderace/mpd-control
 https://github.com/20centaurifux/mpcw.client
+
+ASR service from
+https://github.com/alphacep/vosk-android-demo
+
+Voice model for ASR taken from
+https://github.com/janvarev/Irene-Voice-Assistant

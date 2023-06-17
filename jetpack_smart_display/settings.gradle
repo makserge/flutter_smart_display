@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Smart Display"
 include ':app'
+include ':models'
