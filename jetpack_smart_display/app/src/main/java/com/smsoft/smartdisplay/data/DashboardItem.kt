@@ -6,6 +6,7 @@ enum class DashboardItem {
     SENSORS,
     INTERNET_RADIO,
     DOORBELL;
+
     companion object {
         fun getItem(index: Int): DashboardItem {
             return when (index) {

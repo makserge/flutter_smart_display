@@ -82,6 +82,7 @@ class SpeechRecognitionService : Service() {
                     if (word == null) {
                         if (isInRecognizingMode) {
                             isInRecognizingMode = false
+                            trySend(SpeechRecognitionState.Ready)
                         }
                         return
                     }
@@ -100,9 +101,12 @@ class SpeechRecognitionService : Service() {
                 }
 
                 override fun onFinalResult(hypothesis: String?) {
+                    isInRecognizingMode = false
+                    trySend(SpeechRecognitionState.Ready)
                 }
 
                 override fun onError(exception: Exception?) {
+                    isInRecognizingMode = false
                     trySend(SpeechRecognitionState.Error(message = exception!!.message.toString()))
                 }
 

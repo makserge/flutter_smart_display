@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui
 
-import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.NavHost
@@ -15,7 +14,6 @@ import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.settings.SettingsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 
-@SuppressLint("AuthLeak")
 @UnstableApi
 @Composable
 fun AppNavigation() {
@@ -23,12 +21,7 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                onDoorBellAlarm = {
-                    navController.navigate(Screen.Doorbell.route)
-                },
-                onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
-                }
+                navController = navController
             )
         }
 
@@ -70,3 +63,4 @@ fun AppNavigation() {
         }
     }
 }
+

@@ -178,4 +178,9 @@
     <string name="asr_permission">Record audio permission is required for ASR feature. Please grant the permission</string>
     <string name="asr_permission_confirm">Request permission</string>
     <string name="asr_wakeword">джарвис</string>
+    <string name="clock_command">часы</string>
+    <string name="weather_command">погода</string>
+    <string name="sensors_command">датчики</string>
+    <string name="internet_radio_command">радио</string>
+    <string name="doorbell_command">звонок</string>
 </resources>

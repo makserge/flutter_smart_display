@@ -58,10 +58,12 @@ class DashboardViewModel @Inject constructor(
     private val asrRecognitionStateInt = MutableStateFlow<String?>(null)
     val asrRecognitionState = asrRecognitionStateInt.asStateFlow()
 
+    private val asrCommandStateInt = MutableStateFlow<String?>(null)
+    val asrCommandState = asrCommandStateInt.asStateFlow()
+
 
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
-
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -235,20 +237,20 @@ class DashboardViewModel @Inject constructor(
                     speechRecognitionState.collect { state ->
                         Log.d("DashboardViewModel", state.toString())
                         when (state) {
-                            is SpeechRecognitionState.Error -> {
-
-                            }
-                            SpeechRecognitionState.Initial -> {
-
-                            }
-                            SpeechRecognitionState.Ready -> {
-
+                            is SpeechRecognitionState.Initial,
+                                SpeechRecognitionState.Ready -> {
+                                asrRecognitionStateInt.value = null
                             }
                             is SpeechRecognitionState.Result -> {
                                 asrRecognitionStateInt.value = state.word
+                                processCommand(state.word)
+                                asrRecognitionStateInt.value = null
                             }
                             SpeechRecognitionState.WakeWordDetected -> {
                                 asrRecognitionStateInt.value = ""
+                            }
+                            is SpeechRecognitionState.Error -> {
+
                             }
                         }
                     }
@@ -278,6 +280,16 @@ class DashboardViewModel @Inject constructor(
 
     fun cancelAsrAction() {
         asrRecognitionStateInt.value = null
+    }
+
+    fun resetAsrCommandState() {
+        asrCommandStateInt.value = null
+    }
+
+    private fun processCommand(
+        word: String
+    ) {
+        asrCommandStateInt.value = word
     }
 
     private val MQTT_PRESS_BUTTON_MESSAGE = "1"
