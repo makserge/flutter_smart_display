@@ -29,7 +29,7 @@ fun RadioMediaPlayerControls(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            painter = painterResource(R.drawable.skip_previous_48),
+            painter = painterResource(R.drawable.ic_skip_previous_48),
             contentDescription = stringResource(com.smsoft.smartdisplay.R.string.previous_button),
             modifier = Modifier
                 .clip(CircleShape)
@@ -51,7 +51,7 @@ fun RadioMediaPlayerControls(
                 .size(80.dp)
         )
         Icon(
-            painter = painterResource(R.drawable.skip_next_48),
+            painter = painterResource(R.drawable.ic_skip_next_48),
             contentDescription = stringResource(com.smsoft.smartdisplay.R.string.next_button),
             modifier = Modifier
                 .clip(CircleShape)

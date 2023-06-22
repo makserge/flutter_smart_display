@@ -9,29 +9,33 @@ import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.utils.getForegroundNotification
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
+import org.vosk.Model
+import org.vosk.Recognizer
 import org.vosk.android.RecognitionListener
 import org.vosk.android.SpeechService
+import org.vosk.android.StorageService
 import javax.inject.Inject
 
 @UnstableApi
 @AndroidEntryPoint
 class SpeechRecognitionService : Service() {
     @Inject
-    lateinit var speechService: SpeechService
-
-    @Inject
     lateinit var speechRecognitionHandler: SpeechRecognitionHandler
 
     private val STICKY_NOTIFICATION_ID = 77
 
     private var isInRecognizingMode = false
+
+    private lateinit var speechService: SpeechService
     private lateinit var wakeWord: String
 
     override fun onCreate() {
@@ -39,7 +43,9 @@ class SpeechRecognitionService : Service() {
         startForeground()
         wakeWord = resources.getString(R.string.asr_wakeword)
 
-        initVosk()
+        CoroutineScope(Dispatchers.IO).launch {
+            initVosk()
+        }
     }
 
     override fun onDestroy() {
@@ -70,6 +76,15 @@ class SpeechRecognitionService : Service() {
     }
 
     private fun initVosk() {
+        val outputPath = StorageService.sync(
+            this,
+            MODEL,
+            TARGET_PATH
+        )
+        val model = Model(outputPath)
+        val rec = Recognizer(model, SAMPLE_RATE)
+        speechService = SpeechService(rec, SAMPLE_RATE)
+
         var listener: RecognitionListener? = null
         speechRecognitionHandler.speechRecognitionState = callbackFlow {
             listener = object: RecognitionListener {

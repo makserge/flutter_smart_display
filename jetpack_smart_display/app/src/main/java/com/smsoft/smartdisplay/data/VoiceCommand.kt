@@ -16,13 +16,13 @@ enum class VoiceCommand(val commandId: Int, val page: DashboardItem) {
         fun getDashboardItem(
             context: Context,
             command: String
-        ): DashboardItem {
+        ): DashboardItem? {
             if (resourceCache.isEmpty()) {
                 resourceCache = VoiceCommand.values().associate {
                     context.getString(it.commandId) to (it.page)
                 }
             }
-            return resourceCache[command] ?: DashboardItem.CLOCK
+            return resourceCache[command]
         }
     }
 }

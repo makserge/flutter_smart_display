@@ -183,4 +183,6 @@
     <string name="sensors_command">датчики</string>
     <string name="internet_radio_command">радио</string>
     <string name="doorbell_command">звонок</string>
+    <string name="asr_sound_enabled">Sound enabled</string>
+    <string name="asr_sound_volume">Sound volume</string>
 </resources>

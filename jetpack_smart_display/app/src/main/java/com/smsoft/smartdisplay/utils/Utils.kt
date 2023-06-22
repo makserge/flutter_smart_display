@@ -8,18 +8,29 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.AssetDataSource
+import androidx.media3.datasource.DataSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
+import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
+import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl.getAudioAttributes
+import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.MainActivity
 import com.smsoft.smartdisplay.ui.screen.dashboard.APP_CHANNEL
 import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_HOST
@@ -31,6 +42,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
+import java.net.NetworkInterface
 
 @Composable
 fun getStateFromFlow(
@@ -60,7 +72,19 @@ fun getIcon(
     val res = item.ifEmpty {
         "empty"
     }
-    return context.resources.getIdentifier("outline_" + res + "_24", "drawable", context.packageName)
+    var id =
+        context.resources.getIdentifier(
+            "ic_outline_" + res + "_48",
+            "drawable",
+            context.packageName
+        )
+    if (id == 0) {
+        id = getIcon(
+            context = context,
+            item = ""
+        )
+    }
+    return id
 }
 
 fun getRadioType(dataStore: DataStore<Preferences>): RadioType {
@@ -108,7 +132,9 @@ fun getRadioSettings(dataStore: DataStore<Preferences>): MPDCredentials {
     )
 }
 
-fun getMQTTHostCredentials(dataStore: DataStore<Preferences>) : String {
+fun getMQTTHostCredentials(
+    dataStore: DataStore<Preferences>
+) : String {
     var uri: String
     runBlocking {
         val data = dataStore.data.first()
@@ -148,4 +174,59 @@ fun getForegroundNotification(
         .setWhen(System.currentTimeMillis())
         .setSmallIcon(R.mipmap.ic_launcher)
     return notificationCompat.build()
+}
+
+fun getMac(): String? {
+    return try {
+        NetworkInterface.getNetworkInterfaces()
+            .toList()
+            .find { networkInterface -> networkInterface.name.equals("wlan0", ignoreCase = true) }
+            ?.hardwareAddress
+            ?.joinToString(separator = "") { byte -> "%02X".format(byte) }
+    } catch (ex: Exception) {
+        null
+    }
+}
+
+@UnstableApi
+fun playAssetSound(
+    context: Context,
+    dataStore: DataStore<Preferences>,
+    fileName: String
+) {
+    var isEnabled = ASR_SOUND_ENABLED_DEFAULT
+    var soundVolume = ASR_SOUND_VOLUME_DEFAULT
+
+    runBlocking {
+        val data = dataStore.data.first()
+        data[booleanPreferencesKey(PreferenceKey.ASR_SOUND_ENABLED.key)]?.let {
+            isEnabled = it
+        }
+        data[floatPreferencesKey(PreferenceKey.ASR_SOUND_VOLUME.key)]?.let {
+            soundVolume = it
+        }
+    }
+
+    if (!isEnabled) {
+        return
+    }
+
+    val dataSourceFactory = DataSource.Factory {
+        AssetDataSource(context)
+    }
+    val mediaSource = ProgressiveMediaSource
+        .Factory(dataSourceFactory)
+        .createMediaSource(MediaItem.fromUri(Uri.parse(fileName)))
+
+    val exoPlayer = ExoPlayerImpl.getExoPlayer(
+        context = context,
+        audioAttributes = getAudioAttributes()
+    )
+
+    exoPlayer.apply {
+        addMediaSource(mediaSource)
+        volume = soundVolume
+        prepare()
+        playWhenReady = true
+    }
 }

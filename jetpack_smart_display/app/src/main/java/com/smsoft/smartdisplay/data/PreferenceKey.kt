@@ -100,5 +100,7 @@ enum class PreferenceKey(val key: String, val title: Int) {
     DOORBELL_STREAM_URL("doorbellStreamUrl", R.string.doorbell_stream_url),
     DOORBELL_BACK_TIMER_DELAY("doorbellBackTimerDelay", R.string.doorbell_back_timer_delay),
     PUSH_BUTTON_TOPIC("pushButtonTopic", R.string.push_button_topic),
-    ASR_ENABLED("asrEnabled", R.string.asr_enabled);
+    ASR_ENABLED("asrEnabled", R.string.asr_enabled),
+    ASR_SOUND_ENABLED("asrSoundEnabled", R.string.asr_sound_enabled),
+    ASR_SOUND_VOLUME("asrSoundVolume", R.string.asr_sound_volume);
 }

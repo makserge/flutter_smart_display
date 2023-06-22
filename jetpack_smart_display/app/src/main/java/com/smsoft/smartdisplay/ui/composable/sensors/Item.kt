@@ -2,7 +2,14 @@ package com.smsoft.smartdisplay.ui.composable.sensors
 
 import android.content.Context
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -108,6 +115,7 @@ fun Item(
                 ) {
                     Icon(
                         modifier = Modifier
+                            .size(48.dp)
                             .padding(
                                 top = 20.dp,
                                 end = 10.dp
@@ -122,6 +130,7 @@ fun Item(
                     )
                     Icon(
                         modifier = Modifier
+                            .size(48.dp)
                             .padding(
                                 top = 10.dp,
                                 end = 10.dp
@@ -156,7 +165,8 @@ fun TextWithIcon(
                 modifier = Modifier
                     .padding(
                         end = 3.dp
-                    ),
+                    )
+                    .size(48.dp),
                 painter = painterResource(
                     id = getIcon(
                         context = context,
@@ -169,7 +179,7 @@ fun TextWithIcon(
         Text(
             modifier = Modifier,
             text = text,
-            style = MaterialTheme.typography.subtitle1,
+            style = MaterialTheme.typography.h5,
             color = MaterialTheme.colors.secondary,
             textAlign = TextAlign.Center
         )
@@ -209,14 +219,17 @@ fun TextWithUnitIcon(
         Text(
             modifier = Modifier,
             text = text,
-            style = MaterialTheme.typography.subtitle2,
+            style = MaterialTheme.typography.h6,
             color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )
         Text(
-            modifier = Modifier,
+            modifier = Modifier
+                .padding(
+                    end = 10.dp
+                ),
             text = unit,
-            style = MaterialTheme.typography.subtitle2,
+            style = MaterialTheme.typography.h6,
             color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )

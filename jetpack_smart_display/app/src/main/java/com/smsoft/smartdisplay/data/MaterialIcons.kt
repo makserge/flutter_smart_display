@@ -6,6 +6,6 @@ object MaterialIcons {
         "lightbulb",
         "toggle_on",
         "thermostat",
-        "water_drop",
+        "humidity_low",
     )
 }

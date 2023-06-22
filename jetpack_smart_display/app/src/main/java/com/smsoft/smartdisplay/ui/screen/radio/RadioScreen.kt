@@ -77,9 +77,9 @@ fun RadioScreen(
                         durationString = if (viewModel.duration > 0) viewModel.formatDuration(viewModel.duration) else "",
                         playResourceProvider = {
                             if (viewModel.isPlaying) {
-                                R.drawable.pause_48
+                                R.drawable.ic_pause_48
                             } else {
-                                R.drawable.play_arrow_48
+                                R.drawable.ic_play_arrow_48
                             }
                         },
                         progressProvider = { Pair(viewModel.progress, viewModel.progressString) },

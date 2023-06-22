@@ -31,3 +31,7 @@ https://github.com/alphacep/vosk-android-demo
 
 Voice model for ASR taken from
 https://github.com/janvarev/Irene-Voice-Assistant
+
+Sounds are taken from
+
+https://github.com/Kitt-AI/snowboy

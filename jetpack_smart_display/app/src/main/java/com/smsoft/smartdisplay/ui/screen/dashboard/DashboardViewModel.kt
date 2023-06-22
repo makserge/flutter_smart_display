@@ -45,7 +45,7 @@ import javax.inject.Inject
 @SuppressLint("StaticFieldLeak")
 class DashboardViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val dataStore: DataStore<Preferences>,
+    val dataStore: DataStore<Preferences>,
     private val mqttClient: MqttAndroidClient,
     private val speechRecognitionHandler: SpeechRecognitionHandler
 ) : ViewModel() {
@@ -243,7 +243,7 @@ class DashboardViewModel @Inject constructor(
                             }
                             is SpeechRecognitionState.Result -> {
                                 asrRecognitionStateInt.value = state.word
-                                processCommand(state.word)
+                                asrCommandStateInt.value = state.word
                                 asrRecognitionStateInt.value = null
                             }
                             SpeechRecognitionState.WakeWordDetected -> {
@@ -284,12 +284,6 @@ class DashboardViewModel @Inject constructor(
 
     fun resetAsrCommandState() {
         asrCommandStateInt.value = null
-    }
-
-    private fun processCommand(
-        word: String
-    ) {
-        asrCommandStateInt.value = word
     }
 
     private val MQTT_PRESS_BUTTON_MESSAGE = "1"

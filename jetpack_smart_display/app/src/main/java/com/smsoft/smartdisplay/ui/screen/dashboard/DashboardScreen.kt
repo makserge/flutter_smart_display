@@ -17,6 +17,7 @@ import com.smsoft.smartdisplay.service.asr.processCommand
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
 import com.smsoft.smartdisplay.ui.composable.asr.SpeechRecognitionAlert
 import com.smsoft.smartdisplay.ui.composable.dashboard.HorizontalPagerScreen
+import com.smsoft.smartdisplay.utils.playAssetSound
 import kotlinx.coroutines.launch
 
 @UnstableApi
@@ -48,6 +49,13 @@ fun DashboardScreen(
                     command = asrCommandState.value!!,
                     onPageChanged = {
                         page.value = it
+                    },
+                    onError = {
+                        playAssetSound(
+                            context = context,
+                            dataStore = viewModel.dataStore,
+                            fileName = ERROR_SOUND
+                        )
                     }
                 )
             }
@@ -58,7 +66,13 @@ fun DashboardScreen(
 
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
     val asrRecognitionState = viewModel.asrRecognitionState.collectAsStateWithLifecycle()
-
+    if (asrRecognitionState.value != null && asrRecognitionState.value!! == "") {
+        playAssetSound(
+            context = context,
+            dataStore = viewModel.dataStore,
+            fileName = WAKE_WORD_SOUND
+        )
+    }
     HorizontalPagerScreen(
         currentPage = page.value,
         onSettingsClick = {
@@ -89,3 +103,6 @@ fun DashboardScreen(
         )
     }
 }
+
+const val WAKE_WORD_SOUND = "asset:///sounds/ding.wav"
+const val ERROR_SOUND = "asset:///sounds/dong.wav"
