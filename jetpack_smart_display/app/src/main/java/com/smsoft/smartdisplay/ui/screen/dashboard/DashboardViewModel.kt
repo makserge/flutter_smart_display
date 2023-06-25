@@ -61,6 +61,7 @@ class DashboardViewModel @Inject constructor(
     private val asrCommandStateInt = MutableStateFlow<String?>(null)
     val asrCommandState = asrCommandStateInt.asStateFlow()
 
+    private val pushButtonState = MutableStateFlow(PUSH_BUTTON_DEFAULT_STATE)
 
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
@@ -77,17 +78,29 @@ class DashboardViewModel @Inject constructor(
         doorBellAlarmStateInt.value = false
     }
 
-    fun sendPressButtonEvent() {
+    fun togglePressButton() {
+        pushButtonState.value = !pushButtonState.value
+        sendPressButtonEvent(
+            message = if (pushButtonState.value) {
+                MQTT_PRESS_BUTTON_ON_MESSAGE
+            } else {
+                MQTT_PRESS_BUTTON_OFF_MESSAGE
+            }
+        )
+    }
+
+    fun sendPressButtonEvent(
+        message: String
+    ) {
         if (!mqttClient.isConnected) {
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val message = MqttMessage().apply {
-                payload = MQTT_PRESS_BUTTON_MESSAGE.toByteArray()
-            }
             mqttClient.publish(
                 topic = pushButtonTopic,
-                message = message,
+                message = MqttMessage().apply {
+                    payload = message.toByteArray()
+                },
                 userContext = null,
                 callback = object: IMqttActionListener {
                     override fun onSuccess(asyncActionToken: IMqttToken?) {
@@ -286,8 +299,10 @@ class DashboardViewModel @Inject constructor(
         asrCommandStateInt.value = null
     }
 
-    private val MQTT_PRESS_BUTTON_MESSAGE = "1"
 }
 
 const val APP_CHANNEL = "SmartDisplaychannnel"
 const val PUSH_BUTTON_DEFAULT_TOPIC = "pushbutton"
+const val PUSH_BUTTON_DEFAULT_STATE = false
+const val MQTT_PRESS_BUTTON_ON_MESSAGE = "1"
+const val MQTT_PRESS_BUTTON_OFF_MESSAGE = "0"

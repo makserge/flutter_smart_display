@@ -59,6 +59,11 @@ fun DashboardScreen(
                             dataStore = viewModel.dataStore,
                             fileName = ERROR_SOUND
                         )
+                    },
+                    onPressButton = {
+                        viewModel.sendPressButtonEvent(
+                            message = it
+                        )
                     }
                 )
             }
@@ -81,7 +86,7 @@ fun DashboardScreen(
         command = voiceCommand.value,
         onSettingsClick = onSettingsClick,
         onClick = {
-            viewModel.sendPressButtonEvent()
+            viewModel.togglePressButton()
         }
     )
     if (asrPermissionsState.value) {
