@@ -9,7 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-const val DEFAULT_STATUS_UPDATE_DELAY = 5000L
+const val DEFAULT_STATUS_UPDATE_DELAY = 2000L
 
 class MPDStatusMonitor(
     private val mpd: MPDHelper,

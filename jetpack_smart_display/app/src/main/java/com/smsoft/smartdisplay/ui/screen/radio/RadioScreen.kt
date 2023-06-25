@@ -13,8 +13,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -22,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerBar
 import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerControls
 import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
@@ -30,10 +29,11 @@ import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
 fun RadioScreen(
     modifier: Modifier = Modifier,
     viewModel: RadioViewModel = hiltViewModel(),
+    command: VoiceCommand? = null,
     onSettingsClick: () -> Unit
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
-    val isShowVolume = remember { mutableStateOf(false) }
+    val isShowVolume = viewModel.isShowVolume.collectAsStateWithLifecycle()
 
     if (state.value is UIState.Error) {
         LaunchedEffect(Unit) {
@@ -42,8 +42,10 @@ fun RadioScreen(
         }
     }
 
-    DisposableEffect(key1 = viewModel) {
-        viewModel.onStart()
+    DisposableEffect(viewModel) {
+        viewModel.onStart(
+            command = command
+        )
         onDispose {
             viewModel.onStopService()
         }
@@ -54,7 +56,7 @@ fun RadioScreen(
             .pointerInput(Unit){
                 detectTapGestures(
                     onTap = {
-                        isShowVolume.value = true
+                        viewModel.setShowVolume()
                     },
                     onLongPress = {
                         onSettingsClick()
@@ -96,14 +98,8 @@ fun RadioScreen(
                 value = (viewModel.volume * 100).toInt(),
                 onValueChange = {
                     viewModel.setVolume(it.toFloat() / 100)
-                    viewModel.reStartVolumeHideTimer {
-                        isShowVolume.value = false
-                    }
                 }
             )
-            viewModel.reStartVolumeHideTimer {
-                isShowVolume.value = false
-            }
         }
     }
 }

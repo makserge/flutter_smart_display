@@ -10,9 +10,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.NavHostController
 import com.smsoft.smartdisplay.data.DashboardItem
-import com.smsoft.smartdisplay.data.Screen
+import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.service.asr.processCommand
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
 import com.smsoft.smartdisplay.ui.composable.asr.SpeechRecognitionAlert
@@ -23,19 +22,22 @@ import kotlinx.coroutines.launch
 @UnstableApi
 @Composable
 fun DashboardScreen(
-    navController: NavHostController,
+    onSettingsClick: () -> Unit,
+    onDoorbell:() -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
     val page = remember { mutableStateOf(DashboardItem.CLOCK.ordinal) }
+    val voiceCommand = remember { mutableStateOf(VoiceCommand.CLOCK) }
 
     val doorBellAlarmState = viewModel.doorBellAlarmState.collectAsStateWithLifecycle()
 
     if (doorBellAlarmState.value) {
         viewModel.resetDoorBellAlarmState()
         LaunchedEffect(Unit) {
-            navController.navigate(Screen.Doorbell.route)
+            onDoorbell()
         }
         return
     }
@@ -47,8 +49,9 @@ fun DashboardScreen(
                 processCommand(
                     context = context,
                     command = asrCommandState.value!!,
-                    onPageChanged = {
-                        page.value = it
+                    onPageChanged = {pageId, command ->
+                        page.value = pageId
+                        voiceCommand.value = command ?: VoiceCommand.CLOCK
                     },
                     onError = {
                         playAssetSound(
@@ -75,9 +78,8 @@ fun DashboardScreen(
     }
     HorizontalPagerScreen(
         currentPage = page.value,
-        onSettingsClick = {
-            navController.navigate(Screen.Settings.route)
-        },
+        command = voiceCommand.value,
+        onSettingsClick = onSettingsClick,
         onClick = {
             viewModel.sendPressButtonEvent()
         }

@@ -21,6 +21,7 @@ import androidx.media3.common.MediaMetadata
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
+import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.service.radio.MediaState
 import com.smsoft.smartdisplay.service.radio.PlayerEvent
 import com.smsoft.smartdisplay.service.radio.RadioMediaService
@@ -51,12 +52,17 @@ class RadioViewModel @Inject constructor(
     var progressString by savedStateHandle.saveable { mutableStateOf("00:00") }
     var isPlaying by savedStateHandle.saveable { mutableStateOf(false) }
     var metaTitle by savedStateHandle.saveable { mutableStateOf("") }
-    var volume by savedStateHandle.saveable { mutableStateOf(0F) }
+    var volume by savedStateHandle.saveable { mutableStateOf(-1F) }
+
+    private val isShowVolumeInt = MutableStateFlow(false)
+    val isShowVolume = isShowVolumeInt.asStateFlow()
 
     private val uiStateInt = MutableStateFlow<UIState>(UIState.Initial)
     val uiState = uiStateInt.asStateFlow()
 
     private var volumeHideTimer: CountDownTimer? = null
+
+    private var command = MutableStateFlow(VoiceCommand.INTERNET_RADIO)
 
     init {
         viewModelScope.launch {
@@ -75,6 +81,7 @@ class RadioViewModel @Inject constructor(
                         if (isInternalPlayer()) {
                             onStartService()
                         }
+                        runCommand()
                     }
                     MediaState.Error -> uiStateInt.value = UIState.Error
                 }
@@ -96,11 +103,21 @@ class RadioViewModel @Inject constructor(
         }
     }
 
+    private suspend fun runCommand() {
+        if (command.value != VoiceCommand.INTERNET_RADIO) {
+            delay(VOICE_COMMAND_DELAY)
+            processCommand(command.value)
+            command.value = VoiceCommand.INTERNET_RADIO
+        }
+    }
+
     private fun isInternalPlayer(): Boolean {
         return getRadioType(dataStore) == RadioType.INTERNAL
     }
 
-    private fun saveCurrentPreset(currentMediaItemIndex: Int) {
+    private fun saveCurrentPreset(
+        currentMediaItemIndex: Int
+    ) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[intPreferencesKey(PreferenceKey.RADIO_PRESET.key)] = currentMediaItemIndex
@@ -114,11 +131,15 @@ class RadioViewModel @Inject constructor(
         }
     }
 
-    fun onUIEvent(uiEvent: UIEvent) = viewModelScope.launch {
+    fun onUIEvent(
+        uiEvent: UIEvent
+    ) = viewModelScope.launch {
         when (uiEvent) {
             UIEvent.Backward -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Previous)
             UIEvent.Forward -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Next)
             UIEvent.PlayPause -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.PlayPause)
+            UIEvent.Play -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Play)
+            UIEvent.Pause -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Pause)
             is UIEvent.UpdateProgress -> {
                 progress = uiEvent.newProgress
                 radioMediaServiceHandler.onPlayerEvent(
@@ -130,8 +151,9 @@ class RadioViewModel @Inject constructor(
         }
     }
 
-
-    fun formatDuration(duration: Long): String {
+    fun formatDuration(
+        duration: Long
+    ): String {
         val totalSeconds = floor(duration / 1E3).toInt()
         val hours = totalSeconds / 3600
         val minutes = totalSeconds / 60 - (hours * 60)
@@ -146,12 +168,16 @@ class RadioViewModel @Inject constructor(
         }
     }
 
-    private fun calculateProgressValues(currentProgress: Long) {
+    private fun calculateProgressValues(
+        currentProgress: Long
+    ) {
         progress = if (currentProgress > 0) (currentProgress.toFloat() / duration) else 0f
         progressString = formatDuration(currentProgress)
     }
 
-    private fun convertCharset(data: String): String {
+    private fun convertCharset(
+        data: String
+    ): String {
         if (data.isNotEmpty()) {
             return Html.fromHtml(data, HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
         }
@@ -172,9 +198,12 @@ class RadioViewModel @Inject constructor(
         uiStateInt.value = UIState.Initial
     }
 
-    internal fun onStart() {
+    internal fun onStart(
+        command: VoiceCommand?
+    ) {
+        val voiceCommand = this.command
+
         viewModelScope.launch {
-            val preset = getRadioPreset(dataStore)
             val mediaItemList = mutableListOf<MediaItem>()
             if (isInternalPlayer()) {
                 val m3uStream = context.assets.open(PLAYLIST)
@@ -191,15 +220,36 @@ class RadioViewModel @Inject constructor(
                     )
                 }
             }
+            val preset = getRadioPreset(dataStore)
             radioMediaServiceHandler.addMediaItemList(mediaItemList, preset)
+
+            voiceCommand.value = command ?: VoiceCommand.INTERNET_RADIO
         }
     }
 
-    internal fun setVolume(value: Float) {
-        radioMediaServiceHandler.setVolume(value)
+    internal fun setVolume(
+        value: Float
+    ) {
+        radioMediaServiceHandler.setVolume(
+            value = value
+        )
+
+        isShowVolumeInt.value = true
+        reStartVolumeHideTimer {
+            isShowVolumeInt.value = false
+        }
     }
 
-    internal fun reStartVolumeHideTimer(callback: () -> Unit) {
+    fun setShowVolume() {
+        isShowVolumeInt.value = true
+        reStartVolumeHideTimer {
+            isShowVolumeInt.value = false
+        }
+    }
+
+    private fun reStartVolumeHideTimer(
+        callback: () -> Unit
+    ) {
         if (volumeHideTimer != null) {
             volumeHideTimer!!.cancel()
             volumeHideTimer = null
@@ -214,9 +264,46 @@ class RadioViewModel @Inject constructor(
         }
         volumeHideTimer!!.start()
     }
+
+    private fun processCommand(
+        command: VoiceCommand
+    ) {
+        when (command) {
+            VoiceCommand.INTERNET_RADIO, VoiceCommand.INTERNET_RADIO_ON, VoiceCommand.INTERNET_RADIO_ON2 -> onUIEvent(UIEvent.Play)
+            VoiceCommand.INTERNET_RADIO_OFF, VoiceCommand.INTERNET_RADIO_OFF2 -> onUIEvent(UIEvent.Pause)
+            VoiceCommand.INTERNET_RADIO_PREV_ITEM -> onUIEvent(UIEvent.Backward)
+            VoiceCommand.INTERNET_RADIO_NEXT_ITEM -> onUIEvent(UIEvent.Forward)
+            VoiceCommand.INTERNET_RADIO_VOL_DOWN -> changeVolume(isForward = false)
+            VoiceCommand.INTERNET_RADIO_VOL_UP -> changeVolume(isForward = true)
+            else -> {}
+        }
+    }
+
+    private fun changeVolume(
+        isForward: Boolean
+    ) {
+        if (volume == -1F) { //No value from MPD
+            return
+        }
+        if (isForward) {
+            if (volume < VOLUME_MAX) {
+                setVolume(
+                    value = volume + VOLUME_STEP
+                )
+            }
+        } else {
+            if (volume > VOLUME_MIN) {
+                setVolume(
+                    value = volume - VOLUME_STEP
+                )
+            }
+        }
+    }
 }
 
 sealed class UIEvent {
+    object Play : UIEvent()
+    object Pause : UIEvent()
     object PlayPause : UIEvent()
     object Backward : UIEvent()
     object Forward : UIEvent()
@@ -231,3 +318,8 @@ sealed class UIState {
 
 private const val PLAYLIST = "radio.m3u"
 private const val VOLUME_HIDE_TIMER = 3000L //3s
+
+private const val VOLUME_MIN = 0F
+private const val VOLUME_MAX = 1F
+private const val VOLUME_STEP = 0.05F //5%
+private const val VOICE_COMMAND_DELAY = 1000L

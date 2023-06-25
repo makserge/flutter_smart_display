@@ -545,7 +545,7 @@ class MPDPlayer constructor(
         return if (status != null) {
             status?.volume!!.toFloat() / 100
         } else {
-            0F
+            -1F
         }
     }
 

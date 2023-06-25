@@ -21,7 +21,12 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                navController = navController
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
+                },
+                onDoorbell = {
+                    navController.navigate(Screen.Doorbell.route)
+                }
             )
         }
 
@@ -31,7 +36,7 @@ fun AppNavigation() {
                     navController.navigate(Screen.Settings.route)
                 },
                 onBack = {
-                    navController.navigate(Screen.Dashboard.route)
+                    navController.navigateUp()
                 }
             )
         }

@@ -29,7 +29,10 @@ class RadioMediaServiceHandler @Inject constructor(
         player.addListener(this)
     }
 
-    fun addMediaItemList(mediaItemList: List<MediaItem>, preset: Int) {
+    fun addMediaItemList(
+        mediaItemList: List<MediaItem>,
+        preset: Int
+    ) {
         player.apply {
             setMediaItems(mediaItemList)
             seekTo(preset, 0)
@@ -43,14 +46,18 @@ class RadioMediaServiceHandler @Inject constructor(
             playWhenReady = true
         }
     }
-    override fun onPlayerError(error: PlaybackException) {
+    override fun onPlayerError(
+        error: PlaybackException
+    ) {
         Log.e("Radio", error.message!!)
 
         if (error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED) {
             mediaStateInt.value = MediaState.Error
         }
     }
-    fun onPlayerEvent(playerEvent: PlayerEvent) {
+    fun onPlayerEvent(
+        playerEvent: PlayerEvent
+    ) {
         when (playerEvent) {
             PlayerEvent.Previous -> player.seekToPreviousMediaItem()
             PlayerEvent.Next -> player.seekToNextMediaItem()
@@ -62,6 +69,18 @@ class RadioMediaServiceHandler @Inject constructor(
                     player.play()
                 }
             }
+            PlayerEvent.Play -> {
+                if (!player.isPlaying) {
+                    mediaStateInt.value = MediaState.Playing(isPlaying = player.isPlaying)
+                    player.play()
+                }
+            }
+            PlayerEvent.Pause -> {
+                if (player.isPlaying) {
+                    mediaStateInt.value = MediaState.Playing(isPlaying = player.isPlaying)
+                    player.pause()
+                }
+            }
             PlayerEvent.Stop -> {
                 stopProgressUpdate()
                 player.stop()
@@ -70,7 +89,9 @@ class RadioMediaServiceHandler @Inject constructor(
         }
     }
 
-    override fun onPlaybackStateChanged(playbackState: Int) {
+    override fun onPlaybackStateChanged(
+        playbackState: Int
+    ) {
         when (playbackState) {
             ExoPlayer.STATE_BUFFERING -> mediaStateInt.value =
                 MediaState.Buffering(player.currentPosition)
@@ -84,7 +105,9 @@ class RadioMediaServiceHandler @Inject constructor(
         }
     }
 
-    override fun onIsPlayingChanged(isPlaying: Boolean) {
+    override fun onIsPlayingChanged(
+        isPlaying: Boolean
+    ) {
         mediaStateInt.value = MediaState.Playing(isPlaying = isPlaying)
 
         stopProgressUpdate()
@@ -104,26 +127,37 @@ class RadioMediaServiceHandler @Inject constructor(
         job?.cancel()
     }
 
-    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: @MediaItemTransitionReason Int) {
+    override fun onMediaItemTransition(
+        mediaItem: MediaItem?,
+        reason: @MediaItemTransitionReason Int
+    ) {
         mediaMetadataInt.value = MediaMetadata.EMPTY
     }
 
-    override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+    override fun onMediaMetadataChanged(
+        mediaMetadata: MediaMetadata
+    ) {
         mediaMetadataInt.value = mediaMetadata
     }
 
-    override fun onVolumeChanged(volume: Float) {
+    override fun onVolumeChanged(
+        volume: Float
+    ) {
         playerStateInt.value = PlayerState(
             volume = volume
         )
     }
 
-    fun setVolume(value: Float) {
+    fun setVolume(
+        value: Float
+    ) {
         player.volume = value
     }
 }
 
 sealed class PlayerEvent {
+    object Play : PlayerEvent()
+    object Pause : PlayerEvent()
     object PlayPause : PlayerEvent()
     object Previous : PlayerEvent()
     object Next : PlayerEvent()

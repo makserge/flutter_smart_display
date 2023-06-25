@@ -1,8 +1,11 @@
 package com.smsoft.smartdisplay.service.notification
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
@@ -16,6 +19,11 @@ class RadioMediaNotificationManager @Inject constructor(
     private val player: ExoPlayer
 ) {
     private var playerNotificationManager: PlayerNotificationManager? = null
+    private var notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(context)
+
+    init {
+        createNotificationChannel()
+    }
 
     @UnstableApi
     fun startNotificationService(
@@ -52,6 +60,16 @@ class RadioMediaNotificationManager @Inject constructor(
         mediaSessionService.startForeground(NOTIFICATION_ID, notification)
     }
 
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            NOTIFICATION_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_LOW
+        )
+        notificationManager.createNotificationChannel(channel)
+    }
+
+
     @UnstableApi
     fun removeNotification() {
         playerNotificationManager?.setPlayer(null)
@@ -59,4 +77,5 @@ class RadioMediaNotificationManager @Inject constructor(
 }
 
 private const val NOTIFICATION_ID = 200
+private const val NOTIFICATION_CHANNEL_NAME = "radio player channel 1"
 private const val NOTIFICATION_CHANNEL_ID = "radio player channel id 1"

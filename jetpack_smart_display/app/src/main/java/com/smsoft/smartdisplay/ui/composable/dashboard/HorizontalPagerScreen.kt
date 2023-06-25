@@ -15,6 +15,7 @@ import androidx.media3.common.util.UnstableApi
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
+import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
@@ -27,6 +28,7 @@ import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 fun HorizontalPagerScreen(
     modifier: Modifier = Modifier,
     currentPage: Int,
+    command: VoiceCommand,
     onSettingsClick: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -56,6 +58,7 @@ fun HorizontalPagerScreen(
                 RenderScreen(
                     modifier = Modifier,
                     index = index,
+                    command = command,
                     onSettingsClick = onSettingsClick
                 )
             }
@@ -77,6 +80,7 @@ fun HorizontalPagerScreen(
 fun RenderScreen(
     modifier: Modifier,
     index: Int,
+    command: VoiceCommand,
     onSettingsClick: () -> Unit
 ) {
     when (DashboardItem.getItem(index)) {
@@ -85,9 +89,10 @@ fun RenderScreen(
             onSettingsClick()
         }
         DashboardItem.SENSORS -> SensorsScreen()
-        DashboardItem.INTERNET_RADIO -> RadioScreen {
-            onSettingsClick()
-        }
+        DashboardItem.INTERNET_RADIO -> RadioScreen(
+            command = command,
+            onSettingsClick = onSettingsClick
+        )
         else -> DoorbellScreen(
             onSettingsClick = onSettingsClick
         )

@@ -130,9 +130,13 @@ class MPDHelper {
                 reconnect()
                 play()
             }
-        } catch(E: CommunicationException) {
-            reconnect()
-            play()
+        } catch(e: CommunicationException) {
+            try {
+                reconnect()
+                play()
+            } catch(ignored: AuthenticationException) {
+            } catch(ignored: CommunicationException) {
+            }
         } catch(ignored: ProtocolException) {
         }
     }

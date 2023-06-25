@@ -185,4 +185,12 @@
     <string name="doorbell_command">звонок</string>
     <string name="asr_sound_enabled">Sound enabled</string>
     <string name="asr_sound_volume">Sound volume</string>
+    <string name="internet_radio_on_command">включи радио</string>
+    <string name="internet_radio_on2_command">включить радио</string>
+    <string name="internet_radio_off_command">выключи радио</string>
+    <string name="internet_radio_off2_command">выключить радио</string>
+    <string name="internet_radio_prev_item_command">радио назад</string>
+    <string name="internet_radio_prev_next_command">радио вперёд</string>
+    <string name="internet_radio_vol_down_command">радио тише</string>
+    <string name="internet_radio_vol_up_command">радио громче</string>
 </resources>
