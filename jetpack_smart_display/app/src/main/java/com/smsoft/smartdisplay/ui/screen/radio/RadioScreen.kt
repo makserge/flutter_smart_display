@@ -90,8 +90,7 @@ fun RadioScreen(
                 }
                 UIState.Error -> {}
             }
-
-            }
+        }
         if (isShowVolume.value) {
             VolumeControl(
                 modifier = Modifier,

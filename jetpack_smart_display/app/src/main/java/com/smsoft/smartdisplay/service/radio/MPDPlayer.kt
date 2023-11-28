@@ -11,6 +11,7 @@ import android.view.TextureView
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.media3.common.*
+import androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.Size
@@ -111,7 +112,30 @@ class MPDPlayer constructor(
             .build()
         listener?.onMediaItemTransition(mediaItem, Player.MEDIA_ITEM_TRANSITION_REASON_SEEK)
 
-        listener?.onSeekProcessed()
+        listener?.onPositionDiscontinuity(
+            Player.PositionInfo(
+                null,
+                0,
+                null,
+                null,
+                0,
+                0,
+                0,
+                0,
+                0
+            ),
+            Player.PositionInfo(
+                null,
+                0,
+                null,
+                null,
+                0,
+                0,
+                0,
+                0,
+                0
+            ),
+            DISCONTINUITY_REASON_SEEK)
     }
 
     override fun prepare() {
@@ -221,13 +245,11 @@ class MPDPlayer constructor(
     }
 
     override fun removeListener(listener: Player.Listener) {
-        TODO("Not yet implemented")
     }
     override fun getApplicationLooper(): Looper {
         TODO("Not yet implemented")
     }
-        override fun setMediaItems(mediaItems: MutableList<MediaItem>, resetPosition: Boolean) {
-        TODO("Not yet implemented")
+    override fun setMediaItems(mediaItems: MutableList<MediaItem>, resetPosition: Boolean) {
     }
 
     override fun setMediaItems(
@@ -235,63 +257,60 @@ class MPDPlayer constructor(
         startIndex: Int,
         startPositionMs: Long
     ) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaItem(mediaItem: MediaItem) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaItem(mediaItem: MediaItem, startPositionMs: Long) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaItem(mediaItem: MediaItem, resetPosition: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaItem(mediaItem: MediaItem) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaItem(index: Int, mediaItem: MediaItem) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaItems(mediaItems: MutableList<MediaItem>) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaItems(index: Int, mediaItems: MutableList<MediaItem>) {
-        TODO("Not yet implemented")
     }
 
     override fun moveMediaItem(currentIndex: Int, newIndex: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun moveMediaItems(fromIndex: Int, toIndex: Int, newIndex: Int) {
-        TODO("Not yet implemented")
+    }
+
+    override fun replaceMediaItem(index: Int, mediaItem: MediaItem) {
+    }
+
+    override fun replaceMediaItems(
+        fromIndex: Int,
+        toIndex: Int,
+        mediaItems: MutableList<MediaItem>
+    ) {
     }
 
     override fun removeMediaItem(index: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun removeMediaItems(fromIndex: Int, toIndex: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun clearMediaItems() {
-        TODO("Not yet implemented")
     }
 
     override fun isCommandAvailable(command: Int): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun canAdvertiseSession(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun getAvailableCommands(): Player.Commands {
@@ -300,136 +319,120 @@ class MPDPlayer constructor(
 
     @Deprecated("Deprecated in Java")
     override fun prepare(mediaSource: MediaSource) {
-        TODO("Not yet implemented")
     }
 
     @Deprecated("Deprecated in Java")
     override fun prepare(mediaSource: MediaSource, resetPosition: Boolean, resetState: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun getPlaybackState(): Int {
-        TODO("Not yet implemented")
+        return Player.STATE_IDLE
     }
 
     override fun getPlaybackSuppressionReason(): Int {
-        TODO("Not yet implemented")
+        return Player.PLAYBACK_SUPPRESSION_REASON_NONE
     }
     override fun getPlayerError(): ExoPlaybackException? {
-        TODO("Not yet implemented")
+        return null
     }
     override fun getPlayWhenReady(): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun setRepeatMode(repeatMode: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun getRepeatMode(): Int {
-        TODO("Not yet implemented")
+        return Player.REPEAT_MODE_OFF
     }
 
     override fun setShuffleModeEnabled(shuffleModeEnabled: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun getShuffleModeEnabled(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun isLoading(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun seekToDefaultPosition() {
-        TODO("Not yet implemented")
     }
 
     override fun seekToDefaultPosition(mediaItemIndex: Int) {
-        TODO("Not yet implemented")
     }
     override fun getSeekBackIncrement(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun seekBack() {
-        TODO("Not yet implemented")
     }
 
     override fun getSeekForwardIncrement(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun seekForward() {
-        TODO("Not yet implemented")
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun hasPrevious(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun hasPreviousWindow(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun hasPreviousMediaItem(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     @Deprecated("Deprecated in Java")
     override fun previous() {
-        TODO("Not yet implemented")
     }
 
     @Deprecated("Deprecated in Java")
     override fun seekToPreviousWindow() {
-        TODO("Not yet implemented")
     }
     override fun getMaxSeekToPreviousPosition(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun seekToPrevious() {
-        TODO("Not yet implemented")
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun hasNext(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun hasNextWindow(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun hasNextMediaItem(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     @Deprecated("Deprecated in Java")
     override fun next() {
-        TODO("Not yet implemented")
     }
 
     @Deprecated("Deprecated in Java")
     override fun seekToNextWindow() {
-        TODO("Not yet implemented")
     }
 
     override fun seekToNext() {
-        TODO("Not yet implemented")
     }
 
     override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
-        TODO("Not yet implemented")
     }
 
     override fun setPlaybackSpeed(speed: Float) {
-        TODO("Not yet implemented")
     }
 
     override fun getPlaybackParameters(): PlaybackParameters {
@@ -442,13 +445,7 @@ class MPDPlayer constructor(
         helper.disconnect()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun stop(reset: Boolean) {
-        TODO("Not yet implemented")
-    }
-
     override fun release() {
-        TODO("Not yet implemented")
     }
 
     override fun getCurrentTracks(): Tracks {
@@ -460,7 +457,6 @@ class MPDPlayer constructor(
     }
 
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
-        TODO("Not yet implemented")
     }
 
     override fun getPlaylistMetadata(): MediaMetadata {
@@ -468,11 +464,10 @@ class MPDPlayer constructor(
     }
 
     override fun setPlaylistMetadata(mediaMetadata: MediaMetadata) {
-        TODO("Not yet implemented")
     }
 
     override fun getCurrentManifest(): Any? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun getCurrentTimeline(): Timeline {
@@ -480,12 +475,12 @@ class MPDPlayer constructor(
     }
 
     override fun getCurrentPeriodIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("0"))
     override fun getCurrentWindowIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getCurrentMediaItemIndex(): Int {
@@ -502,22 +497,22 @@ class MPDPlayer constructor(
         return playlist?.get(preset) ?: MediaItem.EMPTY
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("0"))
     override fun getNextWindowIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getNextMediaItemIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("0"))
     override fun getPreviousWindowIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getPreviousMediaItemIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getMediaItemAt(index: Int): MediaItem {
@@ -550,70 +545,70 @@ class MPDPlayer constructor(
     }
 
     override fun getBufferedPosition(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getBufferedPercentage(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getTotalBufferedDuration(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun isCurrentWindowDynamic(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun isCurrentMediaItemDynamic(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun isCurrentWindowLive(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun isCurrentMediaItemLive(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun getCurrentLiveOffset(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("false"))
     override fun isCurrentWindowSeekable(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun isCurrentMediaItemSeekable(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun isPlayingAd(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun getCurrentAdGroupIndex(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getCurrentAdIndexInAdGroup(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getContentDuration(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getContentPosition(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getContentBufferedPosition(): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getAudioAttributes(): AudioAttributes {
@@ -621,39 +616,30 @@ class MPDPlayer constructor(
     }
 
     override fun clearVideoSurface() {
-        TODO("Not yet implemented")
     }
 
     override fun clearVideoSurface(surface: Surface?) {
-        TODO("Not yet implemented")
     }
 
     override fun setVideoSurface(surface: Surface?) {
-        TODO("Not yet implemented")
     }
 
     override fun setVideoSurfaceHolder(surfaceHolder: SurfaceHolder?) {
-        TODO("Not yet implemented")
     }
 
     override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?) {
-        TODO("Not yet implemented")
     }
 
     override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
-        TODO("Not yet implemented")
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-        TODO("Not yet implemented")
     }
 
     override fun setVideoTextureView(textureView: TextureView?) {
-        TODO("Not yet implemented")
     }
 
     override fun clearVideoTextureView(textureView: TextureView?) {
-        TODO("Not yet implemented")
     }
 
     override fun getVideoSize(): VideoSize {
@@ -673,55 +659,65 @@ class MPDPlayer constructor(
     }
 
     override fun getDeviceVolume(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun isDeviceMuted(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
+    @Deprecated("Deprecated in Java")
     override fun setDeviceVolume(volume: Int) {
-        TODO("Not yet implemented")
     }
 
+    override fun setDeviceVolume(volume: Int, flags: Int) {
+    }
+
+    @Deprecated("Deprecated in Java")
     override fun increaseDeviceVolume() {
-        TODO("Not yet implemented")
     }
 
+    override fun increaseDeviceVolume(flags: Int) {
+    }
+
+    @Deprecated("Deprecated in Java")
     override fun decreaseDeviceVolume() {
-        TODO("Not yet implemented")
     }
 
+    override fun decreaseDeviceVolume(flags: Int) {
+    }
+
+    @Deprecated("Deprecated in Java")
     override fun setDeviceMuted(muted: Boolean) {
-        TODO("Not yet implemented")
     }
 
-    @Deprecated("Deprecated in Java")
+    override fun setDeviceMuted(muted: Boolean, flags: Int) {
+    }
+
+    @Deprecated("Deprecated in Java", ReplaceWith("null"))
     override fun getAudioComponent(): ExoPlayer.AudioComponent? {
-        TODO("Not yet implemented")
+        return null
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("null"))
     override fun getVideoComponent(): ExoPlayer.VideoComponent? {
-        TODO("Not yet implemented")
+        return null
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("null"))
     override fun getTextComponent(): ExoPlayer.TextComponent? {
-        TODO("Not yet implemented")
+        return null
     }
 
-    @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java", ReplaceWith("null"))
     override fun getDeviceComponent(): ExoPlayer.DeviceComponent? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun addAudioOffloadListener(listener: ExoPlayer.AudioOffloadListener) {
-        TODO("Not yet implemented")
     }
 
     override fun removeAudioOffloadListener(listener: ExoPlayer.AudioOffloadListener) {
-        TODO("Not yet implemented")
     }
 
     override fun getAnalyticsCollector(): AnalyticsCollector {
@@ -729,19 +725,17 @@ class MPDPlayer constructor(
     }
 
     override fun addAnalyticsListener(listener: AnalyticsListener) {
-        TODO("Not yet implemented")
     }
 
     override fun removeAnalyticsListener(listener: AnalyticsListener) {
-        TODO("Not yet implemented")
     }
 
     override fun getRendererCount(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getRendererType(index: Int): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getRenderer(index: Int): Renderer {
@@ -749,7 +743,7 @@ class MPDPlayer constructor(
     }
 
     override fun getTrackSelector(): TrackSelector? {
-        TODO("Not yet implemented")
+        return null
     }
 
     @Deprecated("Deprecated in Java")
@@ -770,17 +764,10 @@ class MPDPlayer constructor(
         TODO("Not yet implemented")
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun retry() {
-        TODO("Not yet implemented")
-    }
-
     override fun setMediaSources(mediaSources: MutableList<MediaSource>) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaSources(mediaSources: MutableList<MediaSource>, resetPosition: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaSources(
@@ -788,103 +775,85 @@ class MPDPlayer constructor(
         startMediaItemIndex: Int,
         startPositionMs: Long
     ) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaSource(mediaSource: MediaSource) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaSource(mediaSource: MediaSource, startPositionMs: Long) {
-        TODO("Not yet implemented")
     }
 
     override fun setMediaSource(mediaSource: MediaSource, resetPosition: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaSource(mediaSource: MediaSource) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaSource(index: Int, mediaSource: MediaSource) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaSources(mediaSources: MutableList<MediaSource>) {
-        TODO("Not yet implemented")
     }
 
     override fun addMediaSources(index: Int, mediaSources: MutableList<MediaSource>) {
-        TODO("Not yet implemented")
     }
 
     override fun setShuffleOrder(shuffleOrder: ShuffleOrder) {
-        TODO("Not yet implemented")
     }
 
     override fun setAudioAttributes(audioAttributes: AudioAttributes, handleAudioFocus: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun setAudioSessionId(audioSessionId: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun getAudioSessionId(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun setAuxEffectInfo(auxEffectInfo: AuxEffectInfo) {
-        TODO("Not yet implemented")
     }
 
     override fun clearAuxEffectInfo() {
-        TODO("Not yet implemented")
     }
 
     override fun setPreferredAudioDevice(audioDeviceInfo: AudioDeviceInfo?) {
-        TODO("Not yet implemented")
     }
 
     override fun setSkipSilenceEnabled(skipSilenceEnabled: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun getSkipSilenceEnabled(): Boolean {
-        TODO("Not yet implemented")
+        return false
+    }
+
+    override fun setVideoEffects(videoEffects: MutableList<Effect>) {
     }
 
     override fun setVideoScalingMode(videoScalingMode: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun getVideoScalingMode(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun setVideoChangeFrameRateStrategy(videoChangeFrameRateStrategy: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun getVideoChangeFrameRateStrategy(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun setVideoFrameMetadataListener(listener: VideoFrameMetadataListener) {
-        TODO("Not yet implemented")
     }
 
     override fun clearVideoFrameMetadataListener(listener: VideoFrameMetadataListener) {
-        TODO("Not yet implemented")
     }
 
     override fun setCameraMotionListener(listener: CameraMotionListener) {
-        TODO("Not yet implemented")
     }
 
     override fun clearCameraMotionListener(listener: CameraMotionListener) {
-        TODO("Not yet implemented")
     }
 
     override fun createMessage(target: PlayerMessage.Target): PlayerMessage {
@@ -892,7 +861,6 @@ class MPDPlayer constructor(
     }
 
     override fun setSeekParameters(seekParameters: SeekParameters?) {
-        TODO("Not yet implemented")
     }
 
     override fun getSeekParameters(): SeekParameters {
@@ -900,60 +868,46 @@ class MPDPlayer constructor(
     }
 
     override fun setForegroundMode(foregroundMode: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun setPauseAtEndOfMediaItems(pauseAtEndOfMediaItems: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun getPauseAtEndOfMediaItems(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun getAudioFormat(): Format? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun getVideoFormat(): Format? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun getAudioDecoderCounters(): DecoderCounters? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun getVideoDecoderCounters(): DecoderCounters? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun setHandleAudioBecomingNoisy(handleAudioBecomingNoisy: Boolean) {
-        TODO("Not yet implemented")
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun setHandleWakeLock(handleWakeLock: Boolean) {
-        TODO("Not yet implemented")
     }
 
     override fun setWakeMode(wakeMode: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun setPriorityTaskManager(priorityTaskManager: PriorityTaskManager?) {
-        TODO("Not yet implemented")
     }
 
-    override fun experimentalSetOffloadSchedulingEnabled(offloadSchedulingEnabled: Boolean) {
-        TODO("Not yet implemented")
-    }
-
-    override fun experimentalIsSleepingForOffload(): Boolean {
-        TODO("Not yet implemented")
+    override fun isSleepingForOffload(): Boolean {
+        return false
     }
 
     override fun isTunnelingEnabled(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
     init {
         helper.statusChangedListener = statusChangedListener

@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.ui.screen.radio
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.CountDownTimer
@@ -40,6 +41,7 @@ import kotlin.math.floor
 
 @OptIn(SavedStateHandleSaveableApi::class)
 @HiltViewModel
+@SuppressLint("StaticFieldLeak")
 class RadioViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val radioMediaServiceHandler: RadioMediaServiceHandler,
@@ -47,12 +49,12 @@ class RadioViewModel @Inject constructor(
     val dataStore: DataStore<Preferences>
 ) : ViewModel() {
     var presetTitle by savedStateHandle.saveable { mutableStateOf("") }
-    var duration by savedStateHandle.saveable { mutableStateOf(0L) }
-    var progress by savedStateHandle.saveable { mutableStateOf(0F) }
+    var duration by savedStateHandle.saveable { mutableLongStateOf(0L) }
+    var progress by savedStateHandle.saveable { mutableFloatStateOf(0F) }
     var progressString by savedStateHandle.saveable { mutableStateOf("00:00") }
     var isPlaying by savedStateHandle.saveable { mutableStateOf(false) }
     var metaTitle by savedStateHandle.saveable { mutableStateOf("") }
-    var volume by savedStateHandle.saveable { mutableStateOf(-1F) }
+    var volume by savedStateHandle.saveable { mutableFloatStateOf(-1F) }
 
     private val isShowVolumeInt = MutableStateFlow(false)
     val isShowVolume = isShowVolumeInt.asStateFlow()
@@ -302,18 +304,18 @@ class RadioViewModel @Inject constructor(
 }
 
 sealed class UIEvent {
-    object Play : UIEvent()
-    object Pause : UIEvent()
-    object PlayPause : UIEvent()
-    object Backward : UIEvent()
-    object Forward : UIEvent()
+    data object Play : UIEvent()
+    data object Pause : UIEvent()
+    data object PlayPause : UIEvent()
+    data object Backward : UIEvent()
+    data object Forward : UIEvent()
     data class UpdateProgress(val newProgress: Float) : UIEvent()
 }
 
 sealed class UIState {
-    object Initial : UIState()
-    object Error : UIState()
-    object Ready : UIState()
+    data object Initial : UIState()
+    data object Error : UIState()
+    data object Ready : UIState()
 }
 
 private const val PLAYLIST = "radio.m3u"

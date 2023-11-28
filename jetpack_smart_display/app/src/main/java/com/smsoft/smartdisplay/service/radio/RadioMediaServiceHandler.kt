@@ -1,13 +1,23 @@
 package com.smsoft.smartdisplay.service.radio
 
 import android.util.Log
-import androidx.media3.common.*
-import androidx.media3.common.Player.*
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.Player.Listener
+import androidx.media3.common.Player.MediaItemTransitionReason
+import androidx.media3.common.Player.STATE_ENDED
+import androidx.media3.common.Player.STATE_IDLE
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class RadioMediaServiceHandler @Inject constructor(
@@ -38,9 +48,12 @@ class RadioMediaServiceHandler @Inject constructor(
             seekTo(preset, 0)
         }
     }
-    @Deprecated("Deprecated in Java")
     @UnstableApi
-    override fun onSeekProcessed() {
+    override fun onPositionDiscontinuity(
+        oldPosition: Player.PositionInfo,
+        newPosition: Player.PositionInfo,
+        reason: Int
+    ) {
         player.apply {
             prepare()
             playWhenReady = true
@@ -156,18 +169,18 @@ class RadioMediaServiceHandler @Inject constructor(
 }
 
 sealed class PlayerEvent {
-    object Play : PlayerEvent()
-    object Pause : PlayerEvent()
-    object PlayPause : PlayerEvent()
-    object Previous : PlayerEvent()
-    object Next : PlayerEvent()
-    object Stop : PlayerEvent()
+    data object Play : PlayerEvent()
+    data object Pause : PlayerEvent()
+    data object PlayPause : PlayerEvent()
+    data object Previous : PlayerEvent()
+    data object Next : PlayerEvent()
+    data object Stop : PlayerEvent()
     data class UpdateProgress(val newProgress: Float) : PlayerEvent()
 }
 
 sealed class MediaState {
-    object Initial : MediaState()
-    object Error: MediaState()
+    data object Initial : MediaState()
+    data object Error: MediaState()
     data class Ready(val duration: Long, val currentMediaItem: MediaItem?, val currentMediaItemIndex: Int) : MediaState()
     data class Progress(val progress: Long) : MediaState()
     data class Buffering(val progress: Long) : MediaState()

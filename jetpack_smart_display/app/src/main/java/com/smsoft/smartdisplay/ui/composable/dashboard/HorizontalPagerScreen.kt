@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
-import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.VoiceCommand
@@ -22,7 +21,7 @@ import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalPagerApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @UnstableApi
 @Composable
 fun HorizontalPagerScreen(
@@ -32,11 +31,14 @@ fun HorizontalPagerScreen(
     onSettingsClick: () -> Unit,
     onClick: () -> Unit
 ) {
+    val pages = DashboardItem.values()
     val pagerState = rememberPagerState(
-        initialPage = currentPage
+        initialPage = currentPage,
+        pageCount = {
+            pages.size
+        }
     )
 
-    val pages = DashboardItem.values()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -51,8 +53,7 @@ fun HorizontalPagerScreen(
             modifier = Modifier
                 .weight(1F)
                 .fillMaxSize(),
-            pageCount = pages.size,
-            state = pagerState,
+            state = pagerState
         ) { index ->
             if (index == pagerState.currentPage) {
                 RenderScreen(
