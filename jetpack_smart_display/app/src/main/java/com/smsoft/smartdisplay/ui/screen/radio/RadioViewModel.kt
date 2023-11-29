@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.*
 import javax.inject.Inject
-import kotlin.math.floor
 
 @OptIn(SavedStateHandleSaveableApi::class)
 @HiltViewModel
@@ -156,7 +155,7 @@ class RadioViewModel @Inject constructor(
     fun formatDuration(
         duration: Long
     ): String {
-        val totalSeconds = floor(duration / 1E3).toInt()
+        val totalSeconds = duration.toInt()
         val hours = totalSeconds / 3600
         val minutes = totalSeconds / 60 - (hours * 60)
         val seconds = totalSeconds - (hours * 3600) - (minutes * 60)
@@ -173,8 +172,8 @@ class RadioViewModel @Inject constructor(
     private fun calculateProgressValues(
         currentProgress: Long
     ) {
-        progress = if (currentProgress > 0) (currentProgress.toFloat() / duration) else 0f
-        progressString = formatDuration(currentProgress)
+        progress = if (currentProgress > 0) ((currentProgress / 1000).toFloat() / duration) else 0f
+        progressString = formatDuration(currentProgress / 1000)
     }
 
     private fun convertCharset(
@@ -222,7 +221,10 @@ class RadioViewModel @Inject constructor(
                     )
                 }
             }
-            val preset = getRadioPreset(dataStore)
+            var preset = getRadioPreset(dataStore)
+            if (preset > mediaItemList.size) {
+                preset = 1
+            }
             radioMediaServiceHandler.addMediaItemList(mediaItemList, preset)
 
             voiceCommand.value = command ?: VoiceCommand.INTERNET_RADIO
