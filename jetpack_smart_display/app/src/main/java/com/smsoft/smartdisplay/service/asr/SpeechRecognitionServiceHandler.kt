@@ -10,9 +10,9 @@ class SpeechRecognitionServiceHandler: SpeechRecognitionHandler {
 }
 
 sealed class SpeechRecognitionState {
-    object Initial: SpeechRecognitionState()
-    object Ready: SpeechRecognitionState()
-    object WakeWordDetected: SpeechRecognitionState()
+    data object Initial: SpeechRecognitionState()
+    data object Ready: SpeechRecognitionState()
+    data object WakeWordDetected: SpeechRecognitionState()
     data class Result(val word: String) : SpeechRecognitionState()
     data class Error(val message: String) : SpeechRecognitionState()
 }

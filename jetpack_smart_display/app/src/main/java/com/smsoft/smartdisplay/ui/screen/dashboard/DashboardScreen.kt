@@ -2,6 +2,7 @@ package com.smsoft.smartdisplay.ui.screen.dashboard
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -29,7 +30,7 @@ fun DashboardScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val page = remember { mutableStateOf(DashboardItem.CLOCK.ordinal) }
+    val page = remember { mutableIntStateOf(DashboardItem.CLOCK.ordinal) }
     val voiceCommand = remember { mutableStateOf(VoiceCommand.CLOCK) }
 
     val doorBellAlarmState = viewModel.doorBellAlarmState.collectAsStateWithLifecycle()

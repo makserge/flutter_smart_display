@@ -1,8 +1,9 @@
 package com.smsoft.smartdisplay.ui.composable.sensors
 
-import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -14,23 +15,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.flowlayout.FlowRow
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.database.entity.Sensor
-import com.smsoft.smartdisplay.utils.getIcon
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Item(
     modifier: Modifier,
@@ -89,7 +85,7 @@ fun Item(
                             icon = item.topic2Icon
                         )
                     }
-                    if (item.topic3.isNotEmpty()) {
+                    if (item.topic3.isNotEmpty() && item.topic3Unit.isNotEmpty()) {
                         TextWithUnitIcon(
                             modifier = Modifier,
                             context = context,
@@ -98,7 +94,7 @@ fun Item(
                             icon = item.topic3Icon
                         )
                     }
-                    if (item.topic4.isNotEmpty()) {
+                    if (item.topic4.isNotEmpty() && item.topic4Unit.isNotEmpty()) {
                         TextWithUnitIcon(
                             modifier = Modifier,
                             context = context,
@@ -146,92 +142,5 @@ fun Item(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun TextWithIcon(
-    modifier: Modifier,
-    context: Context,
-    text: String,
-    icon: String,
-) {
-    Row(
-        modifier = Modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon.isNotEmpty()) {
-            Icon(
-                modifier = Modifier
-                    .padding(
-                        end = 3.dp
-                    )
-                    .size(48.dp),
-                painter = painterResource(
-                    id = getIcon(
-                        context = context,
-                        item = icon
-                    )
-                ),
-                contentDescription = null
-            )
-        }
-        Text(
-            modifier = Modifier,
-            text = text,
-            style = MaterialTheme.typography.h5,
-            color = MaterialTheme.colors.secondary,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-fun TextWithUnitIcon(
-    modifier: Modifier,
-    context: Context,
-    text: String,
-    unit: String,
-    icon: String,
-) {
-    Row(
-        modifier = Modifier
-            .defaultMinSize(
-                minWidth = 90.dp
-            ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon.isNotEmpty()) {
-            Icon(
-                modifier = Modifier
-                    .padding(
-                        end = 3.dp
-                    ),
-                painter = painterResource(
-                    id = getIcon(
-                        context = context,
-                        item = icon
-                    )
-                ),
-                contentDescription = null
-            )
-        }
-        Text(
-            modifier = Modifier,
-            text = text,
-            style = MaterialTheme.typography.h6,
-            color = MaterialTheme.colors.primary,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            modifier = Modifier
-                .padding(
-                    end = 10.dp
-                ),
-            text = unit,
-            style = MaterialTheme.typography.h6,
-            color = MaterialTheme.colors.primary,
-            textAlign = TextAlign.Center
-        )
     }
 }

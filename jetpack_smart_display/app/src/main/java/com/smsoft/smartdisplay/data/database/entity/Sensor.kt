@@ -1,9 +1,12 @@
 package com.smsoft.smartdisplay.data.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.smsoft.smartdisplay.data.SensorType
 
-@Entity(tableName = "sensors")
+@Entity(tableName = "sensors", indices = [Index("type")])
 data class Sensor(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
@@ -20,7 +23,9 @@ data class Sensor(
     val topic3Icon: String,
     val topic4: String,
     val topic4Unit: String,
-    val topic4Icon: String
+    val topic4Icon: String,
+    @ColumnInfo(name = "type", defaultValue = "MQTT")
+    val type: String
 )
 
 val emptySensor = Sensor(
@@ -38,5 +43,6 @@ val emptySensor = Sensor(
     topic3Icon = "",
     topic4 = "",
     topic4Unit = "",
-    topic4Icon = ""
+    topic4Icon = "",
+    type = SensorType.getDefaultId()
 )

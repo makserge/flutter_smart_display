@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.data.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.smsoft.smartdisplay.data.database.dao.SensorDao
@@ -10,10 +11,21 @@ import com.smsoft.smartdisplay.data.database.entity.WeatherCurrent
 import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
 
 @Database(
-    entities = [Sensor::class, WeatherCurrent::class, WeatherForecast::class],
-    version = 1,
-    exportSchema = false
+    version = 2,
+    entities = [
+        Sensor::class,
+        WeatherCurrent::class,
+        WeatherForecast::class
+    ],
+    autoMigrations = [
+        AutoMigration (
+            from = 1,
+            to = 2
+        )
+    ],
+    exportSchema = true
 )
+
 abstract class SmartDisplayDatabase: RoomDatabase() {
     abstract fun sensorDao(): SensorDao
     abstract fun weatherCurrentDao(): WeatherCurrentDao

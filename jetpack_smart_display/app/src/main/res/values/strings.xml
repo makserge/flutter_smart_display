@@ -134,7 +134,6 @@
     <string name="mqtt_broker_username">Username</string>
     <string name="mqtt_broker_password">Password</string>
     <string name="icon">Icon</string>
-    <string name="search">Search</string>
     <string name="add_sensor_unit">Unit</string>
     <string name="weather_city">Weather city</string>
     <string name="weather_city_lat">Lat</string>
@@ -197,4 +196,10 @@
     <string name="light_on2_command">включить свет</string>
     <string name="light_off_command">выключи свет</string>
     <string name="light_off2_command">выключить свет</string>
+    <string name="sensor_type_mqtt">MQTT</string>
+    <string name="sensor_type_bluetooth">BLE</string>
+    <string name="type">Type</string>
+    <string name="bluetooth_permission_rationale">Bluetooth permissions are required for BLE sensors support to be available. Please grant the permission</string>
+    <string name="bluetooth_permission">Bluetooth permissions are required for BLE sensors support. Please grant the permission</string>
+    <string name="no_bluetooth_devices">No bluetooth devices found. Click here to restart scan</string>
 </resources>

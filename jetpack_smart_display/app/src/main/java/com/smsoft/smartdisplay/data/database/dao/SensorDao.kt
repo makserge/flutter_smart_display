@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SensorDao {
+    @Query("SELECT * FROM sensors WHERE type = :type")
+    fun getByType(type: String) : Flow<List<Sensor>>
+
     @Query("SELECT * FROM sensors ORDER BY id")
     fun getAll() : Flow<List<Sensor>>
 

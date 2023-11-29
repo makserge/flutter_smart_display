@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.MaterialIcons
@@ -52,7 +53,6 @@ fun IconPicker(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         OutlinedTextField(
             modifier = Modifier
                 .clickable {
@@ -97,8 +97,7 @@ fun IconPicker(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedTextField(
-                        modifier = modifier
-                            .width(150.dp),
+                        modifier = modifier,
                         value = searchedOption,
                         onValueChange = { it ->
                             searchedOption = it
@@ -112,16 +111,10 @@ fun IconPicker(
                                 imageVector = Icons.Outlined.Search,
                                 contentDescription = null
                             )
-                        },
-                        placeholder = {
-                            Text(
-                                modifier = Modifier,
-                                text = stringResource(R.string.search)
-                            )
                         }
                     )
                     val itemsList = if (filteredItems.isEmpty()) {
-                        items.subList(0, maxInitialListSize)
+                        items.subList(0, MAX_INITIAL_LIST_SIZE)
                     } else {
                         filteredItems
                     }
@@ -148,7 +141,7 @@ fun IconPicker(
 }
 
 @Composable
-fun DropdownItem(
+private fun DropdownItem(
     modifier: Modifier,
     context: Context,
     item: String
@@ -176,4 +169,20 @@ fun DropdownItem(
     }
 }
 
-private const val maxInitialListSize = 5
+@Preview
+@Composable
+fun IconPickerPreview() {
+    val icon = "co2"
+
+    IconPicker(
+        modifier = Modifier
+            .padding(
+                start = 5.dp
+            ),
+        value = icon,
+        onValueChange = {
+        },
+    )
+}
+
+private const val MAX_INITIAL_LIST_SIZE = 5

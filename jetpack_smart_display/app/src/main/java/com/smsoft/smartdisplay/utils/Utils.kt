@@ -25,8 +25,15 @@ import androidx.media3.datasource.AssetDataSource
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.BluetoothDevice
+import com.smsoft.smartdisplay.data.BluetoothDeviceType
+import com.smsoft.smartdisplay.data.MQTTData
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
+import com.smsoft.smartdisplay.data.SensorType
+import com.smsoft.smartdisplay.data.database.entity.Sensor
+import com.smsoft.smartdisplay.data.database.entity.emptySensor
+import com.smsoft.smartdisplay.data.emptyBluetoothDevice
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl.getAudioAttributes
 import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
@@ -229,4 +236,183 @@ fun playAssetSound(
         prepare()
         playWhenReady = true
     }
+}
+
+fun getBluetoothDeviceByType(
+    type: String,
+    item: Sensor
+): BluetoothDevice {
+    return if (type == BluetoothDeviceType.THERMOBEACON.title) {
+        BluetoothDevice(
+            deviceName = item.topic3,
+            address = item.topic4
+        )
+    } else if (type.startsWith(BluetoothDeviceType.ATC.title)) {
+        BluetoothDevice(
+            deviceName = item.topic3,
+            address = item.topic4
+        )
+    } else {
+        emptyBluetoothDevice
+    }
+}
+
+fun getSensorByBluetoothType(
+    id: Long,
+    title: String,
+    type: String,
+    address: String
+) : Sensor {
+    return if (type == BluetoothDeviceType.THERMOBEACON.title) {
+        Sensor(
+            id = id,
+            title = title,
+            titleIcon = "",
+            topic1 = "$address/temperature",
+            topic1Unit = "C",
+            topic1Icon = "thermostat",
+            topic2 = "$address/humidity",
+            topic2Unit = "%",
+            topic2Icon = "humidity_low",
+            topic3 = type,
+            topic3Unit = "",
+            topic3Icon = "",
+            topic4 = address,
+            topic4Unit = "",
+            topic4Icon = "",
+            type = SensorType.BLUETOOTH.id
+        )
+    } else if (type.startsWith(BluetoothDeviceType.ATC.title)) {
+        Sensor(
+            id = id,
+            title = title,
+            titleIcon = "",
+            topic1 = "$address/temperature",
+            topic1Unit = "C",
+            topic1Icon = "thermostat",
+            topic2 = "$address/humidity",
+            topic2Unit = "%",
+            topic2Icon = "humidity_low",
+            topic3 = type,
+            topic3Unit = "",
+            topic3Icon = "",
+            topic4 = address,
+            topic4Unit = "",
+            topic4Icon = "",
+            type = SensorType.BLUETOOTH.id
+        )
+    } else {
+        emptySensor
+    }
+}
+
+fun getSensorDataByBluetoothType(
+    device: BluetoothDevice,
+    data: MQTTData
+): MQTTData {
+    if (device.deviceName == BluetoothDeviceType.THERMOBEACON.title) {
+        device.bytes?.let {
+            val parsedBytes = parseThermoBeaconData(
+                bytes = device.bytes
+            )
+            if (parsedBytes.first > -100) { //
+                data.value[device.address + "/temperature"] = String.format("%.2f", parsedBytes.first)
+            }
+            if (parsedBytes.second > 0) { //
+                data.value[device.address + "/humidity"] = String.format("%.2f", parsedBytes.second)
+            }
+        }
+    } else if (device.deviceName.startsWith(BluetoothDeviceType.ATC.title)) {
+        device.bytes?.let {
+            val parsedBytes = parseATCData(
+                bytes = device.bytes
+            )
+            data.value[device.address + "/temperature"] = String.format("%.2f", parsedBytes.first)
+            data.value[device.address + "/humidity"] = String.format("%.2f", parsedBytes.second)
+        }
+    }
+    return MQTTData(
+        value = data.value
+    )
+}
+private fun parseThermoBeaconData(
+    bytes: ByteArray
+): Pair<Float, Float> {
+    //val battery = littleEndianDataParse(bytes, 19, 2) * 0.001
+    var temperature = littleEndianDataParseHaveSign(
+        bytes = bytes,
+        offset = 21,
+        numBytes = 2).toFloat()
+    temperature = if (temperature == -1f) {
+        -128f
+    } else {
+        temperature / 16f
+    }
+    var humidity = littleEndianDataParseHaveSign(
+        bytes = bytes,
+        offset = 23,
+        numBytes = 2).toFloat()
+    humidity = if (humidity == -1f) {
+        -128f
+    } else {
+        humidity / 16f
+    }
+    return Pair(temperature, humidity)
+}
+
+private fun parseATCData(
+    bytes: ByteArray
+): Pair<Float, Float> {
+    val temperature = bytesToUInt16(bytes[14], bytes[15]) * 0.01f
+    val humidity = bytesToUInt16(bytes[16], bytes[17]) * 0.01f
+    //val battery = bytesToUInt16(bytes[18], bytes[19]) * 0.001
+    return Pair(temperature, humidity)
+}
+
+private fun littleEndianDataParse(
+    bytes: ByteArray,
+    offset: Int,
+    numBytes: Int
+): Int {
+    val byte1: Int
+    val byte2: Int
+    if (numBytes != 2) {
+        if (numBytes != 4) {
+            return -1
+        }
+        byte1 = bytes[offset + 3].toInt() shl 24 and -0x1000000
+        byte2 = bytes[offset].toInt() and 0xff or (0xff00 and (bytes[offset + 1].toInt() shl 8)) or (bytes[offset + 2].toInt() shl 16 and 0xff0000)
+    } else {
+        byte1 = bytes[offset + 1].toInt() shl 8 and 0xff00
+        byte2 = (bytes[offset].toInt() and 0xff).toShort().toInt()
+    }
+    return byte1 or byte2
+}
+
+private fun littleEndianDataParseHaveSign(
+    bytes: ByteArray,
+    offset: Int,
+    numBytes: Int
+): Int {
+    val byte1: Int
+    val byte2: Int
+    if (numBytes != 2) {
+        if (numBytes != 4) {
+            return -1
+        }
+        byte1 = bytes[offset + 3].toInt() shl 24
+        byte2 = bytes[offset].toInt() or (bytes[offset + 1].toInt() shl 8) or (bytes[offset + 2].toInt() shl 16)
+
+    } else {
+        byte1 = bytes[offset + 1].toInt() shl 8
+        byte2 = bytes[offset].toInt() and 0xff
+    }
+    return byte1 or byte2
+}
+
+private fun bytesToUInt16(
+    byte1: Byte,
+    byte2: Byte
+): Int {
+    return ((byte1.toInt() and 0xFF) shl 8) or (byte2.toInt() and 0xFF)
 }
