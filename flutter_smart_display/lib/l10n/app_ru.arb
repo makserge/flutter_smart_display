@@ -1,0 +1,8 @@
+{
+  "noSensorsItems": "No sensors items found. Click here to add item",
+  "addSensor": "Add sensor",
+  "editSensor": "Edit sensor",
+  "addSensorAddButton": "Add",
+  "addSensorUpdateButton": "Update",
+  "addSensorCancelButton": "Cancel"
+}
