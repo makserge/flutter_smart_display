@@ -81,19 +81,19 @@ class SensorsUpdateItemViewModel extends FormViewModel
      */
     } else {
       return item.copyWith(
-          title: titleInputController.text,
+          title: titleInputController.text.trim(),
           titleIcon: titleIcon,
-          topic1: topic1InputController.text,
-          topic1Unit: unit1InputController.text,
+          topic1: topic1InputController.text.trim(),
+          topic1Unit: unit1InputController.text.trim(),
           topic1Icon: topic1Icon,
-          topic2: topic2InputController.text,
-          topic2Unit: unit2InputController.text,
+          topic2: topic2InputController.text.trim(),
+          topic2Unit: unit2InputController.text.trim(),
           topic2Icon: topic2Icon,
-          topic3: topic3InputController.text,
-          topic3Unit: unit3InputController.text,
+          topic3: topic3InputController.text.trim(),
+          topic3Unit: unit3InputController.text.trim(),
           topic3Icon: topic3Icon,
-          topic4: topic4InputController.text,
-          topic4Unit: unit4InputController.text,
+          topic4: topic4InputController.text.trim(),
+          topic4Unit: unit4InputController.text.trim(),
           topic4Icon: topic4Icon,
           type: type);
     }

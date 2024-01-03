@@ -11,12 +11,13 @@ class Item extends StatelessWidget {
   const Item(
       {super.key,
       required this.item,
-      //itemsData: HashMap<String, String>,
+      required this.itemsData,
       required this.editMode,
       required this.onDelete,
       required this.onOptionsClick});
 
   final Sensor item;
+  final Map<String, String> itemsData;
   final bool editMode;
   final Function() onDelete;
   final Function() onOptionsClick;
@@ -34,16 +35,16 @@ class Item extends StatelessWidget {
             children: [
               Expanded(
                   child: TextWithUnitIcon(
-                      text: item.topic1,
-                      unit: (item.topic1.isNotEmpty) ? item.topic1Unit : "",
+                      text: itemsData[item.topic1] ?? "n/a",
+                      unit: (itemsData[item.topic1] != null) ? item.topic1Unit : "",
                       icon: item.topic1Icon,
                       editMode: editMode)),
               if (item.topic2.isNotEmpty) ...[
                 horizontalSpaceMicro,
                 Expanded(
                   child: TextWithUnitIcon(
-                      text: item.topic2 ?? "n/a",
-                      unit: (item.topic2.isNotEmpty) ? item.topic2Unit : "",
+                      text: itemsData[item.topic2] ?? "n/a",
+                      unit: (itemsData[item.topic2] != null) ? item.topic2Unit : "",
                       icon: item.topic2Icon,
                       editMode: editMode),
                 ),
@@ -55,8 +56,8 @@ class Item extends StatelessWidget {
               if (item.topic3.isNotEmpty) ...[
                 Expanded(
                     child: TextWithUnitIcon(
-                        text: item.topic3 ?? "n/a",
-                        unit: (item.topic3.isNotEmpty) ? item.topic3Unit : "",
+                        text: itemsData[item.topic3] ?? "n/a",
+                        unit: (itemsData[item.topic3] != null) ? item.topic3Unit : "",
                         icon: item.topic3Icon,
                         editMode: editMode)),
               ],
@@ -64,8 +65,8 @@ class Item extends StatelessWidget {
                 horizontalSpaceMicro,
                 Expanded(
                   child: TextWithUnitIcon(
-                      text: item.topic4 ?? "n/a",
-                      unit: (item.topic4.isNotEmpty) ? item.topic4Unit : "",
+                      text: itemsData[item.topic4] ?? "n/a",
+                      unit: (itemsData[item.topic4] != null) ? item.topic4Unit : "",
                       icon: item.topic4Icon,
                       editMode: editMode),
                 ),

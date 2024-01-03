@@ -26,6 +26,7 @@ class SensorsView extends StackedView<SensorsViewModel> {
           Sensor item = data[index];
           return Item(
             item: item,
+            itemsData: viewModel.mqttTopicData,
             editMode: viewModel.editMode,
             onDelete: () {
               viewModel.deleteItem(item);

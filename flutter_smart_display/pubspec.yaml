@@ -19,6 +19,8 @@ dependencies:
   sqflite_migration_service:
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
+  mqtt_client: ^10.0.1
+  uuid: ^4.2.2
 
 dev_dependencies:
   flutter_test:

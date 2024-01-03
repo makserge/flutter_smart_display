@@ -22,7 +22,7 @@ class TextWithUnitIcon extends StatelessWidget {
       children: [
         if (icon.isNotEmpty) ...[Icon(getIconByKey(icon)), horizontalSpaceTiny],
         SizedBox(
-          width: editMode ? 27 : 35,
+          width: editMode ? 27 : 38,
           child: Text(text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
