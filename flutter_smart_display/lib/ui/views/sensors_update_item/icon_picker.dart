@@ -13,8 +13,7 @@ class IconPicker extends StatefulWidget {
   final Function(String value) onValueChange;
 
   @override
-  // ignore: library_private_types_in_public_api
-  _IconPickerState createState() => _IconPickerState();
+  State<IconPicker> createState() => _IconPickerState();
 }
 
 class _IconPickerState extends State<IconPicker> {
@@ -22,10 +21,10 @@ class _IconPickerState extends State<IconPicker> {
       TextEditingController();
 
   late String _value;
+  final SuggestionsBoxController _suggestionBoxController =
+      SuggestionsBoxController();
 
-  SuggestionsBoxController suggestionBoxController = SuggestionsBoxController();
-
-  static final List<String> items = [
+  static final List<String> _items = [
     "co2",
     "lightbulb",
     "toggle_on",
@@ -48,7 +47,7 @@ class _IconPickerState extends State<IconPicker> {
 
   static List<String> getSuggestions(String query) {
     List<String> matches = <String>[];
-    matches.addAll(items);
+    matches.addAll(_items);
 
     matches.retainWhere((s) => s.toLowerCase().contains(query.toLowerCase()));
     return matches;
@@ -105,7 +104,7 @@ class _IconPickerState extends State<IconPicker> {
             getTitleByKey(context, suggestion)!;
         setValue(suggestion);
       },
-      suggestionsBoxController: suggestionBoxController,
+      suggestionsBoxController: _suggestionBoxController,
       displayAllSuggestionWhenTap: true,
     );
   }

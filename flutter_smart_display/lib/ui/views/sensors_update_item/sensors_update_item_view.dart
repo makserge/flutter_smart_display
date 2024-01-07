@@ -7,6 +7,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../models/sensor_type.dart';
 import '../../../models/sensor.dart';
 import '../../common/ui_helpers.dart';
+import 'bluetooth_devices.dart';
 import 'flat_button.dart';
 import 'sensors_update_item_viewmodel.dart';
 import 'sensors_update_item_view.form.dart';
@@ -57,6 +58,7 @@ class SensorsUpdateItemView extends StackedView<SensorsUpdateItemViewModel>
   @override
   Widget builder(BuildContext context, SensorsUpdateItemViewModel viewModel,
       Widget? child) {
+
     Widget updateMqttTopics() {
       return Column(
         children: [
@@ -108,10 +110,6 @@ class SensorsUpdateItemView extends StackedView<SensorsUpdateItemViewModel>
       );
     }
 
-    Widget bluetoothDevices() {
-      return Container();
-    }
-
     void onClose() {
       if (SensorType.isBluetooth(viewModel.type)) {
         viewModel.stopBleScan();
@@ -152,7 +150,27 @@ class SensorsUpdateItemView extends StackedView<SensorsUpdateItemViewModel>
                       }),
                   verticalSpaceTiny,
                   if (SensorType.isBluetooth(viewModel.type)) ...[
-                    bluetoothDevices()
+                    verticalSpaceTiny,
+                    BluetoothDevices(
+                        value: '',
+                        onValueChange: (String value) {
+
+                        },
+                        onBluetoothPermissionsDenied: () {
+                          viewModel.showBleErrorBottomSheet(context);
+                        },
+                        onRescan: () {
+                          viewModel.startBleScan();
+                        }
+                      //state = bleScanState,
+                      //selectedItem = selectedBleDevice,
+                      //onClick = {
+                      //  selectedBleDevice = it
+                      //},
+                      //onRescan = {
+                      //  viewModel.startBleScan()
+                      //}
+                    )
                   ] else ...[
                     updateMqttTopics()
                   ]

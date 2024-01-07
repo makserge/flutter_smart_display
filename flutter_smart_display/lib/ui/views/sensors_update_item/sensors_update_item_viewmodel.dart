@@ -1,13 +1,20 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_smart_display/models/sensor.dart';
 import 'package:flutter_smart_display/ui/views/sensors_update_item/sensors_update_item_view.form.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:stacked_services/stacked_services.dart';
 
+import '../../../app/app.bottomsheets.dart';
+import '../../../app/app.locator.dart';
 import '../../../models/sensor_type.dart';
 
 class SensorsUpdateItemViewModel extends FormViewModel
     with $SensorsUpdateItemView {
+  final _bottomSheetService = locator<BottomSheetService>();
+
   late int? id;
   String type = SensorType.defaultType.name;
   late String titleIcon;
@@ -65,7 +72,13 @@ class SensorsUpdateItemViewModel extends FormViewModel
     return true;
   }
 
-  void stopBleScan() {}
+  void startBleScan() {
+    log("startBleScan");
+  }
+
+  void stopBleScan() {
+
+  }
 
   Sensor updateItem(Sensor item) {
     if (SensorType.isBluetooth(type)) {
@@ -97,6 +110,14 @@ class SensorsUpdateItemViewModel extends FormViewModel
           topic4Icon: topic4Icon,
           type: type);
     }
+  }
+
+  void showBleErrorBottomSheet(BuildContext context) {
+    _bottomSheetService.showCustomSheet(
+        variant: BottomSheetType.alert,
+        title: AppLocalizations.of(context)!.bleErrorTitle,
+        description: AppLocalizations.of(context)!.bleErrorDescription
+    );
   }
 }
 

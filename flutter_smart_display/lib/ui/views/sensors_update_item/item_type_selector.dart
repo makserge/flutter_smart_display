@@ -11,8 +11,7 @@ class ItemTypeSelector extends StatefulWidget {
   final Function(String value) onValueChange;
 
   @override
-  // ignore: library_private_types_in_public_api
-  _ItemTypeSelectorState createState() => _ItemTypeSelectorState();
+  State<ItemTypeSelector> createState() => _ItemTypeSelectorState();
 }
 
 class _ItemTypeSelectorState extends State<ItemTypeSelector> {

@@ -36,7 +36,9 @@ class Item extends StatelessWidget {
               Expanded(
                   child: TextWithUnitIcon(
                       text: itemsData[item.topic1] ?? "n/a",
-                      unit: (itemsData[item.topic1] != null) ? item.topic1Unit : "",
+                      unit: (itemsData[item.topic1] != null)
+                          ? item.topic1Unit
+                          : "",
                       icon: item.topic1Icon,
                       editMode: editMode)),
               if (item.topic2.isNotEmpty) ...[
@@ -44,7 +46,9 @@ class Item extends StatelessWidget {
                 Expanded(
                   child: TextWithUnitIcon(
                       text: itemsData[item.topic2] ?? "n/a",
-                      unit: (itemsData[item.topic2] != null) ? item.topic2Unit : "",
+                      unit: (itemsData[item.topic2] != null)
+                          ? item.topic2Unit
+                          : "",
                       icon: item.topic2Icon,
                       editMode: editMode),
                 ),
@@ -57,7 +61,9 @@ class Item extends StatelessWidget {
                 Expanded(
                     child: TextWithUnitIcon(
                         text: itemsData[item.topic3] ?? "n/a",
-                        unit: (itemsData[item.topic3] != null) ? item.topic3Unit : "",
+                        unit: (itemsData[item.topic3] != null)
+                            ? item.topic3Unit
+                            : "",
                         icon: item.topic3Icon,
                         editMode: editMode)),
               ],
@@ -66,7 +72,9 @@ class Item extends StatelessWidget {
                 Expanded(
                   child: TextWithUnitIcon(
                       text: itemsData[item.topic4] ?? "n/a",
-                      unit: (itemsData[item.topic4] != null) ? item.topic4Unit : "",
+                      unit: (itemsData[item.topic4] != null)
+                          ? item.topic4Unit
+                          : "",
                       icon: item.topic4Icon,
                       editMode: editMode),
                 ),

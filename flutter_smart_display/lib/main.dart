@@ -7,10 +7,13 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'app/app.bottomsheets.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
   setupDialogUi();
+  setupBottomSheetUi();
   runApp(const MainApp());
 }
 

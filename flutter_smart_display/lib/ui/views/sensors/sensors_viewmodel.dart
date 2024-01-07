@@ -96,7 +96,7 @@ class SensorsViewModel extends BaseViewModel {
       final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
       final topic = c[0].topic;
       final String message =
-      MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
 
       _mqttTopicData[topic] = message;
 
@@ -104,10 +104,11 @@ class SensorsViewModel extends BaseViewModel {
     });
 
     for (var item in _items) {
-      _subscribeToMqttTopic(item);
+      if (!SensorType.isBluetooth(item.type)) {
+        _subscribeToMqttTopic(item);
+      }
     }
   }
-
 
   void _subscribeToMqttTopic(Sensor item) {
     if (SensorType.isBluetooth(item.type)) {

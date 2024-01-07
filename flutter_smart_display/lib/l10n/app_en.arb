@@ -21,5 +21,8 @@
   "sensorTypeMqtt": "MQTT",
   "sensorTypeBluetooth": "BLE",
   "delete": "Delete",
-  "edit": "Edit"
+  "edit": "Edit",
+  "bleErrorTitle": "BLE error",
+  "bleErrorDescription": "Please enable Bluetooth and allow required Bluetooth permissions",
+  "noBluetoothDevices": "No bluetooth devices found. Click here to restart scan"
 }
