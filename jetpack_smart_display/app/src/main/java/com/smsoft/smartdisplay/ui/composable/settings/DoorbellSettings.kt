@@ -52,5 +52,3 @@ fun doorbellSettings(
         }
     }
 }
-//topic:
-//url:

@@ -15,9 +15,13 @@
  */
 package de.dixieflatline.mpcw.client.mpd
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-import de.dixieflatline.mpcw.client.*
+import de.dixieflatline.mpcw.client.CommunicationException
+import de.dixieflatline.mpcw.client.IBrowser
+import de.dixieflatline.mpcw.client.IClient
+import de.dixieflatline.mpcw.client.IPlayer
+import de.dixieflatline.mpcw.client.IPlaylist
+import de.dixieflatline.mpcw.client.PlaylistItem
+import de.dixieflatline.mpcw.client.ProtocolException
 import java.util.function.Consumer
 
 class Client(private val channel: Channel) : IClient {
@@ -31,7 +35,6 @@ class Client(private val channel: Channel) : IClient {
         return CurrentPlaylist(channel)
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     @Throws(CommunicationException::class, ProtocolException::class)
     override fun resyncCurrentPlaylist(playlist: IPlaylist): IPlaylist {
         val list: MutableList<PlaylistItem> = ArrayList()
