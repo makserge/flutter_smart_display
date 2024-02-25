@@ -46,12 +46,12 @@ class SettingsViewModel @Inject constructor(
     val cityLat = getParamFlow(
         dataStore = dataStore,
         defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LAT.key)] ?: "" }
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LAT.key)] ?: WEATHER_CITY_DEFAULT_LAT }
 
     val cityLon = getParamFlow(
         dataStore = dataStore,
         defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LON.key)] ?: "" }
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LON.key)] ?: WEATHER_CITY_DEFAULT_LON }
 
     val mqttHost = getParamFlow(
         dataStore = dataStore,
@@ -177,3 +177,5 @@ const val MPD_SERVER_DEFAULT_PORT = "6600"
 const val DOORBELL_ALARM_DEFAULT_TOPIC = "doorbell"
 const val DOORBELL_STREAM_DEFAULT_URL = ""
 const val DOORBELL_BACK_TIMER_DEFAULT_DELAY = 10F
+const val WEATHER_CITY_DEFAULT_LAT = "48.137428"
+const val WEATHER_CITY_DEFAULT_LON = "11.57549"

@@ -2,7 +2,6 @@ package com.smsoft.smartdisplay.ui.screen.weather
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,6 +16,8 @@ import androidx.work.WorkManager
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.database.repository.WeatherRepository
 import com.smsoft.smartdisplay.service.workers.WeatherUpdateTaskWorker
+import com.smsoft.smartdisplay.ui.screen.settings.WEATHER_CITY_DEFAULT_LAT
+import com.smsoft.smartdisplay.ui.screen.settings.WEATHER_CITY_DEFAULT_LON
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -26,12 +27,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 @SuppressLint("StaticFieldLeak")
@@ -51,20 +49,20 @@ class WeatherViewModel @Inject constructor(
 
     private suspend fun getWeatherCity(): Pair<Double, Double> {
         val data = dataStore.data.first()
-        var lat = 0.0
+        var lat = WEATHER_CITY_DEFAULT_LAT.toDouble()
         data[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LAT.key)]?.let {
             lat = if (it.isNotEmpty()) {
                 it.toDouble()
             } else {
-                0.0
+                WEATHER_CITY_DEFAULT_LAT.toDouble()
             }
         }
-        var lon = 0.0
+        var lon = WEATHER_CITY_DEFAULT_LON.toDouble()
         data[stringPreferencesKey(PreferenceKey.WEATHER_CITY_LON.key)]?.let {
             lon = if (it.isNotEmpty()) {
                 it.toDouble()
             } else {
-                0.0
+                WEATHER_CITY_DEFAULT_LON.toDouble()
             }
         }
         return Pair(lat, lon)
@@ -123,21 +121,15 @@ class WeatherViewModel @Inject constructor(
 
     fun windDegreeToDirection(deg: Int) = windDirections[(deg % 360) / 45]
 
-    fun getDayOfWeek(date: Long, timezone: String): String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    fun getDayOfWeek(date: Long, timezone: String): String =
         DateTimeFormatter.ofPattern("EEEE")
             .format(Instant.ofEpochSecond(date).atZone(ZoneId.of(timezone)))
-    } else {
-        val sdf = SimpleDateFormat("EEEE", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone(timezone)
-        }
-        sdf.format(date)
-    }
 
 }
 
 sealed class UIState {
-    object Initial : UIState()
-    object Ready : UIState()
+    data object Initial : UIState()
+    data object Ready : UIState()
 }
 
 const val WORK_NAME = "weatherUpdater"

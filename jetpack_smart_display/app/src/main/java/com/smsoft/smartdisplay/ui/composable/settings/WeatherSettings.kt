@@ -9,6 +9,8 @@ import com.jamal.composeprefs.ui.PrefsScope
 import com.jamal.composeprefs.ui.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.ui.screen.settings.WEATHER_CITY_DEFAULT_LAT
+import com.smsoft.smartdisplay.ui.screen.settings.WEATHER_CITY_DEFAULT_LON
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 fun weatherSettings(
@@ -27,16 +29,16 @@ fun weatherSettings(
                 modifier = modifier,
                 key = PreferenceKey.WEATHER_CITY_LAT.key,
                 title = stringResource(PreferenceKey.WEATHER_CITY_LAT.title),
-                summary = cityLat
+                summary = cityLat,
+                defaultValue = WEATHER_CITY_DEFAULT_LAT
             )
             EditTextPref(
                 modifier = modifier,
                 key = PreferenceKey.WEATHER_CITY_LON.key,
                 title = stringResource(PreferenceKey.WEATHER_CITY_LON.title),
-                summary = cityLon
+                summary = cityLon,
+                defaultValue = WEATHER_CITY_DEFAULT_LON
             )
         }
     }
 }
-//lat: 48.137428
-//lon: 11.57549
