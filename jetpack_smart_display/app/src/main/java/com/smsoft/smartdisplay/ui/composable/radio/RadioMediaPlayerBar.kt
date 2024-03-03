@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
@@ -19,6 +20,7 @@ import com.smsoft.smartdisplay.ui.screen.radio.UIEvent
 @Composable
 fun RadioMediaPlayerBar(
     modifier: Modifier = Modifier,
+    isProgressEnabled: Boolean,
     progress: Float,
     durationString: String,
     progressString: String,
@@ -30,21 +32,33 @@ fun RadioMediaPlayerBar(
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Slider(
-            modifier = Modifier
-                .padding(
-                    horizontal = 8.dp
-                ),
-            value = if (useNewProgressValue.value) newProgressValue.floatValue else progress,
-            onValueChange = { newValue ->
-                useNewProgressValue.value = true
-                newProgressValue.floatValue = newValue
-                onUiEvent(UIEvent.UpdateProgress(newProgress = newValue))
-            },
-            onValueChangeFinished = {
-                useNewProgressValue.value = false
-            }
-        )
+        if (isProgressEnabled) {
+            Slider(
+                modifier = Modifier
+                    .padding(
+                        horizontal = 8.dp
+                    ),
+                value = if (useNewProgressValue.value) newProgressValue.floatValue else progress,
+                onValueChange = { newValue ->
+                    useNewProgressValue.value = true
+                    newProgressValue.floatValue = newValue
+                    onUiEvent(UIEvent.UpdateProgress(newProgress = newValue))
+                },
+                onValueChangeFinished = {
+                    useNewProgressValue.value = false
+                }
+            )
+        } else {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = 16.dp
+                    ),
+                progress = progress
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

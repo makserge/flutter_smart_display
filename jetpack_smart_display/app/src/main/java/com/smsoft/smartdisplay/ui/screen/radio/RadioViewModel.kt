@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.CountDownTimer
 import android.text.Html
-import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.text.HtmlCompat
 import androidx.datastore.core.DataStore
@@ -32,10 +34,10 @@ import com.smsoft.smartdisplay.utils.getRadioType
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @OptIn(SavedStateHandleSaveableApi::class)
@@ -112,7 +114,7 @@ class RadioViewModel @Inject constructor(
         }
     }
 
-    private fun isInternalPlayer(): Boolean {
+    fun isInternalPlayer(): Boolean {
         return getRadioType(dataStore) == RadioType.INTERNAL
     }
 

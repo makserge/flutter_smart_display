@@ -14,6 +14,7 @@ import com.smsoft.smartdisplay.ui.screen.radio.UIEvent
 @Composable
 fun RadioMediaPlayerUI(
     modifier: Modifier = Modifier,
+    isProgressEnabled: Boolean,
     presetTitle: String,
     metaTitle: String,
     durationString: String,
@@ -49,6 +50,7 @@ fun RadioMediaPlayerUI(
         } else {
             RadioMediaPlayerBar(
                 modifier = modifier,
+                isProgressEnabled = isProgressEnabled,
                 progress = progress,
                 durationString = durationString,
                 progressString = progressString,

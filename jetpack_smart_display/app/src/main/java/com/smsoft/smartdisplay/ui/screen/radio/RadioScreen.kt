@@ -68,6 +68,7 @@ fun RadioScreen(
                 UIState.Initial -> CircularProgressIndicator()
                 UIState.Ready -> {
                     RadioMediaPlayerUI(
+                        isProgressEnabled = viewModel.isInternalPlayer(),
                         presetTitle = viewModel.presetTitle,
                         metaTitle = viewModel.metaTitle,
                         durationString = if (viewModel.duration > 0) viewModel.formatDuration(viewModel.duration) else "",

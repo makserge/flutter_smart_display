@@ -15,8 +15,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,20 +95,13 @@ fun IconPicker(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedTextField(
-                        modifier = modifier,
+                        modifier = Modifier,
                         value = searchedOption,
                         onValueChange = { it ->
                             searchedOption = it
                             filteredItems = items.filter {
                                 it.contains(searchedOption, ignoreCase = true)
                             }.toMutableList()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier,
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = null
-                            )
                         }
                     )
                     val itemsList = if (filteredItems.isEmpty()) {

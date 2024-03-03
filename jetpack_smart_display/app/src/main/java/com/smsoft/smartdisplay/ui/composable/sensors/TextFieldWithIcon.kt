@@ -79,9 +79,7 @@ fun TextFieldWithIcon(
                     start = 5.dp
                 ),
             value = icon,
-            onValueChange = {
-                onIconChange(it)
-            },
+            onValueChange = onIconChange,
         )
         if (showType) {
             ItemTypeSelector(
