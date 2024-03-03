@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        compose_version = '1.6.1'
+        compose_version = '1.6.2'
         hilt_version = '2.48.1'
         exoplayer_media3_version = '1.2.1'
         room_version = '2.6.1'

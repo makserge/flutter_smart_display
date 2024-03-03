@@ -8,7 +8,11 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.ui.AppNavigation
@@ -23,7 +27,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SmartDisplayTheme {
-                Surface {
+                Surface(modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colors.background)) {
                     AppNavigation()
                 }
             }
