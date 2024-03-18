@@ -3,9 +3,13 @@ package com.smsoft.smartdisplay.ui.screen.settings
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -85,6 +89,14 @@ fun SettingsScreen(
         initialValue = ""
     )
 
+    val pushButtonPayloadOn by viewModel.pushButtonPayloadOn.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val pushButtonPayloadOff by viewModel.pushButtonPayloadOff.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -145,6 +157,8 @@ fun SettingsScreen(
                 modifier = Modifier,
                 scope = this,
                 topic = pushButtonTopic.toString(),
+                payloadOn = pushButtonPayloadOn.toString(),
+                payloadOff = pushButtonPayloadOff.toString(),
             )
             asrSettings (
                 modifier = Modifier,

@@ -167,8 +167,10 @@
     <string name="doorbell">Doorbell</string>
     <string name="doorbell_alarm_topic">MQTT alarm topic</string>
     <string name="doorbell_stream_url">RTSP stream URL</string>
-    <string name="push_button">Push button</string>
-    <string name="push_button_topic">MQTT topic</string>
+    <string name="push_button">Push button MQTT settings</string>
+    <string name="push_button_topic">Topic</string>
+    <string name="push_button_payload_on">Payload on</string>
+    <string name="push_button_payload_off">Payload off</string>
     <string name="doorbell_back_timer_delay">Back timer delay</string>
     <string name="no_sensors_items">No sensors items found. Click here to add item</string>
     <string name="asr_enabled">Enabled</string>

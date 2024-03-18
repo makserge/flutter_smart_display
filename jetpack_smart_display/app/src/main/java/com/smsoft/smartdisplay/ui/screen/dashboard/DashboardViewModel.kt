@@ -64,6 +64,8 @@ class DashboardViewModel @Inject constructor(
     private val pushButtonState = MutableStateFlow(PUSH_BUTTON_DEFAULT_STATE)
 
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
+    private var pushButtonPayloadOn = PUSH_BUTTON_DEFAULT_PAYLOAD_ON
+    private var pushButtonPayloadOff = PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
 
     init {
@@ -80,17 +82,11 @@ class DashboardViewModel @Inject constructor(
 
     fun togglePressButton() {
         pushButtonState.value = !pushButtonState.value
-        sendPressButtonEvent(
-            message = if (pushButtonState.value) {
-                MQTT_PRESS_BUTTON_ON_MESSAGE
-            } else {
-                MQTT_PRESS_BUTTON_OFF_MESSAGE
-            }
-        )
+        sendPressButtonEvent(pushButtonState.value)
     }
 
     fun sendPressButtonEvent(
-        message: String
+        isOn: Boolean
     ) {
         if (!mqttClient.isConnected) {
             return
@@ -99,7 +95,11 @@ class DashboardViewModel @Inject constructor(
             mqttClient.publish(
                 topic = pushButtonTopic,
                 message = MqttMessage().apply {
-                    payload = message.toByteArray()
+                    payload = if (isOn) {
+                        pushButtonPayloadOn
+                    } else {
+                        pushButtonPayloadOff
+                    }.toByteArray()
                 },
                 userContext = null,
                 callback = object: IMqttActionListener {
@@ -119,6 +119,12 @@ class DashboardViewModel @Inject constructor(
         val data = dataStore.data.first()
         data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)]?.let {
             pushButtonTopic = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)]?.let {
+            pushButtonPayloadOn = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_OFF.key)]?.let {
+            pushButtonPayloadOff = it.trim()
         }
         data[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)]?.let {
             doorbellTopic = it.trim()
@@ -304,5 +310,5 @@ class DashboardViewModel @Inject constructor(
 const val APP_CHANNEL = "SmartDisplaychannnel"
 const val PUSH_BUTTON_DEFAULT_TOPIC = "pushbutton"
 const val PUSH_BUTTON_DEFAULT_STATE = false
-const val MQTT_PRESS_BUTTON_ON_MESSAGE = "1"
-const val MQTT_PRESS_BUTTON_OFF_MESSAGE = "0"
+const val PUSH_BUTTON_DEFAULT_PAYLOAD_ON = "1"
+const val PUSH_BUTTON_DEFAULT_PAYLOAD_OFF = "0"

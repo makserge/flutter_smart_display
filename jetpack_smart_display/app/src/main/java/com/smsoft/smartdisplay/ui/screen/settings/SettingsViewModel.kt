@@ -103,6 +103,16 @@ class SettingsViewModel @Inject constructor(
         defaultValue = ""
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)] ?: "" }
 
+    val pushButtonPayloadOn = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ""
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)] ?: "" }
+
+    val pushButtonPayloadOff = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ""
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_OFF.key)] ?: "" }
+
     init {
         updateDoorbellAlarmTopic()
         updateAsrServiceState()

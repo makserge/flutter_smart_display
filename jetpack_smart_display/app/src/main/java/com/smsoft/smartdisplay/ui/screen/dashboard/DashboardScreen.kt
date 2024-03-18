@@ -51,7 +51,7 @@ fun DashboardScreen(
                     context = context,
                     command = asrCommandState.value!!,
                     onPageChanged = {pageId, command ->
-                        page.value = pageId
+                        page.intValue = pageId
                         voiceCommand.value = command ?: VoiceCommand.CLOCK
                     },
                     onError = {
@@ -62,9 +62,7 @@ fun DashboardScreen(
                         )
                     },
                     onPressButton = {
-                        viewModel.sendPressButtonEvent(
-                            message = it
-                        )
+                        viewModel.sendPressButtonEvent(it)
                     }
                 )
             }
@@ -83,7 +81,7 @@ fun DashboardScreen(
         )
     }
     HorizontalPagerScreen(
-        currentPage = page.value,
+        currentPage = page.intValue,
         command = voiceCommand.value,
         onSettingsClick = onSettingsClick,
         onClick = {
