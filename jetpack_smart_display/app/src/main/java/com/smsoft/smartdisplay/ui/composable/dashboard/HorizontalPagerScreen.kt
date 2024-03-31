@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,19 +26,12 @@ import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 @Composable
 fun HorizontalPagerScreen(
     modifier: Modifier = Modifier,
-    currentPage: Int,
+    pagerState: PagerState,
+    pageCount: Int,
     command: VoiceCommand,
     onSettingsClick: () -> Unit,
     onClick: () -> Unit
 ) {
-    val pages = DashboardItem.values()
-    val pagerState = rememberPagerState(
-        initialPage = currentPage,
-        pageCount = {
-            pages.size
-        }
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +64,7 @@ fun HorizontalPagerScreen(
                 )
                 .padding(16.dp),
             pagerState = pagerState,
-            pageCount = pages.size
+            pageCount = pageCount
         )
     }
 }

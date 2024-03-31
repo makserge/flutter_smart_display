@@ -5,8 +5,10 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.media3.common.util.UnstableApi
-import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.utils.getAsrWakeWord
 import com.smsoft.smartdisplay.utils.getForegroundNotification
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +33,9 @@ class SpeechRecognitionService : Service() {
     @Inject
     lateinit var speechRecognitionHandler: SpeechRecognitionHandler
 
+    @Inject
+    lateinit var dataStore: DataStore<Preferences>
+
     private val STICKY_NOTIFICATION_ID = 77
 
     private var isInRecognizingMode = false
@@ -41,9 +46,8 @@ class SpeechRecognitionService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForeground()
-        wakeWord = resources.getString(R.string.asr_wakeword)
-
         CoroutineScope(Dispatchers.IO).launch {
+            wakeWord = resources.getString(getAsrWakeWord(dataStore).titleId)
             initVosk()
         }
     }

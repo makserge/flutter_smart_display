@@ -21,22 +21,6 @@ class RadioMediaNotificationAdapter(
         player: Player,
         callback: PlayerNotificationManager.BitmapCallback
     ): Bitmap? {
-        /*
-        Glide.with(context)
-            .asBitmap()
-            .load(player.mediaMetadata.artworkUri)
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .into(object : CustomTarget<Bitmap>() {
-                override fun onLoadCleared(placeholder: Drawable?) = Unit
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap>?
-                ) {
-                    callback.onBitmap(resource)
-                }
-            })
-
-         */
         return null
     }
 }

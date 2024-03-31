@@ -15,6 +15,14 @@ import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
+import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
+import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_ON
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -100,18 +108,43 @@ class SettingsViewModel @Inject constructor(
 
     val pushButtonTopic = getParamFlow(
         dataStore = dataStore,
-        defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)] ?: "" }
+        defaultValue = PUSH_BUTTON_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)] ?: PUSH_BUTTON_DEFAULT_TOPIC }
 
     val pushButtonPayloadOn = getParamFlow(
         dataStore = dataStore,
-        defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)] ?: "" }
+        defaultValue = PUSH_BUTTON_DEFAULT_PAYLOAD_ON
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)] ?: PUSH_BUTTON_DEFAULT_PAYLOAD_ON }
 
     val pushButtonPayloadOff = getParamFlow(
         dataStore = dataStore,
-        defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_OFF.key)] ?: "" }
+        defaultValue = PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_OFF.key)] ?: PUSH_BUTTON_DEFAULT_PAYLOAD_OFF }
+
+    val proximitySensorTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = PROXIMITY_SENSOR_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_TOPIC.key)] ?: PROXIMITY_SENSOR_DEFAULT_TOPIC }
+
+    val proximitySensorPayloadOn = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_ON.key)] ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON }
+
+    val proximitySensorPayloadOff = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)] ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF }
+
+    val lightSensorTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = LIGHT_SENSOR_TOPIC_DEFAULT
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_TOPIC.key)] ?: LIGHT_SENSOR_TOPIC_DEFAULT }
+
+    val lightSensorInterval = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = LIGHT_SENSOR_INTERVAL_DEFAULT
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_INTERVAL.key)] ?: LIGHT_SENSOR_INTERVAL_DEFAULT }
 
     init {
         updateDoorbellAlarmTopic()
@@ -180,6 +213,7 @@ class SettingsViewModel @Inject constructor(
     }
 }
 
+const val CLOCK_AUTO_RETURN_TIMEOUT_DEFAULT = 5F
 const val MQTT_SERVER_DEFAULT_HOST = "localhost"
 const val MQTT_SERVER_DEFAULT_PORT = "1883"
 const val MPD_SERVER_DEFAULT_HOST = ""

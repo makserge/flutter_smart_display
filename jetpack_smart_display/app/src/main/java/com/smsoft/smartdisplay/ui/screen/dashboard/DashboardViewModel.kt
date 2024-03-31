@@ -3,23 +3,35 @@ package com.smsoft.smartdisplay.ui.screen.dashboard
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.os.CountDownTimer
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.MQTTServer
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionHandler
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionState
+import com.smsoft.smartdisplay.service.asr.processCommand
+import com.smsoft.smartdisplay.service.sensor.SensorHandler
+import com.smsoft.smartdisplay.service.sensor.SensorService
+import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_VOLUME_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
+import com.smsoft.smartdisplay.ui.screen.settings.CLOCK_AUTO_RETURN_TIMEOUT_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.utils.getForegroundNotification
+import com.smsoft.smartdisplay.utils.playAssetSound
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
@@ -47,8 +59,15 @@ class DashboardViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     val dataStore: DataStore<Preferences>,
     private val mqttClient: MqttAndroidClient,
-    private val speechRecognitionHandler: SpeechRecognitionHandler
+    private val speechRecognitionHandler: SpeechRecognitionHandler,
+    private val sensorHandler: SensorHandler
 ) : ViewModel() {
+    private val currentPageStateInt = MutableStateFlow(DashboardItem.CLOCK.ordinal)
+    val currentPageState = currentPageStateInt.asStateFlow()
+
+    private val voiceCommandStateInt = MutableStateFlow(VoiceCommand.CLOCK)
+    val voiceCommandState = voiceCommandStateInt.asStateFlow()
+
     private val doorBellAlarmStateInt = MutableStateFlow(false)
     val doorBellAlarmState = doorBellAlarmStateInt.asStateFlow()
 
@@ -58,15 +77,29 @@ class DashboardViewModel @Inject constructor(
     private val asrRecognitionStateInt = MutableStateFlow<String?>(null)
     val asrRecognitionState = asrRecognitionStateInt.asStateFlow()
 
-    private val asrCommandStateInt = MutableStateFlow<String?>(null)
-    val asrCommandState = asrCommandStateInt.asStateFlow()
+    private var isAsrSoundEnabled = ASR_SOUND_ENABLED_DEFAULT
+    private var asrSoundVolume = ASR_SOUND_VOLUME_DEFAULT
 
-    private val pushButtonState = MutableStateFlow(PUSH_BUTTON_DEFAULT_STATE)
+    private var pushButtonState = PUSH_BUTTON_DEFAULT_STATE
+    private var proximitySensorButtonState = PROXIMITY_SENSOR_DEFAULT_STATE
 
     private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
     private var pushButtonPayloadOn = PUSH_BUTTON_DEFAULT_PAYLOAD_ON
     private var pushButtonPayloadOff = PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
+
+    private var proximitySensorTopic = PROXIMITY_SENSOR_DEFAULT_TOPIC
+    private var proximitySensorPayloadOn = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
+    private var proximitySensorPayloadOff = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+    private var proximitySensorButtonThreshold = false
+
     private var doorbellTopic = DOORBELL_ALARM_DEFAULT_TOPIC
+
+    private var lightSensorTopic = LIGHT_SENSOR_TOPIC_DEFAULT
+
+    private var clockAutoReturn = false
+    private var clockAutoReturnTimeout = CLOCK_AUTO_RETURN_TIMEOUT_DEFAULT
+
+    private var clockAutoReturnTimer: CountDownTimer? = null
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -74,6 +107,7 @@ class DashboardViewModel @Inject constructor(
             initMQTT()
         }
         initASR()
+        initSensors()
     }
 
     fun resetDoorBellAlarmState() {
@@ -81,38 +115,62 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun togglePressButton() {
-        pushButtonState.value = !pushButtonState.value
-        sendPressButtonEvent(pushButtonState.value)
+        pushButtonState = !pushButtonState
+        sendPressButtonEvent(pushButtonState)
     }
 
-    fun sendPressButtonEvent(
+    private fun sendPressButtonEvent(
         isOn: Boolean
     ) {
-        if (!mqttClient.isConnected) {
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            mqttClient.publish(
-                topic = pushButtonTopic,
-                message = MqttMessage().apply {
-                    payload = if (isOn) {
-                        pushButtonPayloadOn
-                    } else {
-                        pushButtonPayloadOff
-                    }.toByteArray()
-                },
-                userContext = null,
-                callback = object: IMqttActionListener {
-                    override fun onSuccess(asyncActionToken: IMqttToken?) {
-                        Log.d("DashboardViewModel", "sendPressButtonEvent Ok")
-                    }
+        publishMQTT(
+            topic = pushButtonTopic,
+            messagePayload = if (isOn) {
+                pushButtonPayloadOn
+            } else {
+                pushButtonPayloadOff
+            }
+        )
+    }
 
-                    override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                        Log.d("DashboardViewModel", "sendPressButtonEvent Error")
-                    }
-                }
-            )
+    private fun sendProximityButtonEvent(
+        isOn: Boolean
+    ) {
+        publishMQTT(
+            topic = proximitySensorTopic,
+            messagePayload = if (isOn) {
+                proximitySensorPayloadOn
+            } else {
+                proximitySensorPayloadOff
+            }
+        )
+    }
+
+    private fun initClockAutoReturn() {
+        viewModelScope.launch(Dispatchers.IO) {
+           val data = dataStore.data.first()
+            data[booleanPreferencesKey(PreferenceKey.CLOCK_AUTO_RETURN.key)]?.let {
+                clockAutoReturn = it
+            }
+            data[floatPreferencesKey(PreferenceKey.CLOCK_AUTO_RETURN_TIMEOUT.key)]?.let {
+                clockAutoReturnTimeout = it
+            }
         }
+    }
+
+    private fun reStartClockAutoReturnTimer() {
+        if (clockAutoReturnTimer != null) {
+            clockAutoReturnTimer!!.cancel()
+            clockAutoReturnTimer = null
+        }
+        clockAutoReturnTimer = object : CountDownTimer(clockAutoReturnTimeout.toLong() * 60000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+            }
+
+            override fun onFinish() {
+                currentPageStateInt.value = DashboardItem.CLOCK.ordinal
+            }
+        }
+        clockAutoReturnTimer!!.start()
     }
 
     private suspend fun getMQTTTopics() {
@@ -128,6 +186,18 @@ class DashboardViewModel @Inject constructor(
         }
         data[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)]?.let {
             doorbellTopic = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_TOPIC.key)]?.let {
+            lightSensorTopic = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_TOPIC.key)]?.let {
+            proximitySensorTopic = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_ON.key)]?.let {
+            proximitySensorPayloadOn = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)]?.let {
+            proximitySensorPayloadOff = it.trim()
         }
     }
 
@@ -243,6 +313,12 @@ class DashboardViewModel @Inject constructor(
                 asrPermissionsStateInt.value = false
                 context.stopService(Intent(context, SpeechRecognitionService::class.java))
             }
+            data[booleanPreferencesKey(PreferenceKey.ASR_SOUND_ENABLED.key)]?.let {
+                isAsrSoundEnabled = it
+            }
+            data[floatPreferencesKey(PreferenceKey.ASR_SOUND_VOLUME.key)]?.let {
+                asrSoundVolume = it
+            }
         }
 
         viewModelScope.launch {
@@ -262,8 +338,37 @@ class DashboardViewModel @Inject constructor(
                             }
                             is SpeechRecognitionState.Result -> {
                                 asrRecognitionStateInt.value = state.word
-                                asrCommandStateInt.value = state.word
                                 asrRecognitionStateInt.value = null
+                                if (isAsrSoundEnabled) {
+                                    playAssetSound(
+                                        context = context,
+                                        fileName = WAKE_WORD_SOUND,
+                                        soundVolume = asrSoundVolume
+                                    )
+                                }
+                                processCommand(
+                                    context = context,
+                                    command = state.word,
+                                    onPageChanged = {pageId, command ->
+                                        currentPageStateInt.value = pageId
+                                        voiceCommandStateInt.value = command ?: VoiceCommand.CLOCK
+                                        onPageChanged(pageId)
+                                    },
+                                    onError = {
+                                        playAssetSound(
+                                            context = context,
+                                            fileName = ERROR_SOUND,
+                                            soundVolume = asrSoundVolume
+                                        )
+                                    },
+                                    onPressButton = {
+                                        sendPressButtonEvent(it)
+                                    },
+                                    onPressButton2 = {
+                                        sendProximityButtonEvent(it)
+                                    }
+                                )
+
                             }
                             SpeechRecognitionState.WakeWordDetected -> {
                                 asrRecognitionStateInt.value = ""
@@ -301,14 +406,104 @@ class DashboardViewModel @Inject constructor(
         asrRecognitionStateInt.value = null
     }
 
-    fun resetAsrCommandState() {
-        asrCommandStateInt.value = null
+    fun onPageChanged(pageId: Int) {
+        viewModelScope.launch {
+            currentPageStateInt.value = pageId
+            if (pageId == DashboardItem.CLOCK.ordinal) {
+                clockAutoReturnTimer?.cancel()
+            } else {
+                initClockAutoReturn()
+                if (clockAutoReturn) {
+                    reStartClockAutoReturnTimer()
+                }
+            }
+        }
     }
 
+    private fun initSensors() {
+        viewModelScope.launch {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, SensorService::class.java)
+            )
+        }
+        viewModelScope.launch {
+            sensorHandler.isServiceStarted.asStateFlow().collect { isStarted ->
+                if (isStarted) {
+                    val lightSensorState = sensorHandler.lightSensorState?.stateIn(
+                        initialValue = 0,
+                        scope = viewModelScope,
+                        started = WhileSubscribed(5000)
+                    )
+                    lightSensorState?.collect { state ->
+                        publishMQTT(
+                            topic = lightSensorTopic,
+                            messagePayload = state.toString()
+                        )
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            sensorHandler.isServiceStarted.asStateFlow().collect { isStarted ->
+                if (isStarted) {
+                    val proximitySensorState = sensorHandler.proximitySensorState?.stateIn(
+                        initialValue = 0,
+                        scope = viewModelScope,
+                        started = WhileSubscribed(5000)
+                    )
+                    proximitySensorState?.collect { state ->
+                        Log.d("DashboardViewModel: proximitySensorState", state.toString())
+                        if ((state > PROXIMITY_SENSOR_THRESHOLD)
+                            && !proximitySensorButtonThreshold) {
+                            proximitySensorButtonThreshold = true
+                            proximitySensorButtonState = !proximitySensorButtonState
+                            sendProximityButtonEvent(proximitySensorButtonState)
+                        }
+                        if (state < PROXIMITY_SENSOR_THRESHOLD) {
+                            proximitySensorButtonThreshold = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun publishMQTT(topic: String, messagePayload: String) {
+        if (!mqttClient.isConnected) {
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            mqttClient.publish(
+                topic = topic,
+                message = MqttMessage().apply {
+                    payload = messagePayload.toByteArray()
+                },
+                userContext = null,
+                callback = object: IMqttActionListener {
+                    override fun onSuccess(asyncActionToken: IMqttToken?) {
+                        Log.d("DashboardViewModel", "publishMQTT Ok")
+                    }
+
+                    override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                        Log.d("DashboardViewModel", "publishMQTT Error")
+                    }
+                }
+            )
+        }
+    }
 }
+
+const val WAKE_WORD_SOUND = "asset:///sounds/ding.wav"
+const val ERROR_SOUND = "asset:///sounds/dong.wav"
 
 const val APP_CHANNEL = "SmartDisplaychannnel"
 const val PUSH_BUTTON_DEFAULT_TOPIC = "pushbutton"
 const val PUSH_BUTTON_DEFAULT_STATE = false
 const val PUSH_BUTTON_DEFAULT_PAYLOAD_ON = "1"
 const val PUSH_BUTTON_DEFAULT_PAYLOAD_OFF = "0"
+const val PROXIMITY_SENSOR_DEFAULT_TOPIC = "pushbutton2"
+const val PROXIMITY_SENSOR_DEFAULT_STATE = false
+const val PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON = "1"
+const val PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF = "0"
+const val PROXIMITY_SENSOR_THRESHOLD = 500

@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
         android:maxSdkVersion="30" />
 
+    <uses-feature android:name="android.hardware.sensor" android:required="false"/>
+
     <application
         android:name=".SmartDisplayApplication"
         android:allowBackup="true"
@@ -48,6 +50,7 @@
             android:foregroundServiceType="microphone"
             android:permission="android.permission.RECORD_AUDIO"
         />
+        <service android:name=".service.sensor.SensorService" />
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

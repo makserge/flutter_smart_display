@@ -21,9 +21,13 @@ import com.jamal.composeprefs.ui.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.asrSettings
 import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
 import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
+import com.smsoft.smartdisplay.ui.composable.settings.lightSensorSettings
+import com.smsoft.smartdisplay.ui.composable.settings.proximitySensorSettings
 import com.smsoft.smartdisplay.ui.composable.settings.pushButtonSettings
 import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
 import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
@@ -97,6 +101,26 @@ fun SettingsScreen(
         initialValue = ""
     )
 
+    val proximitySensorTopic by viewModel.proximitySensorTopic.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val proximitySensorPayloadOn by viewModel.proximitySensorPayloadOn.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val proximitySensorPayloadOff by viewModel.proximitySensorPayloadOff.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val lightSensorTopic by viewModel.lightSensorTopic.collectAsStateWithLifecycle(
+        initialValue = LIGHT_SENSOR_TOPIC_DEFAULT
+    )
+
+    val lightSensorInterval by viewModel.lightSensorInterval.collectAsStateWithLifecycle(
+        initialValue = LIGHT_SENSOR_INTERVAL_DEFAULT
+    )
+
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -160,9 +184,23 @@ fun SettingsScreen(
                 payloadOn = pushButtonPayloadOn.toString(),
                 payloadOff = pushButtonPayloadOff.toString(),
             )
+            proximitySensorSettings (
+                modifier = Modifier,
+                scope = this,
+                topic = proximitySensorTopic.toString(),
+                payloadOn = proximitySensorPayloadOn.toString(),
+                payloadOff = proximitySensorPayloadOff.toString(),
+            )
             asrSettings (
                 modifier = Modifier,
-                scope = this
+                scope = this,
+                context = context
+            )
+            lightSensorSettings (
+                modifier = Modifier,
+                scope = this,
+                topic = lightSensorTopic.toString(),
+                interval = lightSensorInterval.toString()
             )
         }
         if (asrPermissionsState.value) {

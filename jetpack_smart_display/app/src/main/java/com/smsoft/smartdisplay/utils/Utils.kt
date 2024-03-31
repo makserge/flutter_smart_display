@@ -15,7 +15,6 @@ import androidx.core.app.NotificationCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,6 +24,7 @@ import androidx.media3.datasource.AssetDataSource
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.AsrWakeWord
 import com.smsoft.smartdisplay.data.BluetoothDevice
 import com.smsoft.smartdisplay.data.BluetoothDeviceType
 import com.smsoft.smartdisplay.data.MQTTData
@@ -36,8 +36,8 @@ import com.smsoft.smartdisplay.data.database.entity.emptySensor
 import com.smsoft.smartdisplay.data.emptyBluetoothDevice
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl.getAudioAttributes
-import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
-import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_VOLUME_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_ENABLED_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.MainActivity
 import com.smsoft.smartdisplay.ui.screen.dashboard.APP_CHANNEL
 import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_HOST
@@ -198,44 +198,50 @@ fun getMac(): String? {
 @UnstableApi
 fun playAssetSound(
     context: Context,
-    dataStore: DataStore<Preferences>,
-    fileName: String
+    fileName: String,
+    soundVolume: Float,
 ) {
-    var isEnabled = ASR_SOUND_ENABLED_DEFAULT
-    var soundVolume = ASR_SOUND_VOLUME_DEFAULT
-
-    runBlocking {
-        val data = dataStore.data.first()
-        data[booleanPreferencesKey(PreferenceKey.ASR_SOUND_ENABLED.key)]?.let {
-            isEnabled = it
-        }
-        data[floatPreferencesKey(PreferenceKey.ASR_SOUND_VOLUME.key)]?.let {
-            soundVolume = it
-        }
-    }
-
-    if (!isEnabled) {
-        return
-    }
-
     val dataSourceFactory = DataSource.Factory {
         AssetDataSource(context)
     }
     val mediaSource = ProgressiveMediaSource
         .Factory(dataSourceFactory)
         .createMediaSource(MediaItem.fromUri(Uri.parse(fileName)))
-
-    val exoPlayer = ExoPlayerImpl.getExoPlayer(
+    ExoPlayerImpl.getExoPlayer(
         context = context,
         audioAttributes = getAudioAttributes()
-    )
-
-    exoPlayer.apply {
+    ).apply {
         addMediaSource(mediaSource)
         volume = soundVolume
         prepare()
         playWhenReady = true
     }
+}
+
+fun getAsrWakeWord(dataStore: DataStore<Preferences>): AsrWakeWord {
+    var wakeWord = AsrWakeWord.getDefault()
+    runBlocking {
+        val data = dataStore.data.first()
+        data[stringPreferencesKey(PreferenceKey.ASR_WAKE_WORD.key)]?.let {
+            wakeWord = AsrWakeWord.getById(it)
+        }
+    }
+    return wakeWord
+}
+
+fun getLightSensorSettings(dataStore: DataStore<Preferences>): Pair<Boolean, Int> {
+    var isEnabled = LIGHT_SENSOR_ENABLED_DEFAULT
+    var interval = LIGHT_SENSOR_INTERVAL_DEFAULT.toInt()
+    runBlocking {
+        val data = dataStore.data.first()
+        data[booleanPreferencesKey(PreferenceKey.LIGHT_SENSOR_ENABLED.key)]?.let {
+            isEnabled = it
+        }
+        data[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_INTERVAL.key)]?.let {
+            interval = it.toInt()
+        }
+    }
+    return Pair(isEnabled, interval)
 }
 
 fun getBluetoothDeviceByType(

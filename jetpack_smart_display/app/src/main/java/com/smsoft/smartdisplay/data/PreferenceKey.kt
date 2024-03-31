@@ -5,6 +5,8 @@ import com.smsoft.smartdisplay.R
 enum class PreferenceKey(val key: String, val title: Int) {
     PRIMARY_COLOR("primaryColor", R.string.primary_color),
     SECONDARY_COLOR("secondaryColor", R.string.secondary_color),
+    CLOCK_AUTO_RETURN("clockAutoReturn", R.string.clock_auto_return),
+    CLOCK_AUTO_RETURN_TIMEOUT("clockAutoReturnTimeout", R.string.clock_auto_return_timeout),
     CLOCK_TYPE("clockType", R.string.clock_type),
     DIGIT_STYLE_ND("digitStyle", R.string.digit_style),
     DIGIT_POSITION_ND("digitPosition", R.string.digit_position),
@@ -102,7 +104,14 @@ enum class PreferenceKey(val key: String, val title: Int) {
     PUSH_BUTTON_TOPIC("pushButtonTopic", R.string.push_button_topic),
     PUSH_BUTTON_PAYLOAD_ON("pushButtonPayloadOn", R.string.push_button_payload_on),
     PUSH_BUTTON_PAYLOAD_OFF("pushButtonPayloadOff", R.string.push_button_payload_off),
+    PROXIMITY_SENSOR_TOPIC("proximitySensorTopic", R.string.proximity_sensor_topic),
+    PROXIMITY_SENSOR_PAYLOAD_ON("proximitySensorPayloadOn", R.string.push_button_payload_on),
+    PROXIMITY_SENSOR_PAYLOAD_OFF("proximitySensorPayloadOff", R.string.push_button_payload_off),
     ASR_ENABLED("asrEnabled", R.string.asr_enabled),
+    ASR_WAKE_WORD("asrWakeWord", R.string.asr_wake_word),
     ASR_SOUND_ENABLED("asrSoundEnabled", R.string.asr_sound_enabled),
-    ASR_SOUND_VOLUME("asrSoundVolume", R.string.asr_sound_volume);
+    ASR_SOUND_VOLUME("asrSoundVolume", R.string.asr_sound_volume),
+    LIGHT_SENSOR_ENABLED("lightSensorEnabled", R.string.light_sensor_enabled),
+    LIGHT_SENSOR_TOPIC("lightSensorTopic", R.string.light_sensor_topic),
+    LIGHT_SENSOR_INTERVAL("lightSensorInterval", R.string.light_sensor_interval);
 }
