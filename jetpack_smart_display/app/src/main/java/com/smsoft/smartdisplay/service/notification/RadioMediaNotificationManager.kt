@@ -11,9 +11,11 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.ui.PlayerNotificationManager
+import com.smsoft.smartdisplay.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
+@UnstableApi
 class RadioMediaNotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val player: ExoPlayer
@@ -43,13 +45,14 @@ class RadioMediaNotificationManager @Inject constructor(
                 )
             )
             .build()
-            .also {
-                it.setMediaSessionToken(mediaSession.sessionCompatToken)
-                it.setUseFastForwardActionInCompactView(true)
-                it.setUseRewindActionInCompactView(true)
-                it.setUseNextActionInCompactView(false)
-                it.setPriority(NotificationCompat.PRIORITY_LOW)
-                it.setPlayer(player)
+            .apply {
+                setMediaSessionToken(mediaSession.sessionCompatToken)
+                setUseFastForwardActionInCompactView(true)
+                setUseRewindActionInCompactView(true)
+                setUseNextActionInCompactView(false)
+                setPriority(NotificationCompat.PRIORITY_LOW)
+                setPlayer(player)
+                setSmallIcon(R.drawable.ic_small_notification)
             }
     }
 

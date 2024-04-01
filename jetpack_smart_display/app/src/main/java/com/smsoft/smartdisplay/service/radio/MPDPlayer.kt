@@ -10,15 +10,35 @@ import android.view.SurfaceView
 import android.view.TextureView
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.media3.common.*
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.AuxEffectInfo
+import androidx.media3.common.DeviceInfo
+import androidx.media3.common.Effect
+import androidx.media3.common.Format
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
 import androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK
+import androidx.media3.common.PriorityTaskManager
+import androidx.media3.common.Timeline
+import androidx.media3.common.TrackSelectionParameters
+import androidx.media3.common.Tracks
+import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.*
+import androidx.media3.exoplayer.DecoderCounters
+import androidx.media3.exoplayer.ExoPlaybackException
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.PlayerMessage
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.exoplayer.analytics.AnalyticsCollector
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.image.ImageOutput
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.exoplayer.source.TrackGroupArray
@@ -32,11 +52,13 @@ import com.smsoft.smartdisplay.utils.mpd.data.MPDState
 import com.smsoft.smartdisplay.utils.mpd.data.MPDStatus
 import com.smsoft.smartdisplay.utils.mpd.event.StatusChangeListener
 import de.dixieflatline.mpcw.client.CommunicationException
-import kotlinx.coroutines.*
-import java.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @UnstableApi
-class MPDPlayer constructor(
+class MPDPlayer(
     private val dataStore: DataStore<Preferences>,
     private val helper: MPDHelper
     ): ExoPlayer {
@@ -909,6 +931,10 @@ class MPDPlayer constructor(
     override fun isTunnelingEnabled(): Boolean {
         return false
     }
+
+    override fun setImageOutput(imageOutput: ImageOutput) {
+    }
+
     init {
         helper.statusChangedListener = statusChangedListener
     }

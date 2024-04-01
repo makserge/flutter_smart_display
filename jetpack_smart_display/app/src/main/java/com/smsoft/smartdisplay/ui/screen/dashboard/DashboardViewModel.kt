@@ -15,6 +15,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.data.AudioType
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.MQTTServer
 import com.smsoft.smartdisplay.data.PreferenceKey
@@ -23,6 +24,7 @@ import com.smsoft.smartdisplay.service.asr.SpeechRecognitionHandler
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionState
 import com.smsoft.smartdisplay.service.asr.processCommand
+import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.service.sensor.SensorHandler
 import com.smsoft.smartdisplay.service.sensor.SensorService
 import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
@@ -36,6 +38,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.asStateFlow
@@ -100,6 +103,11 @@ class DashboardViewModel @Inject constructor(
     private var clockAutoReturnTimeout = CLOCK_AUTO_RETURN_TIMEOUT_DEFAULT
 
     private var clockAutoReturnTimer: CountDownTimer? = null
+
+    private var player = ExoPlayerImpl.getExoPlayer(
+        context = context,
+        audioAttributes = ExoPlayerImpl.getAudioAttributes()
+    )
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -338,48 +346,66 @@ class DashboardViewModel @Inject constructor(
                             }
                             is SpeechRecognitionState.Result -> {
                                 asrRecognitionStateInt.value = state.word
-                                asrRecognitionStateInt.value = null
-                                if (isAsrSoundEnabled) {
-                                    playAssetSound(
-                                        context = context,
-                                        fileName = WAKE_WORD_SOUND,
-                                        soundVolume = asrSoundVolume
-                                    )
-                                }
                                 processCommand(
                                     context = context,
                                     command = state.word,
                                     onPageChanged = {pageId, command ->
                                         currentPageStateInt.value = pageId
                                         voiceCommandStateInt.value = command ?: VoiceCommand.CLOCK
+                                        resetAsrState()
                                         onPageChanged(pageId)
                                     },
                                     onError = {
-                                        playAssetSound(
-                                            context = context,
-                                            fileName = ERROR_SOUND,
-                                            soundVolume = asrSoundVolume
-                                        )
+                                        if (isAsrSoundEnabled) {
+                                            playAssetSound(
+                                                player = player,
+                                                audioType = AudioType.ERROR,
+                                                soundVolume = asrSoundVolume
+                                            )
+                                        }
+                                        resetAsrState()
                                     },
                                     onPressButton = {
                                         sendPressButtonEvent(it)
+                                        resetAsrState()
                                     },
                                     onPressButton2 = {
                                         sendProximityButtonEvent(it)
+                                        resetAsrState()
                                     }
                                 )
 
                             }
                             SpeechRecognitionState.WakeWordDetected -> {
                                 asrRecognitionStateInt.value = ""
+                                if (isAsrSoundEnabled) {
+                                    playAssetSound(
+                                        player = player,
+                                        audioType = AudioType.WAKE_WORD,
+                                        soundVolume = asrSoundVolume
+                                    )
+                                }
                             }
                             is SpeechRecognitionState.Error -> {
-
+                                if (isAsrSoundEnabled) {
+                                    playAssetSound(
+                                        player = player,
+                                        audioType = AudioType.ERROR,
+                                        soundVolume = asrSoundVolume
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private fun resetAsrState() {
+        runBlocking {
+            delay(SHOW_ASR_RESULT_TIMEOUT)
+            asrRecognitionStateInt.value = null
         }
     }
 
@@ -494,9 +520,6 @@ class DashboardViewModel @Inject constructor(
     }
 }
 
-const val WAKE_WORD_SOUND = "asset:///sounds/ding.wav"
-const val ERROR_SOUND = "asset:///sounds/dong.wav"
-
 const val APP_CHANNEL = "SmartDisplaychannnel"
 const val PUSH_BUTTON_DEFAULT_TOPIC = "pushbutton"
 const val PUSH_BUTTON_DEFAULT_STATE = false
@@ -507,3 +530,4 @@ const val PROXIMITY_SENSOR_DEFAULT_STATE = false
 const val PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON = "1"
 const val PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF = "0"
 const val PROXIMITY_SENSOR_THRESHOLD = 500
+const val SHOW_ASR_RESULT_TIMEOUT = 2000L //2s

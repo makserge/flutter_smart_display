@@ -19,12 +19,11 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.AssetDataSource
-import androidx.media3.datasource.DataSource
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.AsrWakeWord
+import com.smsoft.smartdisplay.data.AudioType
 import com.smsoft.smartdisplay.data.BluetoothDevice
 import com.smsoft.smartdisplay.data.BluetoothDeviceType
 import com.smsoft.smartdisplay.data.MQTTData
@@ -34,8 +33,6 @@ import com.smsoft.smartdisplay.data.SensorType
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.database.entity.emptySensor
 import com.smsoft.smartdisplay.data.emptyBluetoothDevice
-import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
-import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl.getAudioAttributes
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.MainActivity
@@ -179,7 +176,7 @@ fun getForegroundNotification(
         .setContentTitle(context.getString(R.string.app_name))
         .setContentIntent(pendingIntent)
         .setWhen(System.currentTimeMillis())
-        .setSmallIcon(R.mipmap.ic_launcher)
+        .setSmallIcon(R.drawable.ic_small_notification)
     return notificationCompat.build()
 }
 
@@ -195,24 +192,17 @@ fun getMac(): String? {
     }
 }
 
+var player: Player? = null
+
 @UnstableApi
 fun playAssetSound(
-    context: Context,
-    fileName: String,
-    soundVolume: Float,
+    player: Player,
+    audioType: AudioType,
+    soundVolume: Float
 ) {
-    val dataSourceFactory = DataSource.Factory {
-        AssetDataSource(context)
-    }
-    val mediaSource = ProgressiveMediaSource
-        .Factory(dataSourceFactory)
-        .createMediaSource(MediaItem.fromUri(Uri.parse(fileName)))
-    ExoPlayerImpl.getExoPlayer(
-        context = context,
-        audioAttributes = getAudioAttributes()
-    ).apply {
-        addMediaSource(mediaSource)
+    player.apply{
         volume = soundVolume
+        setMediaItem(MediaItem.fromUri(Uri.parse(audioType.path)))
         prepare()
         playWhenReady = true
     }

@@ -37,17 +37,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion "1.5.4"
+        kotlinCompilerExtensionVersion "1.5.11"
     }
     packagingOptions {
         resources {
@@ -79,7 +79,7 @@ dependencies {
     implementation "androidx.media3:media3-exoplayer-rtsp:$exoplayer_media3_version"
     implementation "androidx.media3:media3-session:$exoplayer_media3_version"
 
-    implementation "org.videolan.android:libvlc-all:4.0.0-eap11"
+    implementation 'org.videolan.android:libvlc-all:4.0.0-eap15'
 
     implementation "com.github.JamalMulla:ComposePrefs:1.0.6"
     implementation "androidx.datastore:datastore-preferences:1.0.0"
@@ -97,16 +97,16 @@ dependencies {
     implementation "androidx.hilt:hilt-work:1.2.0"
     ksp "androidx.hilt:hilt-compiler:1.2.0"
 
-    implementation "com.squareup.retrofit2:converter-moshi:2.9.0"
-    implementation "com.squareup.moshi:moshi-kotlin:1.15.0"
-    ksp "com.squareup.moshi:moshi-kotlin-codegen:1.15.0"
+    implementation 'com.squareup.retrofit2:converter-moshi:2.11.0'
+    implementation 'com.squareup.moshi:moshi-kotlin:1.15.1'
+    ksp 'com.squareup.moshi:moshi-kotlin-codegen:1.15.1'
 
-    implementation "io.coil-kt:coil-compose:2.5.0"
+    implementation 'io.coil-kt:coil-compose:2.6.0'
 
-    implementation "com.google.accompanist:accompanist-permissions:0.32.0"
+    implementation 'com.google.accompanist:accompanist-permissions:0.34.0'
     implementation "com.google.accompanist:accompanist-systemuicontroller:0.34.0"
 
-    implementation "net.java.dev.jna:jna:5.13.0@aar"
+    implementation 'net.java.dev.jna:jna:5.14.0@aar'
     implementation "com.alphacephei:vosk-android:0.3.47@aar"
     implementation project(":models")
 
