@@ -15,6 +15,7 @@ import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
@@ -145,6 +146,11 @@ class SettingsViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = LIGHT_SENSOR_INTERVAL_DEFAULT
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_INTERVAL.key)] ?: LIGHT_SENSOR_INTERVAL_DEFAULT }
+
+    val lightSensorThreshold = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_SENSOR_THRESHOLD.key)] ?: ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT }
 
     init {
         updateDoorbellAlarmTopic()

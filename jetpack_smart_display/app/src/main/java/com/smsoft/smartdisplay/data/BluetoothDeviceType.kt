@@ -7,7 +7,7 @@ enum class BluetoothDeviceType(val id: String, val title: String) {
     companion object {
         fun toList(): List<String> {
             val list = mutableListOf<String>()
-            BluetoothDeviceType.values().forEach {
+            entries.forEach {
                 list.add(it.title)
             }
             return list

@@ -22,6 +22,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.AlarmSoundToneType
 import com.smsoft.smartdisplay.data.AsrWakeWord
 import com.smsoft.smartdisplay.data.AudioType
 import com.smsoft.smartdisplay.data.BluetoothDevice
@@ -42,11 +43,20 @@ import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_HOST
 import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.net.NetworkInterface
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun getStateFromFlow(
@@ -205,6 +215,55 @@ fun playAssetSound(
         setMediaItem(MediaItem.fromUri(Uri.parse(audioType.path)))
         prepare()
         playWhenReady = true
+    }
+}
+
+@UnstableApi
+fun playAlarmSound(
+    player: Player,
+    soundToneType: AlarmSoundToneType,
+    soundVolume: Float,
+    isFadeIn: Boolean = false,
+    isRepeat: Boolean = false
+) {
+    player.apply{
+        repeatMode = if (isRepeat) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
+        volume = if (isFadeIn) 0F else soundVolume
+        setMediaItem(MediaItem.fromUri(Uri.parse(soundToneType.path)))
+        prepare()
+        playWhenReady = true
+    }
+    if (isFadeIn) {
+        fadeInVolume( 0F, soundVolume) {
+            player.volume = it
+        }
+    }
+}
+
+private var fadeJob: Job? = null
+fun fadeInVolume(
+    fromVolume: Float,
+    toVolume: Float,
+    step: Long = 100L,
+    durationMillis: Long = 15000L,
+    onChange: (value: Float) -> Unit = {}
+) {
+    val oldFadeJob = fadeJob
+    fadeJob = CoroutineScope(Dispatchers.Main).launch {
+        oldFadeJob?.cancelAndJoin()
+        val stepSize = (toVolume - fromVolume) / (max(1, durationMillis) / step)
+
+        onChange(fromVolume)
+        var volume = fromVolume
+        while (isActive) {
+            volume = max(0f, min(volume + stepSize, 1F))
+            onChange(volume)
+            if ((stepSize < 0 && volume <= toVolume) || (stepSize > 0 && volume >= toVolume)) {
+                onChange(toVolume)
+                break
+            }
+            delay(step)
+        }
     }
 }
 
@@ -411,4 +470,17 @@ private fun bytesToUInt16(
     byte2: Byte
 ): Int {
     return ((byte1.toInt() and 0xFF) shl 8) or (byte2.toInt() and 0xFF)
+}
+
+fun formatTime(time: Int): String {
+    val hours = time / 60
+    val minutes = time - (hours * 60)
+    return "%02d:%02d".format(hours, minutes)
+}
+
+fun formatTimeLong(duration: Int): String {
+    val hours = duration / 3600
+    val minutes = duration / 60 - (hours * 60)
+    val seconds = duration - (hours * 3600) - (minutes * 60)
+    return "%d:%02d:%02d".format(hours, minutes, seconds)
 }

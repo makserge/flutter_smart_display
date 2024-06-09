@@ -36,10 +36,8 @@ fun DashboardScreen(
     val currentPageState = viewModel.currentPageState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     LaunchedEffect(currentPageState.value) {
-        if (pagerState.currentPage != currentPageState.value) {
-            scope.launch {
-                pagerState.animateScrollToPage(currentPageState.value)
-            }
+        scope.launch {
+            pagerState.animateScrollToPage(currentPageState.value)
         }
     }
     val voiceCommandState = viewModel.voiceCommandState.collectAsStateWithLifecycle()
@@ -61,6 +59,9 @@ fun DashboardScreen(
         pagerState = pagerState,
         pageCount = pageCount,
         command = voiceCommandState.value,
+        onResetCommand = {
+            viewModel.resetVoiceCommand()
+        },
         onSettingsClick = onSettingsClick,
         onClick = {
             viewModel.togglePressButton()

@@ -14,16 +14,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerUI
 import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
 
+@UnstableApi
 @Composable
 fun RadioScreen(
     modifier: Modifier = Modifier,
     viewModel: RadioViewModel = hiltViewModel(),
-    command: VoiceCommand? = null,
+    command: VoiceCommand,
+    onResetCommand: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
@@ -35,15 +38,16 @@ fun RadioScreen(
             onSettingsClick()
         }
     }
-
     DisposableEffect(viewModel) {
-        viewModel.onStart(
-            command = command
-        )
+        viewModel.onStartService()
         onDispose {
             viewModel.onStopService()
         }
     }
+    LaunchedEffect(command.timeStamp) {
+        viewModel.processVoiceCommand(command.type)
+    }
+
     Box (
         modifier = Modifier
             .fillMaxSize()
@@ -69,17 +73,17 @@ fun RadioScreen(
                 UIState.Ready -> {
                     RadioMediaPlayerUI(
                         isProgressEnabled = viewModel.isInternalPlayer(),
-                        presetTitle = viewModel.presetTitle,
-                        metaTitle = viewModel.metaTitle,
-                        durationString = if (viewModel.duration > 0) viewModel.formatDuration(viewModel.duration) else "",
+                        presetTitle = viewModel.presetTitle.value,
+                        metaTitle = viewModel.metaTitle.value,
+                        durationString = if (viewModel.duration.longValue > 0) viewModel.formatDuration(viewModel.duration.longValue) else "",
                         playResourceProvider = {
-                            if (viewModel.isPlaying) {
+                            if (viewModel.isPlaying.value) {
                                 R.drawable.ic_pause_48
                             } else {
                                 R.drawable.ic_play_arrow_48
                             }
                         },
-                        progressProvider = { Pair(viewModel.progress, viewModel.progressString) },
+                        progressProvider = { Pair(viewModel.progress.floatValue, viewModel.progressString.value) },
                         onUiEvent = viewModel::onUIEvent
                     )
                 }
@@ -89,7 +93,7 @@ fun RadioScreen(
         if (isShowVolume.value) {
             VolumeControl(
                 modifier = Modifier,
-                value = (viewModel.volume * 100).toInt(),
+                value = (viewModel.volume.floatValue * 100).toInt(),
                 onValueChange = {
                     viewModel.setVolume(it.toFloat() / 100)
                 }

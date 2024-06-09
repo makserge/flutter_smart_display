@@ -39,14 +39,17 @@ class RadioMediaServiceHandler @Inject constructor(
         player.addListener(this)
     }
 
-    fun addMediaItemList(
-        mediaItemList: List<MediaItem>,
-        preset: Int
-    ) {
-        player.apply {
-            setMediaItems(mediaItemList)
-            seekTo(preset, 0)
-        }
+    fun addMediaItemList(mediaItemList: List<MediaItem>) {
+        player.setMediaItems(mediaItemList)
+    }
+
+    fun mediaItemCount() : Int {
+        return player.mediaItemCount
+    }
+
+    fun playItem(preset: Int) {
+        val newPreset = if (preset > player.mediaItemCount) 1 else preset
+        player.seekTo(newPreset, 0)
     }
     @UnstableApi
     override fun onPositionDiscontinuity(
@@ -64,7 +67,8 @@ class RadioMediaServiceHandler @Inject constructor(
     ) {
         Log.e("Radio", error.message!!)
 
-        if (error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED) {
+        if ((error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED)
+            || (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS)) {
             mediaStateInt.value = MediaState.Error
         }
     }

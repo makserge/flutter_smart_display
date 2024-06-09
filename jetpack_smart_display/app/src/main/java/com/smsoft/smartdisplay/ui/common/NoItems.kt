@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay.ui.composable.sensors
+package com.smsoft.smartdisplay.ui.common
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -11,11 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.stringResource
-import com.smsoft.smartdisplay.R
+
 @Composable
 fun NoItems(
     modifier: Modifier,
+    title: String,
     onClick: () -> Unit
 ) {
     Box(
@@ -37,7 +37,7 @@ fun NoItems(
         ) {
             Text(
                 modifier = Modifier,
-                text = stringResource(R.string.no_sensors_items),
+                text = title,
                 color = MaterialTheme.colors.primary
             )
         }

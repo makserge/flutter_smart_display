@@ -1,11 +1,13 @@
 package com.smsoft.smartdisplay.data
 
 sealed class Screen(val route: String) {
-    object Clock : Screen("clock")
-    object Settings : Screen("settings")
-    object Dashboard : Screen("dashboard")
-    object Doorbell : Screen("doorbell")
-    object Radio : Screen("radio")
-    object Sensors : Screen("sensors")
-    object Weather : Screen("weather")
+    data object Alarms : Screen("alarms")
+    data object Clock : Screen("clock")
+    data object Dashboard : Screen("dashboard")
+    data object Doorbell : Screen("doorbell")
+    data object Radio : Screen("radio")
+    data object Sensors : Screen("sensors")
+    data object Settings : Screen("settings")
+    data object Timers : Screen("timers")
+    data object Weather : Screen("weather")
 }

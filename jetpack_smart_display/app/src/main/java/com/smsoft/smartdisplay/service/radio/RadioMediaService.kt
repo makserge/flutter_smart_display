@@ -10,6 +10,7 @@ import com.smsoft.smartdisplay.service.notification.RadioMediaNotificationManage
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+@UnstableApi
 @AndroidEntryPoint
 class RadioMediaService : MediaSessionService() {
     @Inject

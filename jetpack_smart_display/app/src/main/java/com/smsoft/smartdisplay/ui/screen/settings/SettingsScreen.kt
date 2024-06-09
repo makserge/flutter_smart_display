@@ -21,8 +21,10 @@ import com.jamal.composeprefs.ui.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.alarmSettings
 import com.smsoft.smartdisplay.ui.composable.settings.asrSettings
 import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
 import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
@@ -31,6 +33,7 @@ import com.smsoft.smartdisplay.ui.composable.settings.proximitySensorSettings
 import com.smsoft.smartdisplay.ui.composable.settings.pushButtonSettings
 import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
 import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
+import com.smsoft.smartdisplay.ui.composable.settings.timerSettings
 import com.smsoft.smartdisplay.ui.composable.settings.weatherSettings
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -121,6 +124,10 @@ fun SettingsScreen(
         initialValue = LIGHT_SENSOR_INTERVAL_DEFAULT
     )
 
+    val lightSensorThreshold by viewModel.lightSensorThreshold.collectAsStateWithLifecycle(
+        initialValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
+    )
+
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -201,6 +208,15 @@ fun SettingsScreen(
                 scope = this,
                 topic = lightSensorTopic.toString(),
                 interval = lightSensorInterval.toString()
+            )
+            alarmSettings (
+                modifier = Modifier,
+                scope = this,
+                lightSensorThreshold = lightSensorThreshold.toString()
+            )
+            timerSettings (
+                modifier = Modifier,
+                scope = this
             )
         }
         if (asrPermissionsState.value) {

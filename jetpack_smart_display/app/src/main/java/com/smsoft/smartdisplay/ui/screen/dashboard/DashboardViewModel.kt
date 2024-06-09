@@ -15,11 +15,14 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.data.AsrCommand
 import com.smsoft.smartdisplay.data.AudioType
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.MQTTServer
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.VoiceCommand
+import com.smsoft.smartdisplay.data.VoiceCommandType
+import com.smsoft.smartdisplay.service.alarm.AlarmHandler
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionHandler
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionState
@@ -27,6 +30,7 @@ import com.smsoft.smartdisplay.service.asr.processCommand
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.service.sensor.SensorHandler
 import com.smsoft.smartdisplay.service.sensor.SensorService
+import com.smsoft.smartdisplay.service.timer.TimerHandler
 import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
@@ -63,12 +67,14 @@ class DashboardViewModel @Inject constructor(
     val dataStore: DataStore<Preferences>,
     private val mqttClient: MqttAndroidClient,
     private val speechRecognitionHandler: SpeechRecognitionHandler,
-    private val sensorHandler: SensorHandler
+    private val sensorHandler: SensorHandler,
+    private val alarmHandler: AlarmHandler,
+    private val timerHandler: TimerHandler
 ) : ViewModel() {
     private val currentPageStateInt = MutableStateFlow(DashboardItem.CLOCK.ordinal)
     val currentPageState = currentPageStateInt.asStateFlow()
 
-    private val voiceCommandStateInt = MutableStateFlow(VoiceCommand.CLOCK)
+    private val voiceCommandStateInt = MutableStateFlow(VoiceCommand(VoiceCommandType.CLOCK))
     val voiceCommandState = voiceCommandStateInt.asStateFlow()
 
     private val doorBellAlarmStateInt = MutableStateFlow(false)
@@ -116,6 +122,8 @@ class DashboardViewModel @Inject constructor(
         }
         initASR()
         initSensors()
+        initAlarm()
+        initTimer()
     }
 
     fun resetDoorBellAlarmState() {
@@ -338,7 +346,6 @@ class DashboardViewModel @Inject constructor(
                         started = WhileSubscribed(5000)
                     )
                     speechRecognitionState.collect { state ->
-                        Log.d("DashboardViewModel", state.toString())
                         when (state) {
                             is SpeechRecognitionState.Initial,
                                 SpeechRecognitionState.Ready -> {
@@ -349,28 +356,8 @@ class DashboardViewModel @Inject constructor(
                                 processCommand(
                                     context = context,
                                     command = state.word,
-                                    onPageChanged = {pageId, command ->
-                                        currentPageStateInt.value = pageId
-                                        voiceCommandStateInt.value = command ?: VoiceCommand.CLOCK
-                                        resetAsrState()
-                                        onPageChanged(pageId)
-                                    },
-                                    onError = {
-                                        if (isAsrSoundEnabled) {
-                                            playAssetSound(
-                                                player = player,
-                                                audioType = AudioType.ERROR,
-                                                soundVolume = asrSoundVolume
-                                            )
-                                        }
-                                        resetAsrState()
-                                    },
-                                    onPressButton = {
-                                        sendPressButtonEvent(it)
-                                        resetAsrState()
-                                    },
-                                    onPressButton2 = {
-                                        sendProximityButtonEvent(it)
+                                    onCommand = { type, params ->
+                                        processAsrCommand(state.word, type, params)
                                         resetAsrState()
                                     }
                                 )
@@ -435,7 +422,8 @@ class DashboardViewModel @Inject constructor(
     fun onPageChanged(pageId: Int) {
         viewModelScope.launch {
             currentPageStateInt.value = pageId
-            if (pageId == DashboardItem.CLOCK.ordinal) {
+            if ((pageId == DashboardItem.CLOCK.ordinal)
+            || (pageId == DashboardItem.INTERNET_RADIO.ordinal)) {
                 clockAutoReturnTimer?.cancel()
             } else {
                 initClockAutoReturn()
@@ -462,10 +450,13 @@ class DashboardViewModel @Inject constructor(
                         started = WhileSubscribed(5000)
                     )
                     lightSensorState?.collect { state ->
-                        publishMQTT(
-                            topic = lightSensorTopic,
-                            messagePayload = state.toString()
-                        )
+                        if (state > 0) {
+                            alarmHandler.lightSensorState.emit(state)
+                            publishMQTT(
+                                topic = lightSensorTopic,
+                                messagePayload = state.toString()
+                            )
+                        }
                     }
                 }
             }
@@ -479,7 +470,6 @@ class DashboardViewModel @Inject constructor(
                         started = WhileSubscribed(5000)
                     )
                     proximitySensorState?.collect { state ->
-                        Log.d("DashboardViewModel: proximitySensorState", state.toString())
                         if ((state > PROXIMITY_SENSOR_THRESHOLD)
                             && !proximitySensorButtonThreshold) {
                             proximitySensorButtonThreshold = true
@@ -491,6 +481,23 @@ class DashboardViewModel @Inject constructor(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun initAlarm() {
+        viewModelScope.launch {
+            alarmHandler.alarmFireState.collect {
+                currentPageStateInt.value = DashboardItem.ALARMS.ordinal
+            }
+        }
+    }
+
+    private fun initTimer() {
+        viewModelScope.launch {
+            timerHandler.timerEndState.collect {
+                voiceCommandStateInt.value = VoiceCommand(VoiceCommandType.CLOCK)
+                currentPageStateInt.value = DashboardItem.TIMERS.ordinal
             }
         }
     }
@@ -508,7 +515,6 @@ class DashboardViewModel @Inject constructor(
                 userContext = null,
                 callback = object: IMqttActionListener {
                     override fun onSuccess(asyncActionToken: IMqttToken?) {
-                        Log.d("DashboardViewModel", "publishMQTT Ok")
                     }
 
                     override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -517,6 +523,50 @@ class DashboardViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    private fun processAsrCommand(command: String, type: AsrCommand, params: Any?) {
+        when (type) {
+            AsrCommand.LIGHT1 -> sendPressButtonEvent(params as Boolean)
+            AsrCommand.LIGHT2 -> sendProximityButtonEvent(params as Boolean)
+            AsrCommand.TIMER -> processAsrTimerCommand(params)
+            AsrCommand.PAGE -> processAsrPageCommand(command, params)
+        }
+    }
+
+    private fun processAsrPageCommand(command: String, params: Any?) {
+        if (params == null) {
+            if (isAsrSoundEnabled) {
+                playAssetSound(
+                    player = player,
+                    audioType = AudioType.ERROR,
+                    soundVolume = asrSoundVolume
+                )
+            }
+            return
+        }
+        val item = params as DashboardItem
+        if (item == DashboardItem.INTERNET_RADIO) {
+            val type = VoiceCommandType.getByCommand(
+                context = context,
+                command = command
+            )
+            voiceCommandStateInt.value = VoiceCommand(type)
+        }
+        currentPageStateInt.value = item.ordinal
+    }
+
+    private fun processAsrTimerCommand(params: Any?) {
+        currentPageStateInt.value = DashboardItem.TIMERS.ordinal
+        val type = VoiceCommandType.getByCommand(
+            context = context,
+            command = params as String
+        )
+        voiceCommandStateInt.value = VoiceCommand(type)
+    }
+
+    fun resetVoiceCommand() {
+        voiceCommandStateInt.value = VoiceCommand(VoiceCommandType.CLOCK)
     }
 }
 
@@ -530,4 +580,4 @@ const val PROXIMITY_SENSOR_DEFAULT_STATE = false
 const val PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON = "1"
 const val PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF = "0"
 const val PROXIMITY_SENSOR_THRESHOLD = 500
-const val SHOW_ASR_RESULT_TIMEOUT = 2000L //2s
+const val SHOW_ASR_RESULT_TIMEOUT = 1000L //2s

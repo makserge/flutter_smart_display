@@ -4,6 +4,8 @@ enum class DashboardItem {
     CLOCK,
     WEATHER,
     SENSORS,
+    TIMERS,
+    ALARMS,
     INTERNET_RADIO,
     DOORBELL;
 
@@ -13,7 +15,9 @@ enum class DashboardItem {
                 0 -> CLOCK
                 1 -> WEATHER
                 2 -> SENSORS
-                3 -> INTERNET_RADIO
+                3 -> TIMERS
+                4 -> ALARMS
+                5 -> INTERNET_RADIO
                 else -> DOORBELL
             }
         }

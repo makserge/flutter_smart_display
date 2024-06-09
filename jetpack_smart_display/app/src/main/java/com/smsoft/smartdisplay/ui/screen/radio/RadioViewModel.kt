@@ -14,17 +14,15 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi
-import androidx.lifecycle.viewmodel.compose.saveable
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.RadioType
-import com.smsoft.smartdisplay.data.VoiceCommand
+import com.smsoft.smartdisplay.data.VoiceCommandType
 import com.smsoft.smartdisplay.service.radio.MediaState
 import com.smsoft.smartdisplay.service.radio.PlayerEvent
 import com.smsoft.smartdisplay.service.radio.RadioMediaService
@@ -34,28 +32,26 @@ import com.smsoft.smartdisplay.utils.getRadioType
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@OptIn(SavedStateHandleSaveableApi::class)
 @HiltViewModel
 @SuppressLint("StaticFieldLeak")
+@UnstableApi
 class RadioViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val radioMediaServiceHandler: RadioMediaServiceHandler,
-    savedStateHandle: SavedStateHandle,
     val dataStore: DataStore<Preferences>
 ) : ViewModel() {
-    var presetTitle by savedStateHandle.saveable { mutableStateOf("") }
-    var duration by savedStateHandle.saveable { mutableLongStateOf(0L) }
-    var progress by savedStateHandle.saveable { mutableFloatStateOf(0F) }
-    var progressString by savedStateHandle.saveable { mutableStateOf("00:00") }
-    var isPlaying by savedStateHandle.saveable { mutableStateOf(false) }
-    var metaTitle by savedStateHandle.saveable { mutableStateOf("") }
-    var volume by savedStateHandle.saveable { mutableFloatStateOf(-1F) }
+    var presetTitle = mutableStateOf("")
+    var duration = mutableLongStateOf(0L)
+    var progress = mutableFloatStateOf(0F)
+    var progressString = mutableStateOf("00:00")
+    var isPlaying = mutableStateOf(false)
+    var metaTitle = mutableStateOf("")
+    var volume = mutableFloatStateOf(-1F)
 
     private val isShowVolumeInt = MutableStateFlow(false)
     val isShowVolume = isShowVolumeInt.asStateFlow()
@@ -65,26 +61,38 @@ class RadioViewModel @Inject constructor(
 
     private var volumeHideTimer: CountDownTimer? = null
 
-    private var command = MutableStateFlow(VoiceCommand.INTERNET_RADIO)
-
     init {
+        viewModelScope.launch {
+            if (isInternalPlayer()) {
+                val mediaItemList = mutableListOf<MediaItem>()
+                val m3uStream = context.assets.open(PLAYLIST)
+                val streamEntries = M3uParser.parse(m3uStream.reader())
+                streamEntries.forEach {
+                    mediaItemList.add(
+                        MediaItem.Builder()
+                            .setUri(it.location.url.toString())
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setDisplayTitle(it.title)
+                                    .build()
+                            ).build()
+                    )
+                }
+                radioMediaServiceHandler.addMediaItemList(mediaItemList)
+            }
+        }
         viewModelScope.launch {
             radioMediaServiceHandler.mediaState.collect { mediaState ->
                 when (mediaState) {
                     MediaState.Initial -> uiStateInt.value = UIState.Initial
                     is MediaState.Buffering -> calculateProgressValues(mediaState.progress)
-                    is MediaState.Playing -> isPlaying = mediaState.isPlaying
+                    is MediaState.Playing -> isPlaying.value = mediaState.isPlaying
                     is MediaState.Progress -> calculateProgressValues(mediaState.progress)
                     is MediaState.Ready -> {
                         saveCurrentPreset(mediaState.currentMediaItemIndex)
-                        presetTitle = if (mediaState.currentMediaItem != null) mediaState.currentMediaItem.mediaMetadata.displayTitle.toString() else ""
-                        duration = if (mediaState.duration > 0) mediaState.duration else 0
+                        presetTitle.value = if (mediaState.currentMediaItem != null) mediaState.currentMediaItem.mediaMetadata.displayTitle.toString() else ""
+                        duration.longValue = if (mediaState.duration > 0) mediaState.duration else 0
                         uiStateInt.value = UIState.Ready
-
-                        if (isInternalPlayer()) {
-                            onStartService()
-                        }
-                        runCommand()
                     }
                     MediaState.Error -> uiStateInt.value = UIState.Error
                 }
@@ -93,24 +101,16 @@ class RadioViewModel @Inject constructor(
         viewModelScope.launch {
             radioMediaServiceHandler.mediaMetadata.collect { mediaMetadata ->
                 mediaMetadata.title?.let {
-                    metaTitle = convertCharset(it as String)
+                    metaTitle.value = convertCharset(it as String)
                 }
             }
         }
         viewModelScope.launch {
             radioMediaServiceHandler.playerState.collect { playerState ->
                 playerState.volume.let {
-                    volume = it
+                    volume.floatValue = it
                 }
             }
-        }
-    }
-
-    private suspend fun runCommand() {
-        if (command.value != VoiceCommand.INTERNET_RADIO) {
-            delay(VOICE_COMMAND_DELAY)
-            processCommand(command.value)
-            command.value = VoiceCommand.INTERNET_RADIO
         }
     }
 
@@ -144,7 +144,7 @@ class RadioViewModel @Inject constructor(
             UIEvent.Play -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Play)
             UIEvent.Pause -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Pause)
             is UIEvent.UpdateProgress -> {
-                progress = uiEvent.newProgress
+                progress.floatValue = uiEvent.newProgress
                 radioMediaServiceHandler.onPlayerEvent(
                     PlayerEvent.UpdateProgress(
                         uiEvent.newProgress
@@ -174,8 +174,8 @@ class RadioViewModel @Inject constructor(
     private fun calculateProgressValues(
         currentProgress: Long
     ) {
-        progress = if (currentProgress > 0) ((currentProgress / 1000).toFloat() / duration) else 0f
-        progressString = formatDuration(currentProgress / 1000)
+        progress.floatValue = if (currentProgress > 0) ((currentProgress / 1000).toFloat() / duration.longValue) else 0F
+        progressString.value = formatDuration(currentProgress / 1000)
     }
 
     private fun convertCharset(
@@ -187,50 +187,24 @@ class RadioViewModel @Inject constructor(
         return data
     }
 
-    private fun onStartService() {
-        val intent = Intent(context, RadioMediaService::class.java)
-        ContextCompat.startForegroundService(context, intent)
+    @UnstableApi
+    fun onStartService() {
+        if (isInternalPlayer()) {
+            val intent = Intent(context, RadioMediaService::class.java)
+            ContextCompat.startForegroundService(context, intent)
+        }
     }
 
+    @UnstableApi
     internal fun onStopService() {
-        context.stopService(Intent(context, RadioMediaService::class.java))
+        if (isInternalPlayer()) {
+            context.stopService(Intent(context, RadioMediaService::class.java))
+        }
         onCleared()
     }
 
     internal fun resetState() {
         uiStateInt.value = UIState.Initial
-    }
-
-    internal fun onStart(
-        command: VoiceCommand?
-    ) {
-        val voiceCommand = this.command
-
-        viewModelScope.launch {
-            val mediaItemList = mutableListOf<MediaItem>()
-            if (isInternalPlayer()) {
-                val m3uStream = context.assets.open(PLAYLIST)
-                val streamEntries = M3uParser.parse(m3uStream.reader())
-                streamEntries.forEach {
-                    mediaItemList.add(
-                        MediaItem.Builder()
-                            .setUri(it.location.url.toString())
-                            .setMediaMetadata(
-                                MediaMetadata.Builder()
-                                    .setDisplayTitle(it.title)
-                                    .build()
-                            ).build()
-                    )
-                }
-            }
-            var preset = getRadioPreset(dataStore)
-            if (preset > mediaItemList.size) {
-                preset = 1
-            }
-            radioMediaServiceHandler.addMediaItemList(mediaItemList, preset)
-
-            voiceCommand.value = command ?: VoiceCommand.INTERNET_RADIO
-        }
     }
 
     internal fun setVolume(
@@ -271,36 +245,47 @@ class RadioViewModel @Inject constructor(
         volumeHideTimer!!.start()
     }
 
-    private fun processCommand(
-        command: VoiceCommand
+    fun processVoiceCommand(
+        command: VoiceCommandType
     ) {
+        if (radioMediaServiceHandler.mediaItemCount() == 0) {
+            return
+        }
         when (command) {
-            VoiceCommand.INTERNET_RADIO, VoiceCommand.INTERNET_RADIO_ON, VoiceCommand.INTERNET_RADIO_ON2 -> onUIEvent(UIEvent.Play)
-            VoiceCommand.INTERNET_RADIO_OFF, VoiceCommand.INTERNET_RADIO_OFF2 -> onUIEvent(UIEvent.Pause)
-            VoiceCommand.INTERNET_RADIO_PREV_ITEM -> onUIEvent(UIEvent.Backward)
-            VoiceCommand.INTERNET_RADIO_NEXT_ITEM -> onUIEvent(UIEvent.Forward)
-            VoiceCommand.INTERNET_RADIO_VOL_DOWN -> changeVolume(isForward = false)
-            VoiceCommand.INTERNET_RADIO_VOL_UP -> changeVolume(isForward = true)
-            else -> {}
+            VoiceCommandType.INTERNET_RADIO_OFF, VoiceCommandType.INTERNET_RADIO_OFF2 -> onUIEvent(UIEvent.Pause)
+            VoiceCommandType.INTERNET_RADIO_PREV_ITEM -> onUIEvent(UIEvent.Backward)
+            VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> onUIEvent(UIEvent.Forward)
+            VoiceCommandType.INTERNET_RADIO_VOL_DOWN -> {
+                changeVolume(isForward = false)
+                onUIEvent(UIEvent.Play)
+            }
+            VoiceCommandType.INTERNET_RADIO_VOL_UP -> {
+                changeVolume(isForward = true)
+                onUIEvent(UIEvent.Play)
+            }
+            else -> {
+                val preset = getRadioPreset(dataStore)
+                radioMediaServiceHandler.playItem(preset)
+            }
         }
     }
 
     private fun changeVolume(
         isForward: Boolean
     ) {
-        if (volume == -1F) { //No value from MPD
+        if (volume.floatValue == -1F) { //No value from MPD
             return
         }
         if (isForward) {
-            if (volume < VOLUME_MAX) {
+            if (volume.floatValue < VOLUME_MAX) {
                 setVolume(
-                    value = volume + VOLUME_STEP
+                    value = volume.floatValue + VOLUME_STEP
                 )
             }
         } else {
-            if (volume > VOLUME_MIN) {
+            if (volume.floatValue > VOLUME_MIN) {
                 setVolume(
-                    value = volume - VOLUME_STEP
+                    value = volume.floatValue - VOLUME_STEP
                 )
             }
         }
@@ -322,10 +307,9 @@ sealed class UIState {
     data object Ready : UIState()
 }
 
-private const val PLAYLIST = "radio.m3u"
+const val PLAYLIST = "radio.m3u"
 private const val VOLUME_HIDE_TIMER = 3000L //3s
 
 private const val VOLUME_MIN = 0F
 private const val VOLUME_MAX = 1F
 private const val VOLUME_STEP = 0.05F //5%
-private const val VOICE_COMMAND_DELAY = 1000L

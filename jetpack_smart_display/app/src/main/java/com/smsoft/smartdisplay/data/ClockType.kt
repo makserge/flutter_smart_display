@@ -17,7 +17,7 @@ enum class ClockType(val id: String, val titleId: Int) {
 
     companion object {
         fun toMap(context: Context): Map<String, String> {
-            return values().associate {
+            return entries.associate {
                 it.id to context.getString(it.titleId)
             }
         }
@@ -31,7 +31,7 @@ enum class ClockType(val id: String, val titleId: Int) {
         }
 
         fun getById(id: String): ClockType {
-            val item = values().filter {
+            val item = entries.filter {
                 it.id == id
             }
             return item[0]

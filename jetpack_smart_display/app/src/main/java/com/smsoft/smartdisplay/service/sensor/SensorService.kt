@@ -127,7 +127,7 @@ class SensorService : Service() {
             startForeground(
                 STICKY_NOTIFICATION_ID,
                 notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
             )
         } else {
             startForeground(

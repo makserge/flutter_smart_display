@@ -113,5 +113,12 @@ enum class PreferenceKey(val key: String, val title: Int) {
     ASR_SOUND_VOLUME("asrSoundVolume", R.string.asr_sound_volume),
     LIGHT_SENSOR_ENABLED("lightSensorEnabled", R.string.light_sensor_enabled),
     LIGHT_SENSOR_TOPIC("lightSensorTopic", R.string.light_sensor_topic),
-    LIGHT_SENSOR_INTERVAL("lightSensorInterval", R.string.light_sensor_interval);
+    LIGHT_SENSOR_INTERVAL("lightSensorInterval", R.string.light_sensor_interval),
+    ALARM_LIGHT_ENABLED("alarmLightEnabled", R.string.alarm_light_enabled),
+    ALARM_LIGHT_SENSOR_THRESHOLD("alarmLightSensorThreshold", R.string.alarm_light_sensor_threshold),
+    ALARM_TIMEOUT("alarmTimeout", R.string.alarm_timeout),
+    ALARM_SOUND_VOLUME("alarmSoundVolume", R.string.alarm_sound_volume),
+    TIMER_ASR_ENABLED("timerAsrEnabled", R.string.timer_asr_enabled),
+    TIMER_TIMEOUT("timerTimeout", R.string.timer_timeout),
+    TIMER_SOUND_VOLUME("timerSoundVolume", R.string.timer_sound_volume);
 }

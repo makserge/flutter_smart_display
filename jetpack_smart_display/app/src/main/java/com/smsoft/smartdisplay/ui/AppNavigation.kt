@@ -6,12 +6,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.smsoft.smartdisplay.data.Screen
+import com.smsoft.smartdisplay.data.VoiceCommand
+import com.smsoft.smartdisplay.data.VoiceCommandType
+import com.smsoft.smartdisplay.ui.screen.alarms.AlarmsScreen
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import com.smsoft.smartdisplay.ui.screen.dashboard.DashboardScreen
 import com.smsoft.smartdisplay.ui.screen.doorbell.DoorbellScreen
 import com.smsoft.smartdisplay.ui.screen.radio.RadioScreen
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsScreen
 import com.smsoft.smartdisplay.ui.screen.settings.SettingsScreen
+import com.smsoft.smartdisplay.ui.screen.timers.TimersScreen
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherScreen
 
 @UnstableApi
@@ -52,9 +56,13 @@ fun AppNavigation() {
         }
 
         composable(Screen.Radio.route) {
-            RadioScreen {
-                navController.navigate(Screen.Settings.route)
-            }
+            RadioScreen(
+                onResetCommand = {},
+                command = VoiceCommand(VoiceCommandType.CLOCK),
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
         }
 
         composable(Screen.Sensors.route) {
@@ -65,6 +73,17 @@ fun AppNavigation() {
             WeatherScreen {
                 navController.navigate(Screen.Settings.route)
             }
+        }
+
+        composable(Screen.Alarms.route) {
+            AlarmsScreen()
+        }
+
+        composable(Screen.Timers.route) {
+            TimersScreen(
+                command = VoiceCommand(VoiceCommandType.CLOCK),
+                onResetCommand = { }
+            )
         }
     }
 }

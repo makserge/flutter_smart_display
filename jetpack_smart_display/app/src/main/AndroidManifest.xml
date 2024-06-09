@@ -3,7 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission
@@ -21,7 +23,8 @@
         android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
         android:maxSdkVersion="30" />
-
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"/>
     <uses-feature android:name="android.hardware.sensor" android:required="false"/>
 
     <application
@@ -45,17 +48,27 @@
 
         </activity>
 
-        <service android:name=".service.radio.RadioMediaService" />
+        <service android:name=".service.radio.RadioMediaService"
+            android:foregroundServiceType="mediaPlayback"
+            android:permission="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+            />
         <service android:name=".service.asr.SpeechRecognitionService"
             android:foregroundServiceType="microphone"
             android:permission="android.permission.RECORD_AUDIO"
         />
-        <service android:name=".service.sensor.SensorService" />
+        <service android:name=".service.sensor.SensorService"
+            android:foregroundServiceType="connectedDevice"
+            android:permission="android.permission.BLUETOOTH_SCAN"
+        />
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove">
         </provider>
+        <receiver
+            android:name=".receiver.AlarmReceiver"
+            android:exported="false">
+        </receiver>
     </application>
 
 </manifest>

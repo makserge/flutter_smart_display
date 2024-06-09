@@ -58,6 +58,7 @@ class RadioMediaModule {
 
     @Provides
     @Singleton
+    @UnstableApi
     fun provideNotificationManager(
         @ApplicationContext context: Context,
         player: ExoPlayer

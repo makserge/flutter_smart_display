@@ -12,7 +12,7 @@ enum class Font(val font: Int, val titleId: Int) {
 
     companion object {
         fun toMap(context: Context): Map<String, String> {
-            return values().associate {
+            return entries.associate {
                 it.font.toString() to context.getString(it.titleId)
             }
         }
@@ -22,7 +22,7 @@ enum class Font(val font: Int, val titleId: Int) {
         }
 
         fun getById(id: String): Font {
-            val item = values().filter {
+            val item = entries.filter {
                 it.font.toString() == id
             }
             return item[0]

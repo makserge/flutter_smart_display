@@ -1,4 +1,4 @@
-package com.smsoft.smartdisplay.ui.composable.sensors
+package com.smsoft.smartdisplay.ui.common
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.FloatingActionButton
@@ -8,13 +8,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.smsoft.smartdisplay.R
 
 @Composable
 fun AddItemButton(
     modifier: Modifier,
+    contentDescription: String,
     onClick: () -> Unit
 ) {
     FloatingActionButton(
@@ -26,7 +25,7 @@ fun AddItemButton(
         Icon(
             modifier = Modifier,
             imageVector = Icons.Default.Add,
-            contentDescription = stringResource(R.string.add_sensor)
+            contentDescription = contentDescription
         )
     }
 }

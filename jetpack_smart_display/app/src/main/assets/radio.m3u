@@ -4,9 +4,6 @@ http://allzic17.ice.infomaniak.ch/allzic17.mp3
 #EXTINF:0,80´s Bylgjan
 http://icecast.365net.is:8000/orb80s.aac
 
-#EXTINF:0,Klassik Radio - Jean Michel Jarre
-https://klassikr.streamabc.net/klr-jmjarre-mp3-192-8219853
-
 #EXTINF:0,Radio Brocken 90er
 http://fhhalle.streamabc.net/fhhal-brocken90er-mp3-256-1012329
 
@@ -50,7 +47,7 @@ http://bigrradio.cdnstream1.com/5181_128
 http://bigrradio.cdnstream1.com/5184_128
 
 #EXTINF:0,Eldoradio.lu - 80s - 70s/80s
-http://shoutcast.rtl.lu/eldo80s
+http://sc.bce.lu/eldo80s
 
 #EXTINF:0,RauteMusik.FM - 90s
 https://rautemusik-de-hz-fal-stream11.radiohost.de/90s
@@ -59,7 +56,7 @@ https://rautemusik-de-hz-fal-stream11.radiohost.de/90s
 https://80er.stream.laut.fm/80er
 
 #EXTINF:0,Bleudream - 80
-http://streamingv2.shoutcast.com/bleudream-80
+https://streaming.brol.tech/jamendolounge
 
 #EXTINF:0,Positively - Decades - 80s
 http://streaming.positivity.radio/pr/posi80s/icecast.audio
@@ -69,12 +66,6 @@ http://streambbr.ir-media-tec.com/2000er/mp3-128
 
 #EXTINF:0,Radio obozrevatel - Абсолютный хит
 http://music.myradio.ua:8000/absolute-hit128.mp3
-
-#EXTINF:0,Radio obozrevatel - Музыка для сна
-http://music.myradio.ua:8000/sleepmusic128.mp3
-
-#EXTINF:0,laut.fm/happy90s Happy90s
-https://happy90s.stream.laut.fm/happy90s
 
 #EXTINF:0,laut.fm/2000er
 http://stream.laut.fm/2000er
