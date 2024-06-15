@@ -35,8 +35,8 @@ import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_ENABLED_DEFAUL
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_TIMEOUT_DEFAULT
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_COMMAND_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_ON
-import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.radio.PLAYLIST
 import com.smsoft.smartdisplay.utils.fadeInVolume
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
@@ -71,7 +71,7 @@ class AlarmsViewModel @Inject constructor(
         audioAttributes = ExoPlayerImpl.getAudioAttributes()
     )
 
-    private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
+    private var pushButtonCommandTopic = PUSH_BUTTON_COMMAND_DEFAULT_TOPIC
     private var pushButtonPayloadOn = PUSH_BUTTON_DEFAULT_PAYLOAD_ON
     private var isAlarmLightEnabled = ALARM_LIGHT_ENABLED_DEFAULT
     private var lightSensorThreshold = Integer.parseInt(ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT)
@@ -102,8 +102,8 @@ class AlarmsViewModel @Inject constructor(
             data[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_SENSOR_THRESHOLD.key)]?.let {
                 lightSensorThreshold = it.toInt()
             }
-            data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)]?.let {
-                pushButtonTopic = it.trim()
+            data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_COMMAND_TOPIC.key)]?.let {
+                pushButtonCommandTopic = it.trim()
             }
             data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)]?.let {
                 pushButtonPayloadOn = it.trim()
@@ -227,7 +227,7 @@ class AlarmsViewModel @Inject constructor(
                 if (!isFired && (value > 0) && (value < lightSensorThreshold)) {
                     isFired = true
                     publishMQTT(
-                        topic = pushButtonTopic,
+                        topic = pushButtonCommandTopic,
                         messagePayload = pushButtonPayloadOn
                     )
                     return@collect

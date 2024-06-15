@@ -89,10 +89,11 @@ class DashboardViewModel @Inject constructor(
     private var isAsrSoundEnabled = ASR_SOUND_ENABLED_DEFAULT
     private var asrSoundVolume = ASR_SOUND_VOLUME_DEFAULT
 
-    private var pushButtonState = PUSH_BUTTON_DEFAULT_STATE
+    private var pushButtonState = MutableStateFlow<Boolean>(PUSH_BUTTON_DEFAULT_STATE)
     private var proximitySensorButtonState = PROXIMITY_SENSOR_DEFAULT_STATE
 
-    private var pushButtonTopic = PUSH_BUTTON_DEFAULT_TOPIC
+    private var pushButtonStatusTopic = PUSH_BUTTON_STATUS_DEFAULT_TOPIC
+    private var pushButtonCommandTopic = PUSH_BUTTON_COMMAND_DEFAULT_TOPIC
     private var pushButtonPayloadOn = PUSH_BUTTON_DEFAULT_PAYLOAD_ON
     private var pushButtonPayloadOff = PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
 
@@ -131,15 +132,15 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun togglePressButton() {
-        pushButtonState = !pushButtonState
-        sendPressButtonEvent(pushButtonState)
+        pushButtonState.value = !pushButtonState.value
+        sendPressButtonEvent(pushButtonState.value)
     }
 
     private fun sendPressButtonEvent(
         isOn: Boolean
     ) {
         publishMQTT(
-            topic = pushButtonTopic,
+            topic = pushButtonCommandTopic,
             messagePayload = if (isOn) {
                 pushButtonPayloadOn
             } else {
@@ -191,8 +192,11 @@ class DashboardViewModel @Inject constructor(
 
     private suspend fun getMQTTTopics() {
         val data = dataStore.data.first()
-        data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)]?.let {
-            pushButtonTopic = it.trim()
+        data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)]?.let {
+            pushButtonStatusTopic = it.trim()
+        }
+        data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_COMMAND_TOPIC.key)]?.let {
+            pushButtonCommandTopic = it.trim()
         }
         data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)]?.let {
             pushButtonPayloadOn = it.trim()
@@ -242,6 +246,9 @@ class DashboardViewModel @Inject constructor(
             Log.d("MQTT", "messageArrived: $topic: $message")
             if (topic == doorbellTopic) {
                 doorBellAlarmStateInt.value = true
+            }
+            if (topic == pushButtonStatusTopic) {
+                pushButtonState.value = (message.payload.toString(Charsets.UTF_8) == PUSH_BUTTON_ON_PAYLOAD)
             }
         }
 
@@ -571,8 +578,10 @@ class DashboardViewModel @Inject constructor(
 }
 
 const val APP_CHANNEL = "SmartDisplaychannnel"
-const val PUSH_BUTTON_DEFAULT_TOPIC = "pushbutton"
+const val PUSH_BUTTON_STATUS_DEFAULT_TOPIC = "*/stat/*/POWER"
+const val PUSH_BUTTON_COMMAND_DEFAULT_TOPIC = "*/cmnd/*/POWER"
 const val PUSH_BUTTON_DEFAULT_STATE = false
+const val PUSH_BUTTON_ON_PAYLOAD = "ON"
 const val PUSH_BUTTON_DEFAULT_PAYLOAD_ON = "1"
 const val PUSH_BUTTON_DEFAULT_PAYLOAD_OFF = "0"
 const val PROXIMITY_SENSOR_DEFAULT_TOPIC = "pushbutton2"

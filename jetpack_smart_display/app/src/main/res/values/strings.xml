@@ -170,7 +170,8 @@
     <string name="doorbell_alarm_topic">MQTT alarm topic</string>
     <string name="doorbell_stream_url">RTSP stream URL</string>
     <string name="push_button">Push button MQTT settings</string>
-    <string name="push_button_topic">Topic</string>
+    <string name="push_button_status_topic">Status topic</string>
+    <string name="push_button_command_topic">Command topic</string>
     <string name="push_button_payload_on">Payload on</string>
     <string name="push_button_payload_off">Payload off</string>
     <string name="proximity_sensor">Proximity sensor MQTT settings</string>

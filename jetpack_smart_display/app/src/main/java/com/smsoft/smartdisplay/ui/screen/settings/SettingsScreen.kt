@@ -92,7 +92,11 @@ fun SettingsScreen(
         initialValue = DOORBELL_STREAM_DEFAULT_URL
     )
 
-    val pushButtonTopic by viewModel.pushButtonTopic.collectAsStateWithLifecycle(
+    val pushButtonStatusTopic by viewModel.pushButtonStatusTopic.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val pushButtonCommandTopic by viewModel.pushButtonCommandTopic.collectAsStateWithLifecycle(
         initialValue = ""
     )
 
@@ -187,7 +191,8 @@ fun SettingsScreen(
             pushButtonSettings (
                 modifier = Modifier,
                 scope = this,
-                topic = pushButtonTopic.toString(),
+                statusTopic = pushButtonStatusTopic.toString(),
+                commandTopic = pushButtonCommandTopic.toString(),
                 payloadOn = pushButtonPayloadOn.toString(),
                 payloadOff = pushButtonPayloadOff.toString(),
             )

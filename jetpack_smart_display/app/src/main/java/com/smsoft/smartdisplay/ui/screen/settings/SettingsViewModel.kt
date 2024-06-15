@@ -21,9 +21,10 @@ import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_COMMAND_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_ON
-import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_STATUS_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -107,10 +108,15 @@ class SettingsViewModel @Inject constructor(
         defaultValue = DOORBELL_STREAM_DEFAULT_URL
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)] ?: DOORBELL_STREAM_DEFAULT_URL }
 
-    val pushButtonTopic = getParamFlow(
+    val pushButtonStatusTopic = getParamFlow(
         dataStore = dataStore,
-        defaultValue = PUSH_BUTTON_DEFAULT_TOPIC
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_TOPIC.key)] ?: PUSH_BUTTON_DEFAULT_TOPIC }
+        defaultValue = PUSH_BUTTON_STATUS_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)] ?: PUSH_BUTTON_COMMAND_DEFAULT_TOPIC }
+
+    val pushButtonCommandTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = PUSH_BUTTON_COMMAND_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_COMMAND_TOPIC.key)] ?: PUSH_BUTTON_COMMAND_DEFAULT_TOPIC }
 
     val pushButtonPayloadOn = getParamFlow(
         dataStore = dataStore,
@@ -154,6 +160,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         updateDoorbellAlarmTopic()
+        updateButtonSwitchStatusTopic()
         updateAsrServiceState()
     }
 
@@ -164,6 +171,30 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             var prevValue = ""
             doorbellAlarmTopic.collectLatest { newValue ->
+                if (newValue == prevValue) {
+                    return@collectLatest
+                }
+                if (prevValue.isNotEmpty()) {
+                    mqttClient.unsubscribe(
+                        topic = prevValue
+                    )
+                }
+                mqttClient.subscribe(
+                    topic = (newValue as String).trim(),
+                    qos = QoS.AtMostOnce.value
+                )
+                prevValue = newValue.trim()
+            }
+        }
+    }
+
+    private fun updateButtonSwitchStatusTopic() {
+        if (!mqttClient.isConnected) {
+            return
+        }
+        viewModelScope.launch {
+            var prevValue = ""
+            pushButtonStatusTopic.collectLatest { newValue ->
                 if (newValue == prevValue) {
                     return@collectLatest
                 }
