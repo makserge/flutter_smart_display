@@ -57,7 +57,6 @@ fun AppNavigation() {
 
         composable(Screen.Radio.route) {
             RadioScreen(
-                onResetCommand = {},
                 command = VoiceCommand(VoiceCommandType.CLOCK),
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)

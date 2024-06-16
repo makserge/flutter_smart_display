@@ -90,7 +90,6 @@ fun RenderScreen(
         DashboardItem.SENSORS -> SensorsScreen()
         DashboardItem.INTERNET_RADIO -> RadioScreen(
             command = command,
-            onResetCommand = onResetCommand,
             onSettingsClick = onSettingsClick
         )
         DashboardItem.ALARMS -> AlarmsScreen()

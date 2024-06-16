@@ -3,15 +3,13 @@ package com.smsoft.smartdisplay.service.radio
 import android.media.AudioDeviceInfo
 import android.net.Uri
 import android.os.Looper
-import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.TextureView
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.AuxEffectInfo
+import androidx.media3.common.C
 import androidx.media3.common.DeviceInfo
 import androidx.media3.common.Effect
 import androidx.media3.common.Format
@@ -46,8 +44,8 @@ import androidx.media3.exoplayer.trackselection.TrackSelectionArray
 import androidx.media3.exoplayer.trackselection.TrackSelector
 import androidx.media3.exoplayer.video.VideoFrameMetadataListener
 import androidx.media3.exoplayer.video.spherical.CameraMotionListener
-import com.smsoft.smartdisplay.utils.getRadioSettings
 import com.smsoft.smartdisplay.utils.mpd.MPDHelper
+import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
 import com.smsoft.smartdisplay.utils.mpd.data.MPDState
 import com.smsoft.smartdisplay.utils.mpd.data.MPDStatus
 import com.smsoft.smartdisplay.utils.mpd.event.StatusChangeListener
@@ -59,47 +57,46 @@ import kotlinx.coroutines.launch
 
 @UnstableApi
 class MPDPlayer(
-    private val dataStore: DataStore<Preferences>,
-    private val helper: MPDHelper
-    ): ExoPlayer {
-    private val TAG = "MPD"
+    private val helper: MPDHelper,
+    private val credentials: MPDCredentials
+): ExoPlayer {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private var listener: Player.Listener? = null
     private var playlist: List<MediaItem>? = null
     private var status: MPDStatus? = null
     private var preset = 1
+    private var isPrepared = false
+
+    init {
+        coroutineScope.launch {
+            helper.connect(credentials)
+        }
+    }
 
     override fun addListener(listener: Player.Listener) {
-        Log.d(TAG, "addListener")
         this.listener = listener
     }
 
     private val statusChangedListener = object: StatusChangeListener {
         override fun connectionStateChanged(isConnected: Boolean) {
-            Log.d(TAG, "connectionStateChanged:isConnected:$isConnected")
         }
 
         override fun playlistChanged(newStatus: MPDStatus, playlistVersion: Int) {
-            Log.d(TAG, "playlistChanged:playlistVersion:$playlistVersion")
             status = newStatus
-
             updatePlaylist()
-
-            listener?.onVolumeChanged(volume)
+            if ((playlist != null) && playlist!!.isEmpty()) {
+                helper.pause()
+            }
         }
 
         override fun trackChanged(newStatus: MPDStatus, track: Int) {
-            Log.d(TAG, "trackChanged:track:$track")
-
             listener?.onPlaybackStateChanged(ExoPlayer.STATE_BUFFERING)
 
             status = newStatus
             preset = track
 
             updatePlaylist()
-
-            listener?.onVolumeChanged(volume)
 
             coroutineScope.launch(Dispatchers.Main) {
                 delay(500)
@@ -111,21 +108,20 @@ class MPDPlayer(
         override fun trackPositionChanged(newStatus: MPDStatus) {
             status = newStatus
             listener?.onIsPlayingChanged(isPlaying)
-            listener?.onVolumeChanged(volume)
+        }
+
+        override fun volumeChanged(newStatus: MPDStatus, volume: Int) {
+            listener?.onVolumeChanged(volume / 100F)
         }
     }
 
     override fun setMediaItems(mediaItems: MutableList<MediaItem>) {
-        Log.d(TAG, "setMediaItems")
     }
 
     override fun seekTo(positionMs: Long) {
-        Log.d(TAG, "seekTo: position: $positionMs")
     }
 
     override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
-        Log.d(TAG, "seekTo: mediaItemIndex: $mediaItemIndex")
-
         preset = mediaItemIndex
 
         val mediaItem = MediaItem.Builder()
@@ -161,36 +157,30 @@ class MPDPlayer(
     }
 
     override fun prepare() {
-        Log.d(TAG, "prepare")
-
+        isPrepared = true
         coroutineScope.launch {
-            val credentials = getRadioSettings(dataStore)
-            if (helper.connect(credentials)) {
-                Log.d(TAG, "connected")
-
-                getPlaylist()
-
-                status = try {
-                    helper.getStatus()
-                } catch (e: CommunicationException) {
-                    helper.reconnect()
-                    helper.getStatus()
+            try {
+                playlist = helper.getPlaylist()
+                status = helper.getStatus()
+                preset = status!!.songPos
+                if (status != null) {
+                    if (status!!.state == MPDState.PAUSED) {
+                        helper.play()
+                    } else if (status!!.state == MPDState.STOPPED) {
+                        helper.playId(currentMediaItem.mediaId)
+                    }
                 }
-
                 helper.startMonitor()
-
-                helper.playId(currentMediaItem.mediaId)
-
-                listener?.onPlaybackStateChanged(ExoPlayer.STATE_READY)
-                listener?.onVolumeChanged(volume)
-
                 coroutineScope.launch(Dispatchers.Main) {
                     delay(500)
                     listener?.onIsPlayingChanged(isPlaying)
+                    listener?.onMediaMetadataChanged(mediaMetadata)
+                    listener?.onPlaybackStateChanged(ExoPlayer.STATE_READY)
                 }
-
-            } else {
-                Log.d(TAG, "connection failure")
+            } catch (e: CommunicationException) {
+                helper.reconnect()
+                prepare()
+            } catch(e: Exception) {
                 listener?.onPlayerError(
                     PlaybackException(
                         "Connection Failed",
@@ -202,32 +192,16 @@ class MPDPlayer(
         }
     }
 
-    private fun getPlaylist() {
-        playlist = try {
-            helper.getPlaylist()
-        } catch (e: CommunicationException) {
-            helper.reconnect()
-            helper.getPlaylist()
-        }
-        listener?.onMediaMetadataChanged(mediaMetadata)
-    }
     private fun updatePlaylist() {
-        playlist = try {
-            helper.updatePlaylist()
-        } catch (e: CommunicationException) {
-            helper.reconnect()
-            helper.updatePlaylist()
-        }
+        playlist = helper.updatePlaylist()
         listener?.onMediaMetadataChanged(mediaMetadata)
     }
 
     override fun setPlayWhenReady(playWhenReady: Boolean) {
-        Log.d(TAG, "setPlayWhenReady")
     }
 
     override fun getMediaItemCount(): Int {
-        Log.d(TAG, "getMediaItemCount")
-        return playlist?.size!!
+        return if (playlist != null) playlist!!.size else 1
     }
 
     override fun isPlaying(): Boolean {
@@ -235,29 +209,33 @@ class MPDPlayer(
     }
 
     override fun play() {
-        Log.d(TAG, "play")
         coroutineScope.launch {
             helper.play()
         }
     }
 
     override fun pause() {
-        Log.d(TAG, "pause")
         coroutineScope.launch {
             helper.pause()
         }
     }
 
     override fun seekToPreviousMediaItem() {
-        Log.d(TAG, "seekToPreviousMediaItem")
         coroutineScope.launch {
+            if (!isPrepared) {
+                prepare()
+                delay(500)
+            }
             helper.previous()
         }
     }
 
     override fun seekToNextMediaItem() {
-        Log.d(TAG, "seekToNextMediaItem")
         coroutineScope.launch {
+            if (!isPrepared) {
+                prepare()
+                delay(500)
+            }
             helper.next()
         }
     }
@@ -268,9 +246,11 @@ class MPDPlayer(
 
     override fun removeListener(listener: Player.Listener) {
     }
+
     override fun getApplicationLooper(): Looper {
         TODO("Not yet implemented")
     }
+
     override fun setMediaItems(mediaItems: MutableList<MediaItem>, resetPosition: Boolean) {
     }
 
@@ -462,9 +442,11 @@ class MPDPlayer(
     }
 
     override fun stop() {
-        Log.d(TAG, "stop")
-        helper.stopMonitor()
-        helper.disconnect()
+        coroutineScope.launch {
+            helper.stop()
+            helper.stopMonitor()
+            helper.disconnect()
+        }
     }
 
     override fun release() {
@@ -506,13 +488,13 @@ class MPDPlayer(
     }
 
     override fun getCurrentMediaItemIndex(): Int {
-        Log.d(TAG, "getCurrentMediaItemIndex")
         return preset
     }
 
     override fun getCurrentMediaItem(): MediaItem {
-        Log.d(TAG, "getCurrentMediaItem")
-
+        if (playlist == null) {
+            return MediaItem.EMPTY
+        }
         if (preset > playlist?.size!! - 1) {
             preset = playlist?.size!! - 1
         }
@@ -525,7 +507,8 @@ class MPDPlayer(
     }
 
     override fun getNextMediaItemIndex(): Int {
-        return 0
+        return if ((status == null) || (playlist?.size == 0) || (preset == playlist?.size))
+            C.INDEX_UNSET else preset + 1
     }
 
     @Deprecated("Deprecated in Java", ReplaceWith("0"))
@@ -534,7 +517,8 @@ class MPDPlayer(
     }
 
     override fun getPreviousMediaItemIndex(): Int {
-        return 0
+        return if ((status == null) || (playlist?.size == 0) || (preset == 1))
+            C.INDEX_UNSET else preset - 1
     }
 
     override fun getMediaItemAt(index: Int): MediaItem {
@@ -542,17 +526,14 @@ class MPDPlayer(
     }
 
     override fun getDuration(): Long {
-        Log.d(TAG, "getDuration")
-        return status?.totalTime!!
+        return if (status != null) status?.totalTime!! else 0
     }
 
     override fun getCurrentPosition(): Long {
-        Log.d(TAG, "getCurrentPosition")
-        return status?.elapsedTime!! * 1000
+        return if (status != null) status?.elapsedTime!! * 1000 else 0
     }
 
     override fun setVolume(audioVolume: Float) {
-        Log.d(TAG, "setVolume:$audioVolume")
         coroutineScope.launch {
             helper.setVolume((audioVolume * 100).toInt())
         }

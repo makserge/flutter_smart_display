@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.utils.mpd
 
-import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.smsoft.smartdisplay.utils.mpd.data.MPDCommand
@@ -18,8 +17,6 @@ class MPDHelper {
         get() = this::statusConnection.isInitialized && statusConnection.isConnected
 
     var statusChangedListener: StatusChangeListener? = null
-
-    private val TAG = "MPDHelper"
 
     private lateinit var commandConnection: Connection
     private lateinit var statusConnection: Connection
@@ -46,10 +43,8 @@ class MPDHelper {
             return connect(credentials)
         }
         catch (e: AuthenticationException) {
-            Log.e(TAG, e.message.toString())
             false
         } catch (e: Exception) {
-            Log.e(TAG, e.message.toString())
             false
         }
     }
@@ -72,15 +67,13 @@ class MPDHelper {
             if (commandConnection.isConnected) {
                 commandConnection.disconnect()
             }
-        } catch(e: Exception) {
-            Log.e(TAG, e.message.toString())
+        } catch(ignored: Exception) {
         }
         try {
             if (statusConnection.isConnected) {
                 statusConnection.disconnect()
             }
-        } catch(e: Exception) {
-            Log.e(TAG, e.message.toString())
+        } catch(ignored: Exception) {
         }
     }
 
@@ -114,12 +107,28 @@ class MPDHelper {
         return parsePlayList(response)
     }
 
-    @Throws(CommunicationException::class, ProtocolException::class)
-    fun updatePlaylist(playlistVersion: Int = -1): List<MediaItem> {
-        val response = statusConnection.sendCommand(MPDCommand.PLAYLIST_CHANGES,
-            playlistVersion.toString()
-        )
-        return parsePlayList(response)
+    fun updatePlaylist(playlistVersion: Int = -1): List<MediaItem>? {
+        try {
+            if (commandConnection.isConnected) {
+                val response = statusConnection.sendCommand(
+                    MPDCommand.PLAYLIST_CHANGES,
+                    playlistVersion.toString()
+                )
+                return parsePlayList(response)
+            } else {
+                reconnect()
+                updatePlaylist(playlistVersion)
+            }
+        } catch(e: CommunicationException) {
+            try {
+                reconnect()
+                updatePlaylist(playlistVersion)
+            } catch(ignored: AuthenticationException) {
+            } catch(ignored: CommunicationException) {
+            }
+        } catch(ignored: ProtocolException) {
+        }
+        return null
     }
 
     fun play() {
@@ -145,6 +154,21 @@ class MPDHelper {
         try {
             if (commandConnection.isConnected) {
                 commandConnection.sendCommand(MPDCommand.PAUSE)
+            } else {
+                reconnect()
+                pause()
+            }
+        } catch(e: CommunicationException) {
+            reconnect()
+            pause()
+        } catch(ignored: ProtocolException) {
+        }
+    }
+
+    fun stop() {
+        try {
+            if (commandConnection.isConnected) {
+                commandConnection.sendCommand(MPDCommand.STOP)
             } else {
                 reconnect()
                 pause()
@@ -256,6 +280,9 @@ class MPDHelper {
             else if (line.startsWith("Name:")) {
                 name = line.substring("Name: ".length)
             }
+            else if (line.startsWith("Artist:")) {
+                name = line.substring("Artist: ".length)
+            }
             else if (title.isEmpty() &&line.startsWith("Title:")) {
                 title = line.substring("Title: ".length)
             }
@@ -283,5 +310,4 @@ class MPDHelper {
         }
         return null
     }
-
 }

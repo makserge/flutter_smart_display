@@ -32,6 +32,7 @@ import com.smsoft.smartdisplay.utils.getRadioType
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -90,7 +91,7 @@ class RadioViewModel @Inject constructor(
                     is MediaState.Progress -> calculateProgressValues(mediaState.progress)
                     is MediaState.Ready -> {
                         saveCurrentPreset(mediaState.currentMediaItemIndex)
-                        presetTitle.value = if (mediaState.currentMediaItem != null) mediaState.currentMediaItem.mediaMetadata.displayTitle.toString() else ""
+                        presetTitle.value = if ((mediaState.currentMediaItem != null) && (mediaState.currentMediaItem != MediaItem.EMPTY)) mediaState.currentMediaItem.mediaMetadata.displayTitle.toString() else ""
                         duration.longValue = if (mediaState.duration > 0) mediaState.duration else 0
                         uiStateInt.value = UIState.Ready
                     }
@@ -108,7 +109,14 @@ class RadioViewModel @Inject constructor(
         viewModelScope.launch {
             radioMediaServiceHandler.playerState.collect { playerState ->
                 playerState.volume.let {
+                    if (it == -1F) {
+                        return@let
+                    }
                     volume.floatValue = it
+                    isShowVolumeInt.value = true
+                    reStartVolumeHideTimer {
+                        isShowVolumeInt.value = false
+                    }
                 }
             }
         }
@@ -255,14 +263,8 @@ class RadioViewModel @Inject constructor(
             VoiceCommandType.INTERNET_RADIO_OFF, VoiceCommandType.INTERNET_RADIO_OFF2 -> onUIEvent(UIEvent.Pause)
             VoiceCommandType.INTERNET_RADIO_PREV_ITEM -> onUIEvent(UIEvent.Backward)
             VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> onUIEvent(UIEvent.Forward)
-            VoiceCommandType.INTERNET_RADIO_VOL_DOWN -> {
-                changeVolume(isForward = false)
-                onUIEvent(UIEvent.Play)
-            }
-            VoiceCommandType.INTERNET_RADIO_VOL_UP -> {
-                changeVolume(isForward = true)
-                onUIEvent(UIEvent.Play)
-            }
+            VoiceCommandType.INTERNET_RADIO_VOL_DOWN -> changeVolume(isForward = false)
+            VoiceCommandType.INTERNET_RADIO_VOL_UP -> changeVolume(isForward = true)
             else -> {
                 val preset = getRadioPreset(dataStore)
                 radioMediaServiceHandler.playItem(preset)
@@ -273,20 +275,24 @@ class RadioViewModel @Inject constructor(
     private fun changeVolume(
         isForward: Boolean
     ) {
-        if (volume.floatValue == -1F) { //No value from MPD
-            return
-        }
-        if (isForward) {
-            if (volume.floatValue < VOLUME_MAX) {
-                setVolume(
-                    value = volume.floatValue + VOLUME_STEP
-                )
+        viewModelScope.launch {
+            if (volume.floatValue == -1F) { //No value from MPD
+                val preset = getRadioPreset(dataStore)
+                radioMediaServiceHandler.playItem(preset)
+                delay(500)
             }
-        } else {
-            if (volume.floatValue > VOLUME_MIN) {
-                setVolume(
-                    value = volume.floatValue - VOLUME_STEP
-                )
+            if (isForward) {
+                if (volume.floatValue < VOLUME_MAX) {
+                    setVolume(
+                        value = volume.floatValue + VOLUME_STEP
+                    )
+                }
+            } else {
+                if (volume.floatValue > VOLUME_MIN) {
+                    setVolume(
+                        value = volume.floatValue - VOLUME_STEP
+                    )
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ import com.smsoft.smartdisplay.service.notification.RadioMediaNotificationManage
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.service.radio.MPDPlayer
 import com.smsoft.smartdisplay.service.radio.RadioMediaServiceHandler
+import com.smsoft.smartdisplay.utils.getRadioSettings
 import com.smsoft.smartdisplay.utils.getRadioType
 import com.smsoft.smartdisplay.utils.mpd.MPDHelper
 import dagger.Module
@@ -34,6 +35,7 @@ class RadioMediaModule {
     @Singleton
     fun provideMPDHelper(): MPDHelper = MPDHelper()
 
+
     @Provides
     @Singleton
     @UnstableApi
@@ -43,16 +45,18 @@ class RadioMediaModule {
         audioAttributes: AudioAttributes,
         mpdHelper: MPDHelper
     ): ExoPlayer {
-
         return when (getRadioType(dataStore)) {
             RadioType.INTERNAL -> ExoPlayerImpl.getExoPlayer(
                 context = context,
                 audioAttributes = audioAttributes
             )
-            else -> MPDPlayer(
-                dataStore = dataStore,
-                helper = mpdHelper
-            )
+            else -> {
+                val credentials = getRadioSettings(dataStore)
+                MPDPlayer(
+                    helper = mpdHelper,
+                    credentials = credentials
+                )
+            }
         }
     }
 

@@ -26,7 +26,6 @@ fun RadioScreen(
     modifier: Modifier = Modifier,
     viewModel: RadioViewModel = hiltViewModel(),
     command: VoiceCommand,
-    onResetCommand: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()

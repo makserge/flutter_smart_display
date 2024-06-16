@@ -10,5 +10,6 @@ enum class MPDCommand(val id: String) {
     PLAY("play"),
     PAUSE("pause"),
     PLAY_ID("playid"),
-    SET_VOLUME("setvol");
+    SET_VOLUME("setvol"),
+    STOP("stop");
 }

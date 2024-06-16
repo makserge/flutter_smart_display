@@ -76,8 +76,12 @@ class RadioMediaServiceHandler @Inject constructor(
         playerEvent: PlayerEvent
     ) {
         when (playerEvent) {
-            PlayerEvent.Previous -> player.seekToPreviousMediaItem()
-            PlayerEvent.Next -> player.seekToNextMediaItem()
+            PlayerEvent.Previous -> {
+                player.seekToPreviousMediaItem()
+            }
+            PlayerEvent.Next -> {
+                player.seekToNextMediaItem()
+            }
             PlayerEvent.PlayPause -> {
                 mediaStateInt.value = MediaState.Playing(isPlaying = player.isPlaying)
                 if (player.isPlaying) {
@@ -96,6 +100,13 @@ class RadioMediaServiceHandler @Inject constructor(
                 if (player.isPlaying) {
                     mediaStateInt.value = MediaState.Playing(isPlaying = player.isPlaying)
                     player.pause()
+                } else {
+                    mediaStateInt.value = MediaState.Ready(
+                        player.duration,
+                        player.currentMediaItem,
+                        player.currentMediaItemIndex
+                    )
+                    player.stop()
                 }
             }
             PlayerEvent.Stop -> {

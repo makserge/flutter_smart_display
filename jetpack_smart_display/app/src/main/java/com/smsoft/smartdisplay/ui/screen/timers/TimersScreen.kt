@@ -53,7 +53,7 @@ fun TimersScreen(
         LaunchedEffect(command.timeStamp) {
             command.let {
                 coroutineScope.launch {
-                    viewModel.processVoiceCommand(it!!.type)
+                    viewModel.processVoiceCommand(it.type)
                     onResetCommand()
                 }
             }
