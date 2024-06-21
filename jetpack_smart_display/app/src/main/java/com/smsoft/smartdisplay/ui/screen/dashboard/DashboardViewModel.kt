@@ -89,7 +89,7 @@ class DashboardViewModel @Inject constructor(
     private var isAsrSoundEnabled = ASR_SOUND_ENABLED_DEFAULT
     private var asrSoundVolume = ASR_SOUND_VOLUME_DEFAULT
 
-    private var pushButtonState = MutableStateFlow<Boolean>(PUSH_BUTTON_DEFAULT_STATE)
+    private var pushButtonState = MutableStateFlow(PUSH_BUTTON_DEFAULT_STATE)
     private var proximitySensorButtonState = PROXIMITY_SENSOR_DEFAULT_STATE
 
     private var pushButtonStatusTopic = PUSH_BUTTON_STATUS_DEFAULT_TOPIC

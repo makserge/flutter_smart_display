@@ -19,6 +19,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
@@ -202,7 +203,26 @@ fun getMac(): String? {
     }
 }
 
-var player: Player? = null
+@UnstableApi
+fun playStream(
+    player: Player,
+    uri: String,
+    soundVolume: Float,
+    onError: () -> Unit
+) {
+    player.apply{
+        volume = soundVolume
+        setMediaItem(MediaItem.fromUri(uri))
+        prepare()
+        playWhenReady = true
+        addListener(object: Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                onError()
+            }
+        })
+    }
+}
+
 
 @UnstableApi
 fun playAssetSound(

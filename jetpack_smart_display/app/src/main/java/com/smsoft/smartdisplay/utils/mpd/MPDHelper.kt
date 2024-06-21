@@ -175,7 +175,7 @@ class MPDHelper {
             }
         } catch(e: CommunicationException) {
             reconnect()
-            pause()
+            stop()
         } catch(ignored: ProtocolException) {
         }
     }

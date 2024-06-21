@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.CountDownTimer
 import android.provider.Settings
 import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -16,8 +15,6 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.AlarmSoundToneType
 import com.smsoft.smartdisplay.data.AlarmSoundType
@@ -27,10 +24,6 @@ import com.smsoft.smartdisplay.data.database.entity.emptyAlarm
 import com.smsoft.smartdisplay.data.database.repository.AlarmRepository
 import com.smsoft.smartdisplay.service.alarm.AlarmHandler
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
-import com.smsoft.smartdisplay.service.radio.MediaState
-import com.smsoft.smartdisplay.service.radio.PlayerEvent
-import com.smsoft.smartdisplay.service.radio.RadioMediaService
-import com.smsoft.smartdisplay.service.radio.RadioMediaServiceHandler
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_SOUND_VOLUME_DEFAULT
@@ -41,6 +34,7 @@ import com.smsoft.smartdisplay.ui.screen.radio.PLAYLIST
 import com.smsoft.smartdisplay.utils.fadeInVolume
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
 import com.smsoft.smartdisplay.utils.playAlarmSound
+import com.smsoft.smartdisplay.utils.playStream
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
@@ -63,8 +57,7 @@ class AlarmsViewModel @Inject constructor(
     private val alarmRepository: AlarmRepository,
     private val alarmHandler: AlarmHandler,
     private val alarmManager: AlarmManager,
-    private val mqttClient: MqttAndroidClient,
-    private val radioMediaServiceHandler: RadioMediaServiceHandler
+    private val mqttClient: MqttAndroidClient
 ) : ViewModel() {
     var player = ExoPlayerImpl.getExoPlayer(
         context = context,
@@ -259,42 +252,23 @@ class AlarmsViewModel @Inject constructor(
     }
 
     fun playRadio(preset: Int, isFadeEnabled: Boolean, onError: () -> Unit) {
-        val intent = Intent(context, RadioMediaService::class.java)
-        ContextCompat.startForegroundService(context, intent)
-
         viewModelScope.launch {
-            val mediaItemList = mutableListOf<MediaItem>()
             val m3uStream = context.assets.open(PLAYLIST)
             val streamEntries = M3uParser.parse(m3uStream.reader())
-            streamEntries.forEach {
-                mediaItemList.add(
-                    MediaItem.Builder()
-                        .setUri(it.location.url.toString())
-                        .setMediaMetadata(
-                            MediaMetadata.Builder()
-                                .setDisplayTitle(it.title)
-                                .build()
-                        ).build()
-                )
-            }
-            radioMediaServiceHandler.apply {
-                addMediaItemList(mediaItemList)
-                playItem(preset)
-            }
+            val entry = streamEntries[preset]
+            playStream(
+                player = player,
+                uri = entry.location.url.toString(),
+                soundVolume = 0F,
+                onError = onError
+            )
             if (isFadeEnabled) {
-                radioMediaServiceHandler.setVolume(0F)
+                player.volume = 0F
                 fadeInVolume( 0F, alarmSoundVolume) {
-                    radioMediaServiceHandler.setVolume(it)
+                    player.volume = it
                 }
             } else {
-                radioMediaServiceHandler.setVolume(alarmSoundVolume)
-            }
-            viewModelScope.launch {
-                radioMediaServiceHandler.mediaState.collect { mediaState ->
-                    if (mediaState == MediaState.Error) {
-                        onError()
-                    }
-                }
+                player.volume = alarmSoundVolume
             }
         }
     }
@@ -318,7 +292,6 @@ class AlarmsViewModel @Inject constructor(
     }
 
     fun stopPlayer() {
-        radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Stop)
-        context.stopService(Intent(context, RadioMediaService::class.java))
+        player.stop()
     }
 }

@@ -88,14 +88,14 @@ fun RenderScreen(
             onSettingsClick()
         }
         DashboardItem.SENSORS -> SensorsScreen()
-        DashboardItem.INTERNET_RADIO -> RadioScreen(
-            command = command,
-            onSettingsClick = onSettingsClick
-        )
         DashboardItem.ALARMS -> AlarmsScreen()
         DashboardItem.TIMERS -> TimersScreen(
             command = command,
             onResetCommand = onResetCommand
+        )
+        DashboardItem.INTERNET_RADIO -> RadioScreen(
+            command = command,
+            onSettingsClick = onSettingsClick
         )
         else -> DoorbellScreen(
             onSettingsClick = onSettingsClick
