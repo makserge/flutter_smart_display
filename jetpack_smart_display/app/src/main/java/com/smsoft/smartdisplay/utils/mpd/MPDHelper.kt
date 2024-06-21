@@ -92,19 +92,31 @@ class MPDHelper {
 
     @Throws(CommunicationException::class, ProtocolException::class)
     fun waitForChanges(): List<String> {
-        return statusConnection.sendCommand(MPDCommand.IDLE)
+        if (this::statusConnection.isInitialized) {
+            return statusConnection.sendCommand(MPDCommand.IDLE)
+        } else {
+            throw CommunicationException("")
+        }
     }
 
     @Throws(CommunicationException::class, ProtocolException::class)
     fun getStatus(): MPDStatus {
-        val response = statusConnection.sendCommand(MPDCommand.STATUS)
-        return MPDStatus(response)
+        if (this::statusConnection.isInitialized) {
+            val response = statusConnection.sendCommand(MPDCommand.STATUS)
+            return MPDStatus(response)
+        } else {
+            throw CommunicationException("")
+        }
     }
 
     @Throws(CommunicationException::class, ProtocolException::class)
     fun getPlaylist(): List<MediaItem> {
-        val response = statusConnection.sendCommand(MPDCommand.PLAYLIST)
-        return parsePlayList(response)
+        if (this::statusConnection.isInitialized) {
+            val response = statusConnection.sendCommand(MPDCommand.PLAYLIST)
+            return parsePlayList(response)
+        } else {
+            throw CommunicationException("")
+        }
     }
 
     fun updatePlaylist(playlistVersion: Int = -1): List<MediaItem>? {

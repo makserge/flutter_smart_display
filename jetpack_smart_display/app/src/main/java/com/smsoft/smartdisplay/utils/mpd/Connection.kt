@@ -88,11 +88,18 @@ class Connection(
     }
     @Throws(CommunicationException::class, ProtocolException::class)
     fun sendCommand(command: MPDCommand): List<String> {
-        return (channel.send(command.id) as Ok).response
+        if (this::channel.isInitialized) {
+            return (channel.send(command.id) as Ok).response
+        } else {
+            throw CommunicationException("")
+        }
     }
 
     @Throws(CommunicationException::class, ProtocolException::class)
     fun sendCommand(command: MPDCommand, vararg args: String): List<String> {
+        if (!this::channel.isInitialized) {
+            throw CommunicationException("")
+        }
         val outBuf = StringBuffer().apply {
             append(command.id)
             for (arg in args) {

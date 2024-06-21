@@ -86,7 +86,13 @@ class MPDPlayer(
             status = newStatus
             updatePlaylist()
             if ((playlist != null) && playlist!!.isEmpty()) {
-                helper.pause()
+                try {
+                    helper.pause()
+                } catch (e: CommunicationException) {
+                    reconnect {
+                        helper.pause()
+                    }
+                }
             }
         }
 
@@ -178,17 +184,25 @@ class MPDPlayer(
                     listener?.onPlaybackStateChanged(ExoPlayer.STATE_READY)
                 }
             } catch (e: CommunicationException) {
-                helper.reconnect()
-                prepare()
-            } catch(e: Exception) {
-                listener?.onPlayerError(
-                    PlaybackException(
-                        "Connection Failed",
-                        null,
-                        PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
-                    )
-                )
+                reconnect {
+                    prepare()
+                }
             }
+        }
+    }
+
+    private fun reconnect(callback: () -> Unit) {
+        try {
+            helper.reconnect()
+            callback()
+        } catch(e: Exception) {
+            listener?.onPlayerError(
+                PlaybackException(
+                    "Connection Failed",
+                    null,
+                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+                )
+            )
         }
     }
 
@@ -210,13 +224,25 @@ class MPDPlayer(
 
     override fun play() {
         coroutineScope.launch {
-            helper.play()
+            try {
+                helper.play()
+            } catch (e: CommunicationException) {
+                reconnect {
+                    helper.play()
+                }
+            }
         }
     }
 
     override fun pause() {
         coroutineScope.launch {
-            helper.pause()
+            try {
+                helper.pause()
+            } catch (e: CommunicationException) {
+                reconnect {
+                    helper.pause()
+                }
+            }
         }
     }
 
@@ -226,7 +252,13 @@ class MPDPlayer(
                 prepare()
                 delay(500)
             }
-            helper.previous()
+            try {
+                helper.previous()
+            } catch (e: CommunicationException) {
+                reconnect {
+                    helper.previous()
+                }
+            }
         }
     }
 
@@ -236,7 +268,13 @@ class MPDPlayer(
                 prepare()
                 delay(500)
             }
-            helper.next()
+            try {
+                helper.next()
+            } catch (e: CommunicationException) {
+                reconnect {
+                    helper.next()
+                }
+            }
         }
     }
 
@@ -443,7 +481,13 @@ class MPDPlayer(
 
     override fun stop() {
         coroutineScope.launch {
-            helper.stop()
+            try {
+                helper.stop()
+            } catch (e: CommunicationException) {
+                reconnect {
+                    helper.stop()
+                }
+            }
             helper.stopMonitor()
             helper.disconnect()
         }
@@ -535,7 +579,13 @@ class MPDPlayer(
 
     override fun setVolume(audioVolume: Float) {
         coroutineScope.launch {
-            helper.setVolume((audioVolume * 100).toInt())
+            try {
+                helper.setVolume((audioVolume * 100).toInt())
+            } catch (e: CommunicationException) {
+                reconnect {
+                    helper.setVolume((audioVolume * 100).toInt())
+                }
+            }
         }
     }
 
