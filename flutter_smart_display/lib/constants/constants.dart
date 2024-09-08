@@ -1,4 +1,4 @@
-List<String> dashboardItems = [
+const List<String> dashboardItems = [
   "CLOCK",
   "WEATHER",
   "SENSORS",
