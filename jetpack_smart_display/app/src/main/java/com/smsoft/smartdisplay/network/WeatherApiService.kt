@@ -13,7 +13,7 @@ interface WeatherApiService {
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
         @Query("units") units: String = "metric",
-        @Query("exclude") exclude: String = "minutely",
+        @Query("exclude") exclude: String = "minutely, hourly",
         @Query("appid") appId: String = BuildConfig.OWM_API_KEY,
     ): WeatherResult.Success
 }
@@ -21,7 +21,7 @@ interface WeatherApiService {
 class WeatherApi(moshi: Moshi) {
     private val retrofit: WeatherApiService by lazy {
         Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org/data/2.5/")
+            .baseUrl("https://api.openweathermap.org/data/3.0/")
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(WeatherApiService::class.java)
