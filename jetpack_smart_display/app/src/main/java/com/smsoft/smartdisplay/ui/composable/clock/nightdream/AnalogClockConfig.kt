@@ -3,8 +3,8 @@ package com.smsoft.smartdisplay.ui.composable.clock.nightdream
 import android.content.Context
 import androidx.compose.runtime.Composable
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
+import com.smsoft.smartdisplay.utils.getStateFromFlow
 
 data class AnalogClockConfig(
     var digitStyle: DigitStyle = DigitStyle.getDefault(),
@@ -130,7 +130,7 @@ data class AnalogClockConfig(
 
         companion object {
             fun toMap(context: Context): Map<String, String> {
-                return values().associate {
+                return entries.associate {
                     it.id.toString() to context.getString(it.titleId)
                 }
             }
@@ -144,7 +144,7 @@ data class AnalogClockConfig(
             }
 
             fun getById(id: String): DigitStyle {
-                val item = values().filter {
+                val item = entries.filter {
                     it.id.toString() == id
                 }
                 return item[0]
@@ -161,7 +161,7 @@ data class AnalogClockConfig(
 
         companion object {
             fun toMap(context: Context): Map<String, String> {
-                return values().associate {
+                return entries.associate {
                     it.font to context.getString(it.titleId)
                 }
             }
@@ -171,7 +171,7 @@ data class AnalogClockConfig(
             }
 
             fun getById(id: String): Font {
-                val item = values().filter {
+                val item = entries.filter {
                     it.font == id
                 }
                 return item[0]
@@ -186,7 +186,7 @@ data class AnalogClockConfig(
 
         companion object {
             fun toMap(context: Context): Map<String, String> {
-                return values().associate {
+                return entries.associate {
                     it.style to context.getString(it.titleId)
                 }
             }
@@ -200,7 +200,7 @@ data class AnalogClockConfig(
             }
 
             fun getById(id: String): TickStyle {
-                val item = values().filter {
+                val item = entries.filter {
                     it.style == id
                 }
                 return item[0]
@@ -214,7 +214,7 @@ data class AnalogClockConfig(
 
         companion object {
             fun toMap(context: Context): Map<String, String> {
-                return values().associate {
+                return entries.associate {
                     it.style to context.getString(it.titleId)
                 }
             }
@@ -228,7 +228,7 @@ data class AnalogClockConfig(
             }
 
             fun getById(id: String): HandStyle {
-                val item = values().filter {
+                val item = entries.filter {
                     it.style == id
                 }
                 return item[0]

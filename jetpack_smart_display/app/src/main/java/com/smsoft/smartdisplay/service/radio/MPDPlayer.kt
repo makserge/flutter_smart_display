@@ -854,6 +854,14 @@ class MPDPlayer(
     override fun setShuffleOrder(shuffleOrder: ShuffleOrder) {
     }
 
+    override fun setPreloadConfiguration(preloadConfiguration: ExoPlayer.PreloadConfiguration) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getPreloadConfiguration(): ExoPlayer.PreloadConfiguration {
+        TODO("Not yet implemented")
+    }
+
     override fun setAudioAttributes(audioAttributes: AudioAttributes, handleAudioFocus: Boolean) {
     }
 
@@ -952,6 +960,10 @@ class MPDPlayer(
     override fun setWakeMode(wakeMode: Int) {
     }
 
+    override fun setPriority(priority: Int) {
+        TODO("Not yet implemented")
+    }
+
     override fun setPriorityTaskManager(priorityTaskManager: PriorityTaskManager?) {
     }
 
@@ -963,7 +975,11 @@ class MPDPlayer(
         return false
     }
 
-    override fun setImageOutput(imageOutput: ImageOutput) {
+    override fun isReleased(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun setImageOutput(imageOutput: ImageOutput?) {
     }
 
     init {

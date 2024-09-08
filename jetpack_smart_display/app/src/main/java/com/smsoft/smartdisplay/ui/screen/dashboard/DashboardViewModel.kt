@@ -36,7 +36,6 @@ import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.settings.CLOCK_AUTO_RETURN_TIMEOUT_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
-import com.smsoft.smartdisplay.utils.getForegroundNotification
 import com.smsoft.smartdisplay.utils.playAssetSound
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -261,13 +260,6 @@ class DashboardViewModel @Inject constructor(
     @UnstableApi
     private fun initMQTT() {
         val mqttServer = getMQTTServerCredentials(dataStore)
-        mqttClient.apply {
-            setForegroundService(
-                notification = getForegroundNotification(
-                    context = context
-                )
-            )
-        }
         val mqttConnectOptions = MqttConnectOptions().apply {
             userName = mqttServer.login.trim()
             password = mqttServer.password.trim().toCharArray()
