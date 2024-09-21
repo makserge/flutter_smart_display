@@ -29,6 +29,7 @@ import com.smsoft.smartdisplay.ui.composable.settings.asrSettings
 import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
 import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
 import com.smsoft.smartdisplay.ui.composable.settings.lightSensorSettings
+import com.smsoft.smartdisplay.ui.composable.settings.messageSettings
 import com.smsoft.smartdisplay.ui.composable.settings.proximitySensorSettings
 import com.smsoft.smartdisplay.ui.composable.settings.pushButtonSettings
 import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
@@ -132,6 +133,10 @@ fun SettingsScreen(
         initialValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
     )
 
+    val messageTopic by viewModel.messageTopic.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -221,6 +226,11 @@ fun SettingsScreen(
             )
             timerSettings (
                 modifier = Modifier,
+                scope = this
+            )
+            messageSettings (
+                modifier = Modifier,
+                messageTopic =  messageTopic.toString(),
                 scope = this
             )
         }

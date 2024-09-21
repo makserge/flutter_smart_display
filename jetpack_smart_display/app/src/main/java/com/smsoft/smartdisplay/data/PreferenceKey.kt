@@ -121,5 +121,9 @@ enum class PreferenceKey(val key: String, val title: Int) {
     ALARM_SOUND_VOLUME("alarmSoundVolume", R.string.alarm_sound_volume),
     TIMER_ASR_ENABLED("timerAsrEnabled", R.string.timer_asr_enabled),
     TIMER_TIMEOUT("timerTimeout", R.string.timer_timeout),
-    TIMER_SOUND_VOLUME("timerSoundVolume", R.string.timer_sound_volume);
+    TIMER_SOUND_VOLUME("timerSoundVolume", R.string.timer_sound_volume),
+    MESSAGE_ENABLED("messageEnabled", R.string.message_enabled),
+    MESSAGE_TIMEOUT("messageTimeout", R.string.message_timeout),
+    MESSAGE_SOUND_VOLUME("messageSoundVolume", R.string.message_sound_volume),
+    MESSAGE_TOPIC("messageTopic", R.string.message_topic);
 }

@@ -15,6 +15,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.data.AlarmSoundToneType
 import com.smsoft.smartdisplay.data.AsrCommand
 import com.smsoft.smartdisplay.data.AudioType
 import com.smsoft.smartdisplay.data.DashboardItem
@@ -34,8 +35,13 @@ import com.smsoft.smartdisplay.service.timer.TimerHandler
 import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_ENABLED_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_SOUND_VOLUME_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_TIMEOUT_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.settings.CLOCK_AUTO_RETURN_TIMEOUT_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.utils.playAlarmSound
 import com.smsoft.smartdisplay.utils.playAssetSound
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -85,6 +91,9 @@ class DashboardViewModel @Inject constructor(
     private val asrRecognitionStateInt = MutableStateFlow<String?>(null)
     val asrRecognitionState = asrRecognitionStateInt.asStateFlow()
 
+    private val messageStateInt = MutableStateFlow<String?>(null)
+    val messageState = messageStateInt.asStateFlow()
+
     private var isAsrSoundEnabled = ASR_SOUND_ENABLED_DEFAULT
     private var asrSoundVolume = ASR_SOUND_VOLUME_DEFAULT
 
@@ -110,10 +119,17 @@ class DashboardViewModel @Inject constructor(
 
     private var clockAutoReturnTimer: CountDownTimer? = null
 
+    private var messageEnabled = MESSAGE_ENABLED_DEFAULT
+    private var messageTimeout = MESSAGE_TIMEOUT_DEFAULT
+    private var messageSoundVolume = MESSAGE_SOUND_VOLUME_DEFAULT
+    private var messageTopic = MESSAGE_DEFAULT_TOPIC
+
     private var player = ExoPlayerImpl.getExoPlayer(
         context = context,
         audioAttributes = ExoPlayerImpl.getAudioAttributes()
     )
+
+    private var messageOffTimer: CountDownTimer? = null
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -124,6 +140,7 @@ class DashboardViewModel @Inject constructor(
         initSensors()
         initAlarm()
         initTimer()
+        initMessage()
     }
 
     fun resetDoorBellAlarmState() {
@@ -220,6 +237,24 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    private fun initMessage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val data = dataStore.data.first()
+            data[booleanPreferencesKey(PreferenceKey.MESSAGE_ENABLED.key)]?.let {
+                messageEnabled = it
+            }
+            data[floatPreferencesKey(PreferenceKey.MESSAGE_TIMEOUT.key)]?.let {
+                messageTimeout = it
+            }
+            data[floatPreferencesKey(PreferenceKey.MESSAGE_SOUND_VOLUME.key)]?.let {
+                messageSoundVolume = it
+            }
+            data[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)]?.let {
+                messageTopic = it.trim()
+            }
+        }
+    }
+
     private val mqttClientCallback = object : MqttCallbackExtended {
         override fun connectComplete(
             reconnect: Boolean,
@@ -243,11 +278,21 @@ class DashboardViewModel @Inject constructor(
             message: MqttMessage
         ) {
             Log.d("MQTT", "messageArrived: $topic: $message")
-            if (topic == doorbellTopic) {
-                doorBellAlarmStateInt.value = true
-            }
-            if (topic == pushButtonStatusTopic) {
-                pushButtonState.value = (message.payload.toString(Charsets.UTF_8) == PUSH_BUTTON_ON_PAYLOAD)
+            when (topic) {
+                doorbellTopic -> doorBellAlarmStateInt.value = true
+                pushButtonStatusTopic -> pushButtonState.value = (message.payload.toString(Charsets.UTF_8) == PUSH_BUTTON_ON_PAYLOAD)
+                messageTopic -> {
+                    if (!messageEnabled) {
+                        return
+                    }
+                    messageStateInt.value = message.payload.toString(Charsets.UTF_8).trim()
+                    viewModelScope.launch {
+                        playMessageSound()
+                        restartMessageOffTimer {
+                            cancelMessageAction()
+                        }
+                    }
+                }
             }
         }
 
@@ -564,8 +609,42 @@ class DashboardViewModel @Inject constructor(
         voiceCommandStateInt.value = VoiceCommand(type)
     }
 
+    private fun playMessageSound() {
+        playAlarmSound(
+            player = player,
+            soundToneType = AlarmSoundToneType.BARIUM,
+            soundVolume = messageSoundVolume,
+            isFadeIn = false,
+            isRepeat = true
+        )
+    }
+
+    private fun restartMessageOffTimer(
+        onEnd: () -> Unit
+    ) {
+        if (messageOffTimer != null) {
+            messageOffTimer!!.cancel()
+            messageOffTimer = null
+        }
+        messageOffTimer = object : CountDownTimer((messageTimeout * 10000).toLong(), 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+            }
+
+            override fun onFinish() {
+                onEnd()
+            }
+        }
+        messageOffTimer!!.start()
+    }
+
     fun resetVoiceCommand() {
         voiceCommandStateInt.value = VoiceCommand(VoiceCommandType.CLOCK)
+    }
+
+    fun cancelMessageAction() {
+        player.stop()
+        messageOffTimer?.cancel()
+        messageStateInt.value = null
     }
 }
 

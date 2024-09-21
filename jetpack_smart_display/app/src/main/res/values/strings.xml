@@ -306,4 +306,9 @@
     <string name="timer_asr_enabled">Speech recognition enabled</string>
     <string name="timer_timeout">Timeout</string>
     <string name="timer_sound_volume">Sound volume</string>
+    <string name="message">Message</string>
+    <string name="message_enabled">Enabled</string>
+    <string name="message_timeout">Timeout</string>
+    <string name="message_sound_volume">Volume</string>
+    <string name="message_topic">MQTT topic</string>
 </resources>

@@ -191,15 +191,16 @@ fun getForegroundNotification(
     return notificationCompat.build()
 }
 
-fun getMac(): String? {
-    return try {
-        NetworkInterface.getNetworkInterfaces()
+fun getMac(): String {
+    try {
+        val mac = NetworkInterface.getNetworkInterfaces()
             .toList()
             .find { networkInterface -> networkInterface.name.equals("wlan0", ignoreCase = true) }
             ?.hardwareAddress
             ?.joinToString(separator = "") { byte -> "%02X".format(byte) }
+        return mac ?: "AndroidClient"
     } catch (ex: Exception) {
-        null
+        return "AndroidClient"
     }
 }
 

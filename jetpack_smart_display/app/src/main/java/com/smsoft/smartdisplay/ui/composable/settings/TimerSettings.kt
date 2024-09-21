@@ -1,7 +1,6 @@
 package com.smsoft.smartdisplay.ui.composable.settings
 
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.jamal.composeprefs.ui.GroupHeader
@@ -11,7 +10,7 @@ import com.jamal.composeprefs.ui.prefs.SwitchPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 fun timerSettings(
     modifier: Modifier.Companion,
     scope: PrefsScope

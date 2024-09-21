@@ -18,6 +18,7 @@ import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
+import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_TOPIC
@@ -158,10 +159,16 @@ class SettingsViewModel @Inject constructor(
         defaultValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_SENSOR_THRESHOLD.key)] ?: ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT }
 
+    val messageTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = MESSAGE_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)] ?: MESSAGE_DEFAULT_TOPIC }
+
     init {
         updateDoorbellAlarmTopic()
         updateButtonSwitchStatusTopic()
         updateAsrServiceState()
+        updateMessageTopic()
     }
 
     private fun updateDoorbellAlarmTopic() {
@@ -195,6 +202,30 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             var prevValue = ""
             pushButtonStatusTopic.collectLatest { newValue ->
+                if (newValue == prevValue) {
+                    return@collectLatest
+                }
+                if (prevValue.isNotEmpty()) {
+                    mqttClient.unsubscribe(
+                        topic = prevValue
+                    )
+                }
+                mqttClient.subscribe(
+                    topic = (newValue as String).trim(),
+                    qos = QoS.AtMostOnce.value
+                )
+                prevValue = newValue.trim()
+            }
+        }
+    }
+
+    private fun updateMessageTopic() {
+        if (!mqttClient.isConnected) {
+            return
+        }
+        viewModelScope.launch {
+            var prevValue = ""
+            messageTopic.collectLatest { newValue ->
                 if (newValue == prevValue) {
                     return@collectLatest
                 }

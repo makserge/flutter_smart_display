@@ -13,6 +13,7 @@ import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
 import com.smsoft.smartdisplay.ui.composable.asr.SpeechRecognitionAlert
 import com.smsoft.smartdisplay.ui.composable.dashboard.HorizontalPagerScreen
+import com.smsoft.smartdisplay.ui.composable.message.MessageAlert
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -54,6 +55,7 @@ fun DashboardScreen(
 
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
     val asrRecognitionState = viewModel.asrRecognitionState.collectAsStateWithLifecycle()
+    val messageState = viewModel.messageState.collectAsStateWithLifecycle()
 
     HorizontalPagerScreen(
         pagerState = pagerState,
@@ -84,6 +86,15 @@ fun DashboardScreen(
             text = asrRecognitionState.value!!,
             onDismiss = {
                 viewModel.cancelAsrAction()
+            }
+        )
+    }
+    if (messageState.value != null) {
+        MessageAlert(
+            modifier = Modifier,
+            text = messageState.value!!,
+            onDismiss = {
+                viewModel.cancelMessageAction()
             }
         )
     }
