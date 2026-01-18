@@ -302,6 +302,11 @@
     <string name="alarm_sound_volume">Sound volume</string>
     <string name="alarm_timeout">Timeout</string>
     <string name="alarm_light_sensor_threshold">Light sensor threshold</string>
+    <string name="alarm_light_dimmer_enabled">Light dimmer enabled</string>
+    <string name="alarm_light_dimmer_command_on_off_topic">Dimmer command ON / OFF topic</string>
+    <string name="alarm_light_dimmer_command_on_payload">Dimmer command ON payload</string>
+    <string name="alarm_light_dimmer_command_off_payload">Dimmer command OFF payload</string>
+    <string name="alarm_light_dimmer_command_topic">Dimmer command topic</string>
     <string name="timer">Timer</string>
     <string name="timer_asr_enabled">Speech recognition enabled</string>
     <string name="timer_timeout">Timeout</string>

@@ -24,6 +24,11 @@ import com.smsoft.smartdisplay.data.database.entity.emptyAlarm
 import com.smsoft.smartdisplay.data.database.repository.AlarmRepository
 import com.smsoft.smartdisplay.service.alarm.AlarmHandler
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_SOUND_VOLUME_DEFAULT
@@ -38,15 +43,22 @@ import com.smsoft.smartdisplay.utils.playStream
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.MqttAndroidClient
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
+import kotlin.math.max
+import kotlin.math.min
 
 @UnstableApi
 @HiltViewModel
@@ -69,8 +81,12 @@ class AlarmsViewModel @Inject constructor(
     private var isAlarmLightEnabled = ALARM_LIGHT_ENABLED_DEFAULT
     private var lightSensorThreshold = Integer.parseInt(ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT)
     private var alarmOffTimeout = ALARM_TIMEOUT_DEFAULT
-
     private var alarmSoundVolume = ALARM_SOUND_VOLUME_DEFAULT
+    private var isAlarmLightDimmerEnabled = ALARM_LIGHT_DIMMER_ENABLED_DEFAULT
+    private var dimmerCommandOnOffTopic = ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
+    private var dimmerCommandPayloadOn = ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+    private var dimmerCommandPayloadOff = ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+    private var dimmerCommandTopic = ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
 
     val getAll = alarmRepository.getAll
 
@@ -106,6 +122,21 @@ class AlarmsViewModel @Inject constructor(
             }
             data[floatPreferencesKey(PreferenceKey.ALARM_TIMEOUT.key)]?.let {
                 alarmOffTimeout = it
+            }
+            data[booleanPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_ENABLED.key)]?.let {
+                isAlarmLightDimmerEnabled = it
+            }
+            data[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_TOPIC.key)]?.let {
+                dimmerCommandOnOffTopic = it.trim()
+            }
+            data[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_PAYLOAD.key)]?.let {
+                dimmerCommandPayloadOn = it.trim()
+            }
+            data[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_OFF_PAYLOAD.key)]?.let {
+                dimmerCommandPayloadOff = it.trim()
+            }
+            data[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_TOPIC.key)]?.let {
+                dimmerCommandTopic = it.trim()
             }
         }
         viewModelScope.launch {
@@ -183,6 +214,12 @@ class AlarmsViewModel @Inject constructor(
         } else {
             stopPlayer()
         }
+        if (isAlarmLightDimmerEnabled) {
+            publishMQTT(
+                topic = dimmerCommandOnOffTopic,
+                messagePayload = dimmerCommandPayloadOff
+            )
+        }
     }
 
     private fun showAlarm(alarm: Alarm) {
@@ -219,12 +256,65 @@ class AlarmsViewModel @Inject constructor(
             alarmHandler.lightSensorState.collect { value ->
                 if (!isFired && (value > 0) && (value < lightSensorThreshold)) {
                     isFired = true
-                    publishMQTT(
-                        topic = pushButtonCommandTopic,
-                        messagePayload = pushButtonPayloadOn
-                    )
+
+                    if (isAlarmLightDimmerEnabled) {
+                        fadeInLightDimmer()
+                    } else {
+                        publishMQTT(
+                            topic = pushButtonCommandTopic,
+                            messagePayload = pushButtonPayloadOn
+                        )
+                    }
                     return@collect
                 }
+            }
+        }
+    }
+
+    private fun fadeInLightDimmer() {
+        publishMQTT(
+            topic = dimmerCommandOnOffTopic,
+            messagePayload = dimmerCommandPayloadOff
+        )
+        publishMQTT(
+            topic = dimmerCommandTopic,
+            messagePayload = "0"
+        )
+        publishMQTT(
+            topic = dimmerCommandOnOffTopic,
+            messagePayload = dimmerCommandPayloadOn
+        )
+        fadeInValue( 0f, 1f) {
+            publishMQTT(
+                topic = dimmerCommandTopic,
+                messagePayload = (it * 100).toString()
+            )
+        }
+    }
+
+    private var fadeValueJob: Job? = null
+    fun fadeInValue(
+        fromValue: Float,
+        toValue: Float,
+        step: Long = 100L,
+        durationMillis: Long = 30000L,
+        onChange: (value: Float) -> Unit = {}
+    ) {
+        val oldFadeJob = fadeValueJob
+        fadeValueJob = CoroutineScope(Dispatchers.Main).launch {
+            oldFadeJob?.cancelAndJoin()
+            val stepSize = (toValue - fromValue) / (max(1, durationMillis) / step)
+
+            onChange(fromValue)
+            var value = fromValue
+            while (isActive) {
+                value = max(0f, min(value + stepSize, 1F))
+                onChange(value)
+                if ((stepSize < 0 && value <= toValue) || (stepSize > 0 && value >= toValue)) {
+                    onChange(toValue)
+                    break
+                }
+                delay(step)
             }
         }
     }

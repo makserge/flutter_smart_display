@@ -21,6 +21,10 @@ import com.jamal.composeprefs.ui.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
@@ -133,6 +137,22 @@ fun SettingsScreen(
         initialValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
     )
 
+    val dimmerCommandOnOffTopic by viewModel.dimmerCommandOnOffTopic.collectAsStateWithLifecycle(
+        initialValue = ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
+    )
+
+    val dimmerCommandOnPayload by viewModel.dimmerCommandOnPayload.collectAsStateWithLifecycle(
+        initialValue = ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+    )
+
+    val dimmerCommandOffPayload by viewModel.dimmerCommandOffPayload.collectAsStateWithLifecycle(
+        initialValue = ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+    )
+
+    val dimmerCommandTopic by viewModel.dimmerCommandTopic.collectAsStateWithLifecycle(
+        initialValue = ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
+    )
+
     val messageTopic by viewModel.messageTopic.collectAsStateWithLifecycle(
         initialValue = ""
     )
@@ -222,7 +242,11 @@ fun SettingsScreen(
             alarmSettings (
                 modifier = Modifier,
                 scope = this,
-                lightSensorThreshold = lightSensorThreshold.toString()
+                lightSensorThreshold = lightSensorThreshold.toString(),
+                dimmerCommandOnOffTopic = dimmerCommandOnOffTopic.toString(),
+                dimmerCommandOnPayload = dimmerCommandOnPayload.toString(),
+                dimmerCommandOffPayload = dimmerCommandOffPayload.toString(),
+                dimmerCommandTopic = dimmerCommandTopic.toString(),
             )
             timerSettings (
                 modifier = Modifier,

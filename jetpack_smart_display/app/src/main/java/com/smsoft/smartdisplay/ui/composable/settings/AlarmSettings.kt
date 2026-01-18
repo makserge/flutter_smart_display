@@ -16,7 +16,11 @@ import com.smsoft.smartdisplay.data.PreferenceKey
 fun alarmSettings(
     modifier: Modifier.Companion,
     scope: PrefsScope,
-    lightSensorThreshold: String
+    lightSensorThreshold: String,
+    dimmerCommandOnOffTopic: String,
+    dimmerCommandOnPayload: String,
+    dimmerCommandOffPayload: String,
+    dimmerCommandTopic: String
 ) {
     scope.prefsGroup({
         GroupHeader(
@@ -36,6 +40,40 @@ fun alarmSettings(
                 title = stringResource(PreferenceKey.ALARM_LIGHT_SENSOR_THRESHOLD.title),
                 summary = lightSensorThreshold,
                 defaultValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
+            )
+            SwitchPref(
+                modifier = modifier,
+                key = PreferenceKey.ALARM_LIGHT_DIMMER_ENABLED.key,
+                title = stringResource(PreferenceKey.ALARM_LIGHT_DIMMER_ENABLED.title),
+                defaultChecked = ALARM_LIGHT_DIMMER_ENABLED_DEFAULT
+            )
+            EditTextPref(
+                modifier = modifier,
+                key = PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_TOPIC.key,
+                title = stringResource(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_TOPIC.title),
+                summary = dimmerCommandOnOffTopic,
+                defaultValue = ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
+            )
+            EditTextPref(
+                modifier = modifier,
+                key = PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_PAYLOAD.key,
+                title = stringResource(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_PAYLOAD.title),
+                summary = dimmerCommandOnPayload,
+                defaultValue = ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+            )
+            EditTextPref(
+                modifier = modifier,
+                key = PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_OFF_PAYLOAD.key,
+                title = stringResource(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_OFF_PAYLOAD.title),
+                summary = dimmerCommandOffPayload,
+                defaultValue = ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+            )
+            EditTextPref(
+                modifier = modifier,
+                key = PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_TOPIC.key,
+                title = stringResource(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_TOPIC.title),
+                summary = dimmerCommandTopic,
+                defaultValue = ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
             )
             SliderPref(
                 modifier = modifier,
@@ -57,5 +95,10 @@ fun alarmSettings(
 
 const val ALARM_LIGHT_ENABLED_DEFAULT = false
 const val ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT = "1000"
+const val ALARM_LIGHT_DIMMER_ENABLED_DEFAULT = false
+const val ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC = "cmnd/led_strip_hall_dimmer/led_enableAll"
+const val ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD = "1"
+const val ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD = "0"
+const val ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC = "cmnd/led_strip_hall_dimmer/led_dimmer"
 const val ALARM_TIMEOUT_DEFAULT = 1F
 const val ALARM_SOUND_VOLUME_DEFAULT = 0.2F

@@ -15,6 +15,10 @@ import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.service.asr.SpeechRecognitionService
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
@@ -158,6 +162,26 @@ class SettingsViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_SENSOR_THRESHOLD.key)] ?: ALARM_LIGHT_SENSOR_THRESHOLD_DEFAULT }
+
+    val dimmerCommandOnOffTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_TOPIC.key)] ?: ALARM_LIGHT_DIMMER_COMMAND_ON_OFF_DEFAULT_TOPIC }
+
+    val dimmerCommandOnPayload = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_ON_PAYLOAD.key)] ?: ALARM_LIGHT_DIMMER_COMMAND_ON_DEFAULT_PAYLOAD }
+
+    val dimmerCommandOffPayload = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_OFF_PAYLOAD.key)] ?: ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD }
+
+    val dimmerCommandTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.ALARM_LIGHT_DIMMER_COMMAND_TOPIC.key)] ?: ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC }
 
     val messageTopic = getParamFlow(
         dataStore = dataStore,
