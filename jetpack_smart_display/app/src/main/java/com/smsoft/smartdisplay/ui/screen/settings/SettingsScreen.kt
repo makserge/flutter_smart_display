@@ -1,15 +1,23 @@
 package com.smsoft.smartdisplay.ui.screen.settings
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+import androidx.compose.material.ScrollableTabRow
+import androidx.compose.material.Tab
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -20,6 +28,7 @@ import androidx.media3.common.util.UnstableApi
 import com.jamal.composeprefs.ui.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
+import com.smsoft.smartdisplay.data.SettingsTab
 import com.smsoft.smartdisplay.ui.composable.asr.CheckRecordAudioPermission
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_LIGHT_DIMMER_COMMAND_OFF_DEFAULT_PAYLOAD
@@ -40,7 +49,9 @@ import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
 import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
 import com.smsoft.smartdisplay.ui.composable.settings.timerSettings
 import com.smsoft.smartdisplay.ui.composable.settings.weatherSettings
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @UnstableApi
 @Composable
@@ -175,88 +186,146 @@ fun SettingsScreen(
             )
         }
     ) {
-        PrefsScreen(
-            modifier = modifier,
-            dataStore = dataStore
+        Column(
+            modifier = modifier
         ) {
-            clockSettings(
-                modifier = modifier,
-                scope = this,
-                context = context,
-                clockType = ClockType.getById(clockType.toString())
+            val pagerState = rememberPagerState(
+                pageCount = {
+                    SettingsTab.entries.size
+                }
             )
-            weatherSettings(
-                modifier = Modifier,
-                scope = this,
-                cityLat = cityLat.toString(),
-                cityLon = cityLon.toString()
-            )
-            sensorsSettings(
-                modifier = Modifier,
-                scope = this,
-                host = mqttHost.toString(),
-                port = mqttPort.toString(),
-                userName = mqttUserName.toString(),
-                password = mqttPassword.toString()
-            )
-            radioSettings(
-                modifier = Modifier,
-                context = context,
-                scope = this,
-                host = mpdHost.toString(),
-                port = mpdPort.toString(),
-                password = mpdPassword.toString()
-            )
-            doorbellSettings (
-                modifier = Modifier,
-                scope = this,
-                alarmTopic = doorbellAlarmTopic.toString(),
-                streamURL = doorbellStreamURL.toString()
-            )
-            pushButtonSettings (
-                modifier = Modifier,
-                scope = this,
-                statusTopic = pushButtonStatusTopic.toString(),
-                commandTopic = pushButtonCommandTopic.toString(),
-                payloadOn = pushButtonPayloadOn.toString(),
-                payloadOff = pushButtonPayloadOff.toString(),
-            )
-            proximitySensorSettings (
-                modifier = Modifier,
-                scope = this,
-                topic = proximitySensorTopic.toString(),
-                payloadOn = proximitySensorPayloadOn.toString(),
-                payloadOff = proximitySensorPayloadOff.toString(),
-            )
-            asrSettings (
-                modifier = Modifier,
-                scope = this,
-                context = context
-            )
-            lightSensorSettings (
-                modifier = Modifier,
-                scope = this,
-                topic = lightSensorTopic.toString(),
-                interval = lightSensorInterval.toString()
-            )
-            alarmSettings (
-                modifier = Modifier,
-                scope = this,
-                lightSensorThreshold = lightSensorThreshold.toString(),
-                dimmerCommandOnOffTopic = dimmerCommandOnOffTopic.toString(),
-                dimmerCommandOnPayload = dimmerCommandOnPayload.toString(),
-                dimmerCommandOffPayload = dimmerCommandOffPayload.toString(),
-                dimmerCommandTopic = dimmerCommandTopic.toString(),
-            )
-            timerSettings (
-                modifier = Modifier,
-                scope = this
-            )
-            messageSettings (
-                modifier = Modifier,
-                messageTopic =  messageTopic.toString(),
-                scope = this
-            )
+            val coroutineScope = rememberCoroutineScope()
+
+            ScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage
+            ) {
+                SettingsTab.entries.forEachIndexed { index, tab ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
+                        text = {
+                            Text(text = stringResource(tab.titleId))
+                        }
+                    )
+                }
+            }
+
+            HorizontalPager(
+                modifier = Modifier
+                    .weight(1F)
+                    .fillMaxWidth(),
+                state = pagerState
+            ) { page ->
+                when (SettingsTab.getItem(page)) {
+                    SettingsTab.GENERAL -> PrefsScreen(
+                        modifier = Modifier,
+                        dataStore = dataStore
+                    ) {
+                        clockSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            context = context,
+                            clockType = ClockType.getById(clockType.toString())
+                        )
+                        weatherSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            cityLat = cityLat.toString(),
+                            cityLon = cityLon.toString()
+                        )
+                    }
+                    SettingsTab.CONNECTIVITY -> PrefsScreen(
+                        modifier = Modifier,
+                        dataStore = dataStore
+                    ) {
+                        sensorsSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            host = mqttHost.toString(),
+                            port = mqttPort.toString(),
+                            userName = mqttUserName.toString(),
+                            password = mqttPassword.toString()
+                        )
+                        radioSettings(
+                            modifier = Modifier,
+                            context = context,
+                            scope = this,
+                            host = mpdHost.toString(),
+                            port = mpdPort.toString(),
+                            password = mpdPassword.toString()
+                        )
+                    }
+                    SettingsTab.SENSORS -> PrefsScreen(
+                        modifier = Modifier,
+                        dataStore = dataStore
+                    ) {
+                        doorbellSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            alarmTopic = doorbellAlarmTopic.toString(),
+                            streamURL = doorbellStreamURL.toString()
+                        )
+                        pushButtonSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            statusTopic = pushButtonStatusTopic.toString(),
+                            commandTopic = pushButtonCommandTopic.toString(),
+                            payloadOn = pushButtonPayloadOn.toString(),
+                            payloadOff = pushButtonPayloadOff.toString(),
+                        )
+                        proximitySensorSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            topic = proximitySensorTopic.toString(),
+                            payloadOn = proximitySensorPayloadOn.toString(),
+                            payloadOff = proximitySensorPayloadOff.toString(),
+                        )
+                        lightSensorSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            topic = lightSensorTopic.toString(),
+                            interval = lightSensorInterval.toString()
+                        )
+                    }
+                    SettingsTab.ALARM -> PrefsScreen(
+                        modifier = Modifier,
+                        dataStore = dataStore
+                    ) {
+                        alarmSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            lightSensorThreshold = lightSensorThreshold.toString(),
+                            dimmerCommandOnOffTopic = dimmerCommandOnOffTopic.toString(),
+                            dimmerCommandOnPayload = dimmerCommandOnPayload.toString(),
+                            dimmerCommandOffPayload = dimmerCommandOffPayload.toString(),
+                            dimmerCommandTopic = dimmerCommandTopic.toString(),
+                        )
+                    }
+                    SettingsTab.VOICE_ALERTS -> PrefsScreen(
+                        modifier = Modifier,
+                        dataStore = dataStore
+                    ) {
+                        asrSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            context = context
+                        )
+                        timerSettings(
+                            modifier = Modifier,
+                            scope = this
+                        )
+                        messageSettings(
+                            modifier = Modifier,
+                            messageTopic = messageTopic.toString(),
+                            scope = this
+                        )
+                    }
+                }
+            }
         }
         if (asrPermissionsState.value) {
             CheckRecordAudioPermission(
