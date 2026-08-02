@@ -109,14 +109,14 @@ class BleBluetoothHandler @Inject constructor(
     override fun startScan() {
         deviceMap.clear()
 
-        bluetoothAdapter.bluetoothLeScanner.startScan(null, scanSettings, scanCallback)
+        bluetoothAdapter.bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
     }
 
     @SuppressLint("MissingPermission")
     override fun stopScan() {
         try {
             if (bluetoothAdapter.isEnabled) {
-                bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
+                bluetoothAdapter.bluetoothLeScanner?.stopScan(scanCallback)
             }
         } catch (ignored: Exception) {
         }

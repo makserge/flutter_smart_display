@@ -11,6 +11,7 @@ import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.database.repository.SensorRepository
 import com.smsoft.smartdisplay.service.ble.BluetoothHandler
 import com.smsoft.smartdisplay.service.ble.BluetoothScanState
+import com.smsoft.smartdisplay.service.mqtt.MqttCallbackDispatcher
 import com.smsoft.smartdisplay.utils.getSensorDataByBluetoothType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.mqtt.android.service.MqttAndroidClient
@@ -31,6 +32,7 @@ class SensorsViewModel @Inject constructor(
     val dataStore: DataStore<Preferences>,
     private val sensorRepository: SensorRepository,
     private val mqttClient: MqttAndroidClient,
+    private val mqttCallbackDispatcher: MqttCallbackDispatcher,
     private val bluetoothHandler: BluetoothHandler
 ) : ViewModel() {
 
@@ -150,9 +152,7 @@ class SensorsViewModel @Inject constructor(
     }
 
     init {
-        if (mqttClient.isConnected) {
-            mqttClient.addCallback(mqttClientCallback)
-        }
+        mqttCallbackDispatcher.addListener(mqttClientCallback)
         viewModelScope.launch {
             val scanState = bluetoothHandler.scanState.stateIn(
                 initialValue = BluetoothScanState.Initial,
@@ -175,6 +175,10 @@ class SensorsViewModel @Inject constructor(
                 Log.d("SensorsViewModel", mqttTopicDataInt.value.toString())
             }
         }
+    }
+
+    override fun onCleared() {
+        mqttCallbackDispatcher.removeListener(mqttClientCallback)
     }
 }
 
