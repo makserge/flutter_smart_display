@@ -439,7 +439,11 @@ private fun parseThermoBeaconData(
 private fun parseATCData(
     bytes: ByteArray
 ): Pair<Float, Float> {
-    val temperature = bytesToUInt16(bytes[14], bytes[15]) * 0.01f
+    // ATC1441/pvvx custom format: temperature is a signed int16 (x0.01 degC), humidity is
+    // unsigned (x0.01 %). Using bytesToUInt16 for temperature corrupted every reading at or
+    // below 0 degC, since it always returns a value in [0, 65535] - e.g. an actual -0.50 degC
+    // (raw two's-complement bytes 0xFFCE) decoded as unsigned 65486 -> 654.86 degC.
+    val temperature = bytesToInt16(bytes[14], bytes[15]) * 0.01f
     val humidity = bytesToUInt16(bytes[16], bytes[17]) * 0.01f
     //val battery = bytesToUInt16(bytes[18], bytes[19]) * 0.001
     return Pair(temperature, humidity)
@@ -491,6 +495,16 @@ private fun bytesToUInt16(
     byte2: Byte
 ): Int {
     return ((byte1.toInt() and 0xFF) shl 8) or (byte2.toInt() and 0xFF)
+}
+
+private fun bytesToInt16(
+    byte1: Byte,
+    byte2: Byte
+): Int {
+    // Reinterpret the unsigned 16-bit combination as signed two's-complement: converting to
+    // Short truncates to 16 bits and keeps the sign bit, then widening back to Int sign-extends
+    // it (e.g. 65486 -> (-50).toShort() -> -50), which is what a negative ATC temperature needs.
+    return bytesToUInt16(byte1, byte2).toShort().toInt()
 }
 
 fun formatTime(time: Int): String {
