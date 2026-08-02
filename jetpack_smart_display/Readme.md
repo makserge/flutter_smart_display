@@ -1,3 +1,8 @@
+# Android app for Android wall panel 
+
+Sounds for alarm and timer taken from LOS 
+https://github.com/EvilScout/Lineage-OS-Sounds
+
 Thanks for clock skins:
 
 Analog clock
@@ -177,10 +182,3 @@ Use this pattern (modeled on `LightCommandType` + `LightBrightnessType`) when th
 - Naming: `<feature>_<variant>_command` (e.g. `dimmer_light_on_command`, `dimmer_light_on2_command` for a second synonym).
 - Keep all command strings grouped together in `strings.xml` near the existing block (~lines 195–256) for discoverability.
 - Every phrase referenced by a registry entry needs its own string resource — there's no runtime string composition beyond simple prefix-stripping (`command.removePrefix(prefix).trim()`).
-
-### Testing
-
-There is currently no automated test coverage for the voice command system (`app/src/test` and `app/src/androidTest` only contain the default Android Studio scaffolding). If you add tests:
-
-- Registry `match()`/`getByCommand()` functions all call `context.getString(...)`, so they need a real or Robolectric `Context` — plain JVM unit tests with a mocked `Context` won't work well here. Prefer Robolectric-based tests under `app/src/test/java/com/smsoft/smartdisplay/data/`.
-- The highest-value thing to cover is dispatch **order** in `ProcessCommand.kt` (prefix-style registries must be checked before the final `VoiceCommandType` fallback) — that's the part most likely to silently regress when new commands are added.
