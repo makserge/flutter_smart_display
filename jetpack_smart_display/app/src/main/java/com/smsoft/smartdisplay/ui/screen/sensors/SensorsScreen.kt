@@ -70,12 +70,16 @@ fun SensorsScreen(
                         editMode = isModifyItems,
                         onDeleteItem = { item ->
                             viewModel.deleteItem(item)
+                        },
+                        onEnableItemModification = {
+                            isModifyItems = !isModifyItems
                         }
                     ) { item ->
                         currentEditItem = item
                         isOpenEditItemDialog = true
                     }
                 } else {
+                    isModifyItems = false
                     NoItems(
                         modifier = Modifier,
                         title = stringResource(R.string.no_sensors_items),

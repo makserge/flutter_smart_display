@@ -1,16 +1,18 @@
 package com.smsoft.smartdisplay.ui.composable.sensors
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -26,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun Item(
     modifier: Modifier,
@@ -34,6 +37,7 @@ fun Item(
     itemsData: HashMap<String, String>,
     editMode: Boolean,
     onDelete: (item: Sensor) -> Unit,
+    onEnableModification: () -> Unit,
     onOptionsClick: (item: Sensor) -> Unit
 ) {
     val context = LocalContext.current
@@ -42,8 +46,9 @@ fun Item(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .defaultMinSize(
-                minHeight = 120.dp
+            .combinedClickable(
+                onClick = { if (editMode) onOptionsClick(item) },
+                onLongClick = { onEnableModification() }
             ),
         elevation = 8.dp,
         shape = RoundedCornerShape(10.dp),
@@ -106,40 +111,37 @@ fun Item(
                 }
             }
             if (editMode) {
-                Column(
+                Icon(
                     modifier = Modifier
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .padding(
-                                top = 20.dp,
-                                end = 10.dp
-                            )
-                            .clickable(
-                                onClick = {
-                                    onDelete(item)
-                                }
-                            ),
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.delete)
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .padding(
-                                top = 10.dp,
-                                end = 10.dp
-                            )
-                            .clickable(
-                                onClick = {
-                                    onOptionsClick(item)
-                                }
-                            ),
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.options)
-                    )
-                }
+                        .size(48.dp)
+                        .padding(
+                            end = 10.dp
+                        )
+                        .align(Alignment.CenterVertically)
+                        .clickable(
+                            onClick = {
+                                onOptionsClick(item)
+                            }
+                        ),
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.options)
+                )
+                Icon(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .padding(
+                            end = 10.dp
+                        )
+                        .align(Alignment.CenterVertically)
+                        .clickable(
+                            onClick = {
+                                onDelete(item)
+                            }
+                        ),
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete)
+                )
+                Spacer(Modifier.width(25.dp))
             }
         }
     }

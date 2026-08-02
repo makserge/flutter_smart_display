@@ -2,8 +2,7 @@ package com.smsoft.smartdisplay.ui.composable.sensors
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.smsoft.smartdisplay.data.MQTTData
@@ -17,13 +16,13 @@ fun ItemsList(
     itemsData: MQTTData,
     editMode: Boolean,
     onDeleteItem: (item: Sensor) -> Unit,
+    onEnableItemModification: () -> Unit,
     onEditItem: (item: Sensor) -> Unit
 ) {
     val itemsDataValue = itemsData.lastUpdated
-    LazyVerticalGrid(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize(),
-        columns = GridCells.Fixed(2),
         contentPadding = padding,
         content = {
             items(items.size) { index ->
@@ -33,6 +32,7 @@ fun ItemsList(
                     itemsData = itemsData.value,
                     editMode = editMode,
                     onDelete = onDeleteItem,
+                    onEnableModification = onEnableItemModification,
                     onOptionsClick = onEditItem,
                 )
             }
