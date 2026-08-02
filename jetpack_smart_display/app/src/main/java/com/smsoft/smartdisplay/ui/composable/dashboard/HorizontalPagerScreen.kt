@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
-import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.ui.screen.alarms.AlarmsScreen
