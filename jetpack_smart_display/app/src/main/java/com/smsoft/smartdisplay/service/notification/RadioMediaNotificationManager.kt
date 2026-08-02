@@ -46,7 +46,7 @@ class RadioMediaNotificationManager @Inject constructor(
             )
             .build()
             .apply {
-                setMediaSessionToken(mediaSession.sessionCompatToken)
+                setMediaSessionToken(mediaSession.platformToken)
                 setUseFastForwardActionInCompactView(true)
                 setUseRewindActionInCompactView(true)
                 setUseNextActionInCompactView(false)

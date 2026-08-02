@@ -260,7 +260,7 @@ class RadioViewModel @Inject constructor(
             return
         }
         when (command) {
-            VoiceCommandType.INTERNET_RADIO_OFF, VoiceCommandType.INTERNET_RADIO_OFF2 -> onUIEvent(UIEvent.Pause)
+            VoiceCommandType.INTERNET_RADIO_OFF -> onUIEvent(UIEvent.Pause)
             VoiceCommandType.INTERNET_RADIO_PREV_ITEM -> onUIEvent(UIEvent.Backward)
             VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> onUIEvent(UIEvent.Forward)
             VoiceCommandType.INTERNET_RADIO_VOL_DOWN -> changeVolume(isForward = false)

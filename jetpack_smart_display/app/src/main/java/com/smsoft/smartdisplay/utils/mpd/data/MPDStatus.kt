@@ -16,7 +16,6 @@ class MPDStatus(status: List<String>) {
         private set
     private var isSingle = false
     var state = MPDState.UNKNOWN
-        private set
     private var error: String? = null
     var elapsedTime = 0L
         private set
