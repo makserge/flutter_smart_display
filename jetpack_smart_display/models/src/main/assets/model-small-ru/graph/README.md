@@ -2,160 +2,155 @@
 
 Based on info from https://habr.com/ru/articles/735480/
 
-0. Download stable Debian 12.4 (debian-12.4.0-amd64-netinst.iso) from official repository
-     https://www.debian.org/CD/http-ftp/#stable
-1. Create VirtualBox machine with 16GB RAM, 4CPU, 50GB storage, set first network adapter to bridge mode with ethernet adapter on host machine
-2. Run VM and select "Install" option
-3. Select "English" and press "Enter"
-4. Select "United States" and press "Enter"
-5. Select "American English" and press "Enter"
-6. Enter hostname and with "Tab" button select "Continue"
-7. Leave domain name empty and with "Tab" button select "Continue"
-8. Set root password and with "Tab" button select "Continue"
-9. Reenter root password and with "Tab" button select "Continue"
-10. Set full name for non-root user and with "Tab" button select "Continue"
-11. Set username for non-root user and with "Tab" button select "Continue"
-12. Set password for non-root user and with "Tab" button select "Continue"
-13. Reenter password and with "Tab" button select "Continue"
-14. Set timezone and press "Enter"
-15. Set "Guided - use entire disk" and press "Enter"
-16. Press "Enter"
-17. Press "Enter"
-18. Press "Enter"
-19. Select "Yes" and press "Enter"
-20. Press "Enter"
-21. Press "Enter"
-22. Press "Enter"
-23. Press "Tab" button and select "Continue"
-24. Press "Enter"
-25. Select only "SSH server" and with "Tab" button select "Continue"
-26. Press "Enter"
-27. Select "/dev/sda" and press "Enter"
-28. Press "Enter"
-29. Connect via SSH as regular user
+1. Download stable Ubuntu 24.04 (ubuntu-24.04.4-live-server-amd64.iso) from official repository
+   https://ubuntu.com/download/server/thank-you?version=24.04.4&architecture=amd64&lts=true
+2. Create VirtualBox machine with 16GB RAM, 7CPU, 70GB storage, set first network adapter to bridge mode on host machine
+3. Start VM
+4. Select "English"
+5. Select "Continue without updating"
+6. Select "Done"
+7. Select "Ubuntu Server (minimized)" and press "Done"
+8. Select "Done"
+9. Select "Done"
+10. Select "Done"
+11. Select "Done"
+12. Select "Done"
+13. Select "Continue"
+14. Enter name, server name, username, password and with "Tab" button select "Done"
+15. Select "Continue"
+16. Select "Install OpenSSH server" and with "Tab" button select "Done"
+17. Select "Done"
+18. Select "Reboot now"
+19. Set VM Adapter 1 network to "Bridged Adapter" (VirtualBox: Settings → Network →
+    Adapter 1 → Attached to: Bridged Adapter; VM must be powered off to change this)
+20. Login to VM as user and find current IP via "ip a"
+21. Connect via SSH as regular user using this IP
 
 ssh user@host
 
-Accept connection
+22. Install dependencies
 
-30. Change user to root
+    sudo apt update
+    sudo apt upgrade -y
+    sudo apt install unzip git clang make automake sox gfortran libtool subversion g++ zlib1g-dev sudo gawk python3-pip -y
 
-    su -
-
-31. Install dependencies
-
-    apt update
-    apt upgrade
-    apt install unzip git clang make automake sox gfortran libtool subversion g++ zlib1g-dev sudo gawk pip -y
-
-32. Add user to sudoers 
-
-    usermod -aG sudo username
-
-33. Install python2.7
-
-    mkdir python2.7
-    cd python2.7
-    wget http://ftp.debian.org/debian/pool/main/p/python2.7/python2.7_2.7.18-8+deb11u1_amd64.deb
-    wget http://ftp.debian.org/debian/pool/main/p/python2.7/python2.7-minimal_2.7.18-8+deb11u1_amd64.deb
-    wget http://ftp.debian.org/debian/pool/main/p/python2.7/libpython2.7-stdlib_2.7.18-8+deb11u1_amd64.deb
-    wget http://ftp.debian.org/debian/pool/main/o/openssl/libssl1.1_1.1.1w-0+deb11u1_amd64.deb
-    wget http://ftp.debian.org/debian/pool/main/libf/libffi/libffi7_3.3-6_amd64.deb
-    wget http://ftp.debian.org/debian/pool/main/p/python2.7/libpython2.7-minimal_2.7.18-8+deb11u1_amd64.deb
-
-    dpkg -i libffi7_3.3-6_amd64.deb libssl1.1_1.1.1w-0+deb11u1_amd64.deb libpython2.7-minimal_2.7.18-8+deb11u1_amd64.deb python2.7-minimal_2.7.18-8+deb11u1_amd64.deb libpython2.7-stdlib_2.7.18-8+deb11u1_amd64.deb python2.7_2.7.18-8+deb11u1_amd64.deb  
-    
-34. Return back to regular user
-    exit
-
-35. Get small model
+23. Get small model
 
     mkdir new-model && cd new-model
     wget "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip"
     unzip vosk-model-small-ru-0.22.zip
 
-36. Get Kaldi
+24. Get Kaldi
 
     git clone https://github.com/kaldi-asr/kaldi
     cd kaldi
-    
-37. Install extras
+
+25. Install extras
 
     cd tools
-    sudo extras/install_mkl.sh -sp debian intel-mkl-64bit-2020.0-088
+    sudo extras/install_mkl.sh
 
-38. Check Kaldi dependencies
-    
+26. Check Kaldi dependencies
+
     extras/check_dependencies.sh
 
-    extras/check_dependencies.sh: python2.7 is installed, but the python2 binary does not exist. Creating a symlink and adding this to tools/env.sh
-    extras/check_dependencies.sh: all OK.
-    
-40. Install tools
-        
-    make -j 4
+27. Build tools
 
-41. Install more extras
+    make -j 7
 
-    extras/install_irstlm.sh
+28. Install more extras
+
+    rm -rf ngram-1.3.7 ngram-1.3.7.tar.gz
+    sed -i 's/1.3.7/1.3.16/g' extras/install_opengrm.sh
     extras/install_opengrm.sh
-    
-42. Install SRILM
 
-    wget https://github.com/weimeng23/SRILM/raw/master/srilm-1.7.3.tar.gz
-    mv srilm-1.7.3.tar.gz srilm.tar.gz
-    extras/install_srilm.sh
-    
-43. Install tools
+    (if needed — alphacep OpenFST fork instead of stock OpenFST, before install_opengrm.sh above)
+
+    git clone https://github.com/alphacep/openfst openfst-ac
+    rm -rf openfst
+    ln -sf openfst-ac openfst
+
+    (if needed — fstproject flag fix for compile package, only if you hit an fstproject error in step 36)
+
+    cd vosk-model-small-ru-0.22-compile
+    grep -rl -- '--project_output=true' . | xargs -r sed -i 's/--project_output=true/--project_type=output/g'
+    cd ..
+
+29. Install SRILM
+
+    extras/install_srilm.sh "Your Name" "Your Organization" "your@email.com" "Your Address"
+
+30. Build Kaldi src
 
     cd ../src
     ./configure --shared
-    make depend -j 4
-    make -j 4
+    make depend -j 7
+    make -j 7
 
-44. Update language model
+31. Update language model
 
-    cd ../egs/wsj/s5    
+    cd ../egs/wsj/s5
+    wget "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22-compile.zip"
+    rm -rf ./data
+    rm -rf ./db
+    rm -rf ./exp
+    rm -rf ./model-out
+    rm -rf ./steps
+    rm -rf ./utils
+    unzip -o vosk-model-small-ru-0.22-compile.zip
+    mv -f vosk-model-small-ru-0.22-compile/* .
 
-    wget "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22-compile.tar.gz"
-    tar -xf vosk-model-small-ru-0.22-compile.tar.gz
-    mv vosk-model-small-ru-0.22-compile/* .
+32. Edit kaldi/egs/wsj/s5/db/ru-250k.dic to remove words
 
-45. Edit kaldi/egs/wsj/s5/db/ru-250k.dic by removing some words
+    cd ~/new-model/kaldi/egs/wsj/s5
+    cp db/ru-250k.dic db/ru-250k.dic.bak
 
-46. Copy all content of kaldi/tools/env.sh and paste to the end of kaldi/egs/wsj/s5/path.sh
+33. Append kaldi/tools/env.sh to the end of kaldi/egs/wsj/s5/path.sh
 
-     Example of kaldi/egs/wsj/s5/path.sh:
+    grep KALDI_ROOT path.sh
+    sed -i "s|^export KALDI_ROOT=.*|export KALDI_ROOT=$HOME/new-model/kaldi|" path.sh
+    grep KALDI_ROOT path.sh
 
-export KALDI_ROOT=`pwd`/../../..
-export PATH=$PWD/utils:$KALDI_ROOT/src/bin:$KALDI_ROOT/tools/openfst/bin:$KALDI_ROOT/src/fstbin:$KALDI_ROOT/src/gmmbin:$KALDI_ROOT/src/featbin:$KALDI_ROOT/src/lm:$KALDI_ROOT/src/sgmmbin:$KALDI_ROOT/src/sgmm2bin:$KALDI_ROO$
-export PATH=$KALDI_ROOT/tools/ngram-1.3.7/src/bin:$PATH
-export LD_LIBRARY_PATH=$KALDI_ROOT/tools/openfst/lib/fst/
-export LC_ALL=C
+    cat ../../../tools/env.sh >> path.sh
 
-export PATH=/home/sergey/new-model/kaldi/tools/python:${PATH}
-export IRSTLM=/home/sergey/new-model/kaldi/tools/irstlm
-export PATH=${PATH}:${IRSTLM}/bin
-export LIBLBFGS=/home/sergey/new-model/kaldi/tools/liblbfgs-1.10
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}:${LIBLBFGS}/lib/.libs
-export SRILM=/home/sergey/new-model/kaldi/tools/srilm
-export PATH=${PATH}:${SRILM}/bin:${SRILM}/bin/i686-m64
+    Resulting kaldi/egs/wsj/s5/path.sh:
 
-47. Run this file
+    export KALDI_ROOT=$HOME/new-model/kaldi
+    export PATH=$PWD/utils:$KALDI_ROOT/src/bin:$KALDI_ROOT/tools/openfst/bin:$KALDI_ROOT/src/fstbin:$KALDI_ROOT/src/gmmbin:$KALDI_ROOT/src/featbin:$KALDI_ROOT/src/lm:$KALDI_ROOT/src/sgmmbin:$KALDI_ROOT/src/sgmm2bin:$KALDI_ROOT/src/fgmmbin:$KALDI_ROOT/src/latbin:$KALDI_ROOT/src/nnetbin:$KALDI_ROOT/src/nnet2bin:$KALDI_ROOT/src/online2bin:$KALDI_ROOT/src/ivectorbin:$KALDI_ROOT/src/lmbin:$KALDI_ROOT/src/chainbin:$KALDI_ROOT/src/nnet3bin:$PWD:$PATH:$KALDI_ROOT/tools/sph2pipe_v2.5
+    export PATH=$PATH:$PWD/utils:$PWD/../tools/openfst/bin:$PWD/../tools/fst/bin
+    export PATH=$KALDI_ROOT/tools/ngram-1.3.16/src/bin:$PATH
+    export LD_LIBRARY_PATH=$KALDI_ROOT/tools/openfst/lib/fst
 
-    ./path.sh
+    export LC_ALL=C
 
-48. Install phonetisaurus
+    export PATH=$KALDI_ROOT/tools/python:${PATH}
+    export IRSTLM=$KALDI_ROOT/tools/irstlm
+    export PATH=${PATH}:${IRSTLM}/bin
+    export LIBLBFGS=$KALDI_ROOT/tools/liblbfgs-1.10
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}:${LIBLBFGS}/lib/.libs
+    export SRILM=$KALDI_ROOT/tools/srilm
+    export PATH=${PATH}:${SRILM}/bin:${SRILM}/bin/i686-m64
+
+34. Load path.sh into your current shell
+
+    source path.sh
+
+35. Install phonetisaurus
 
     sudo pip install phonetisaurus --break-system-packages
 
-49. Generate model
+36. Generate model
 
     ./compile-graph.sh
 
-50. Copy generated files
+37. Copy generated files into the deployable model
 
-kaldi/egs/wsj/s5/exp/tdnn/lgraph/Gr.fst
-kaldi/egs/wsj/s5/exp/tdnn/lgraph/HCLr.fst
+    compile-graph.sh already copied Gr.fst, HCLr.fst, and disambig_tid.int into
+    kaldi/egs/wsj/s5/model-out/vosk-model-small-ru-0.22/graph/. Copy them from
+    there into the actual model directory unzipped in step 23:
 
-to new-model/vosk-model-small-ru-0.22/graph
+    mkdir -p ~/new-model/vosk-model-small-ru-0.22/graph
+    cp ~/new-model/kaldi/egs/wsj/s5/model-out/vosk-model-small-ru-0.22/graph/Gr.fst \
+    ~/new-model/kaldi/egs/wsj/s5/model-out/vosk-model-small-ru-0.22/graph/HCLr.fst \
+    ~/new-model/kaldi/egs/wsj/s5/model-out/vosk-model-small-ru-0.22/graph/disambig_tid.int \
+    ~/new-model/vosk-model-small-ru-0.22/graph/

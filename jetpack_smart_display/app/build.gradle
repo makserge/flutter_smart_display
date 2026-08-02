@@ -1,18 +1,18 @@
 plugins {
-    id "com.android.application"
-    id "org.jetbrains.kotlin.android"
-    id "com.google.dagger.hilt.android"
-    id "com.google.devtools.ksp"
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.compose)
 }
 
 android {
     namespace "com.smsoft.smartdisplay"
-    compileSdk 35
+    compileSdk 37
 
     defaultConfig {
         applicationId "com.smsoft.smartdisplay"
         minSdk 26
-        targetSdk 35
+        targetSdk 37
         versionCode 5
         versionName "1.5"
 
@@ -40,14 +40,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion "1.5.14"
+        // AGP 9 removed the global android.defaults.buildfeatures.buildconfig gradle.properties
+        // flag; buildConfig must now be opted into per-module since this module uses
+        // buildConfigField (OWM_API_KEY).
+        buildConfig true
     }
     packagingOptions {
         resources {
@@ -56,64 +54,66 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
 dependencies {
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation "androidx.compose.material:material:$compose_version"
-    implementation "androidx.compose.material:material-icons-extended:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling:$compose_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-compose:2.8.5"
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.material
+    implementation libs.androidx.compose.material.icons.extended
+    implementation libs.androidx.compose.ui.tooling
+    implementation libs.androidx.lifecycle.runtime.compose
 
-    implementation "com.google.dagger:hilt-android:$hilt_version"
+    implementation libs.hilt.android
+    ksp libs.hilt.compiler
+    implementation libs.androidx.hilt.navigation.compose
+    implementation libs.androidx.navigation.compose
 
-    ksp "com.google.dagger:hilt-compiler:$hilt_version"
-    implementation "androidx.hilt:hilt-navigation-compose:1.2.0"
-    implementation "androidx.navigation:navigation-compose:2.8.0"
+    implementation libs.accompanist.permissions
 
-    implementation "com.google.accompanist:accompanist-flowlayout:$accompanist_version"
-    implementation "com.google.accompanist:accompanist-pager:$accompanist_version"
-    implementation "com.google.accompanist:accompanist-pager-indicators:$accompanist_version"
+    implementation libs.androidx.media
+    implementation libs.androidx.media3.exoplayer
+    implementation libs.androidx.media3.ui
+    implementation libs.androidx.media3.exoplayer.rtsp
+    implementation libs.androidx.media3.session
 
-    implementation "androidx.media:media:1.7.0"
-    implementation "androidx.media3:media3-exoplayer:$exoplayer_media3_version"
-    implementation "androidx.media3:media3-ui:$exoplayer_media3_version"
-    implementation "androidx.media3:media3-exoplayer-rtsp:$exoplayer_media3_version"
-    implementation "androidx.media3:media3-session:$exoplayer_media3_version"
+    implementation libs.libvlc.all
 
-    implementation "org.videolan.android:libvlc-all:4.0.0-eap15"
+    implementation libs.composeprefs
+    implementation libs.androidx.datastore.preferences
 
-    implementation "com.github.JamalMulla:ComposePrefs:1.0.6"
-    implementation "androidx.datastore:datastore-preferences:1.1.1"
+    implementation libs.godaddy.color.picker
+    implementation libs.godaddy.color.picker.android
 
-    implementation "com.godaddy.android.colorpicker:compose-color-picker:0.7.0"
-    implementation "com.godaddy.android.colorpicker:compose-color-picker-android:0.7.0"
+    implementation libs.androidx.room.ktx
+    ksp libs.androidx.room.compiler
 
-    implementation "androidx.room:room-ktx:$room_version"
-    ksp "androidx.room:room-compiler:$room_version"
+    implementation libs.androidx.legacy.support.v4
+    implementation libs.paho.mqtt.android
 
-    implementation "androidx.legacy:legacy-support-v4:1.0.0"
-    implementation "com.github.hannesa2:paho.mqtt.android:4.2"
+    implementation libs.androidx.work.runtime.ktx
+    implementation libs.androidx.hilt.work
+    ksp libs.androidx.hilt.compiler
 
-    implementation "androidx.work:work-runtime-ktx:2.9.1"
-    implementation "androidx.hilt:hilt-work:1.2.0"
-    ksp "androidx.hilt:hilt-compiler:1.2.0"
+    implementation libs.retrofit.converter.moshi
+    implementation libs.moshi.kotlin
+    ksp libs.moshi.kotlin.codegen
 
-    implementation "com.squareup.retrofit2:converter-moshi:2.11.0"
-    implementation "com.squareup.moshi:moshi-kotlin:1.15.1"
-    ksp "com.squareup.moshi:moshi-kotlin-codegen:1.15.1"
+    implementation libs.coil.compose
 
-    implementation "io.coil-kt:coil-compose:2.7.0"
-
-    implementation "com.google.accompanist:accompanist-permissions:$accompanist_version"
-    implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
-
-    implementation "net.java.dev.jna:jna:5.14.0@aar"
-    implementation "com.alphacephei:vosk-android:0.3.47@aar"
+    // "@aar" forces the aar artifact type and isn't expressible via the libs.xxx accessor,
+    // so these two keep manual GAV notation but still pull their version from the catalog.
+    implementation "net.java.dev.jna:jna:${libs.versions.jna.get()}@aar"
+    implementation "com.alphacephei:vosk-android:${libs.versions.voskAndroid.get()}@aar"
     implementation project(":models")
 
-    testImplementation "junit:junit:4.13.2"
-    androidTestImplementation "androidx.test.ext:junit:1.2.1"
-    androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.test.espresso.core
+    androidTestImplementation libs.androidx.compose.ui.test.junit4
+    debugImplementation libs.androidx.compose.ui.tooling
+    debugImplementation libs.androidx.compose.ui.test.manifest
 }

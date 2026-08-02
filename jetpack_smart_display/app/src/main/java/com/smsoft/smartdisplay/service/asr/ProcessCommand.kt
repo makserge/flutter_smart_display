@@ -3,39 +3,42 @@ package com.smsoft.smartdisplay.service.asr
 import android.content.Context
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.AsrCommand
+import com.smsoft.smartdisplay.data.LightCommandType
 import com.smsoft.smartdisplay.data.VoiceCommandType
+
+private val TIMER_SET_PREFIX_COMMAND_IDS = listOf(
+    R.string.timer_on_command,
+    R.string.timer2_on_command
+)
 
 fun processCommand(
     context: Context,
     command: String,
     onCommand: (AsrCommand, Any?) -> Unit
 ) {
-    when (command) {
-        context.getString(R.string.light_on_command), context.getString(R.string.light_on2_command) -> {
-            onCommand(AsrCommand.LIGHT1, true)
-            return
-        }
-        context.getString(R.string.light_off_command), context.getString(R.string.light_off2_command) -> {
-            onCommand(AsrCommand.LIGHT1, false)
-            return
-        }
-        context.getString(R.string.light2_on_command), context.getString(R.string.light2_on2_command) -> {
-            onCommand(AsrCommand.LIGHT2, true)
-            return
-        }
-        context.getString(R.string.light2_off_command), context.getString(R.string.light2_off2_command) -> {
-            onCommand(AsrCommand.LIGHT2, false)
-            return
-        }
-    }
-    if (command.startsWith(context.getString(R.string.timer_on_command))) {
-        onCommand(AsrCommand.TIMER, command.replace(context.getString(R.string.timer_on_command), "").trim())
+    LightCommandType.match(context, command)?.let { (asrCommand, isOn) ->
+        onCommand(asrCommand, isOn)
         return
     }
-    if (command.startsWith(context.getString(R.string.timer2_on_command))) {
-        onCommand(AsrCommand.TIMER, command.replace(context.getString(R.string.timer2_on_command), "").trim())
+
+    LightCommandType.matchStep(context, command)?.let { (asrCommand, direction) ->
+        onCommand(asrCommand, direction)
         return
     }
+
+    LightCommandType.matchSetPrefix(context, command)?.let { (asrCommand, remainder) ->
+        onCommand(asrCommand, remainder)
+        return
+    }
+
+    for (prefixId in TIMER_SET_PREFIX_COMMAND_IDS) {
+        val prefix = context.getString(prefixId)
+        if (command.startsWith(prefix)) {
+            onCommand(AsrCommand.TIMER, command.removePrefix(prefix).trim())
+            return
+        }
+    }
+
     val item = VoiceCommandType.getDashboardItem(
         context = context,
         command = command

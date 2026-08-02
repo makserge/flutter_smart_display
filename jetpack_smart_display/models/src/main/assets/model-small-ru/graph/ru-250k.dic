@@ -36,9 +36,19 @@
 номер n o1 mj e0 r
 один o0 dj i1 n
 одну o0 d n u1
+подсветка p o0 d s vj e1 t k a0
+подсветке p o0 d s vj e1 t kj e0
+подсветки p o0 d s vj e1 t kj i0
+подсветкой p o0 d s vj e1 t k o0 j
+подсветку p o0 d s vj e1 t k u0
+пол-часа p o0 l ch a0 s a0
 погода p o0 g o1 d a0
 поставить p o0 s t a1 vj i0 tj
 поставь p o0 s t a1 vj
+процентов p r o0 c e1 n t o0 v
+процентом p r o0 c e1 n t o0 m
+проценту p r o0 c e1 n t u0
+проценты p r o0 c e1 n t y0
 пятнадцать pj a0 t n a1 d c a0 tj
 пять pj a1 tj
 пятьдесят pj a0 tj dj e0 sj a1 t
@@ -51,9 +61,13 @@
 сорок s o1 r o0 k
 сто s t o1
 таймер t a1 j mj e0 r
+темнее tj e0 m nj e1 j e0
 тише tj i1 sh e0
 три t rj i1
 тридцать t rj i1 d c a0 tj
+час ch a1 s
+часа ch a0 s a1
+часа ch a1 s a0
 часы ch a0 s y1
 четыре ch e0 t y1 rj e0
 шесть sh e1 s tj
@@ -61,3 +75,4 @@
 шестьдесят sh e0 s dj e0 sj a1 t
 шестьдесят sh e0 s tj dj e0 sj a1 t
 шестьдесят sh e0 sj a1 t
+ярче j a1 r ch e0

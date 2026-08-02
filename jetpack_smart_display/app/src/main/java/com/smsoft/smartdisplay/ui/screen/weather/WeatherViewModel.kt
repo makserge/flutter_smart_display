@@ -87,9 +87,9 @@ class WeatherViewModel @Inject constructor(
                     val liveData =
                         WorkManager.getInstance(context).getWorkInfoByIdLiveData(request.id)
                     withContext(Dispatchers.Main) {
-                        liveData.observeForever(object : Observer<WorkInfo> {
-                            override fun onChanged(value: WorkInfo) {
-                                if (value.state == WorkInfo.State.SUCCEEDED) {
+                        liveData.observeForever(object : Observer<WorkInfo?> {
+                            override fun onChanged(value: WorkInfo?) {
+                                if (value?.state == WorkInfo.State.SUCCEEDED) {
                                     liveData.removeObserver(this)
 
                                     uiStateInt.value = UIState.Ready

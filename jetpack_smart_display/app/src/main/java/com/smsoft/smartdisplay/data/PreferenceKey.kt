@@ -122,6 +122,7 @@ enum class PreferenceKey(val key: String, val title: Int) {
     ALARM_LIGHT_DIMMER_COMMAND_ON_PAYLOAD("alarmLightDimmerCommandOnPayload", R.string.alarm_light_dimmer_command_on_payload),
     ALARM_LIGHT_DIMMER_COMMAND_OFF_PAYLOAD("alarmLightDimmerCommandOffPayload", R.string.alarm_light_dimmer_command_off_payload),
     ALARM_LIGHT_DIMMER_COMMAND_TOPIC("alarmLightDimmerCommandTopic", R.string.alarm_light_dimmer_command_topic),
+    DIMMER_LIGHT_BRIGHTNESS("dimmerLightBrightness", R.string.dimmer_light_brightness),
     ALARM_TIMEOUT("alarmTimeout", R.string.alarm_timeout),
     ALARM_SOUND_VOLUME("alarmSoundVolume", R.string.alarm_sound_volume),
     TIMER_ASR_ENABLED("timerAsrEnabled", R.string.timer_asr_enabled),

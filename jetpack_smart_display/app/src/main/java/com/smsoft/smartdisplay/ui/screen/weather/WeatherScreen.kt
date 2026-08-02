@@ -84,7 +84,8 @@ fun Weather(
                 CurrentWeather(
                     modifier = Modifier,
                     viewModel = viewModel,
-                    currentWeather = currentForecast
+                    currentWeather = currentForecast,
+                    nightTemperature = weatherForecast.firstOrNull()?.temperatureNight
                 )
             }
         }
