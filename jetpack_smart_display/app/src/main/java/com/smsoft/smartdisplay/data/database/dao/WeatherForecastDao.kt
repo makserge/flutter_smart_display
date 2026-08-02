@@ -17,4 +17,7 @@ interface WeatherForecastDao {
 
     @Update
     suspend fun update(item: WeatherForecast)
+
+    @Query("DELETE FROM weather_forecast WHERE id > :maxId")
+    suspend fun deleteBeyond(maxId: Long)
 }

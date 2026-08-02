@@ -35,11 +35,11 @@ fun Forecast(
                     vertical = 0.dp
                 ),
             text = viewModel.getDayOfWeek(item.date, item.timezone),
-            style = MaterialTheme.typography.subtitle1,
+            style = MaterialTheme.typography.h6,
             color = MaterialTheme.colors.secondary
         )
         Image(
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(72.dp),
             painter = rememberAsyncImagePainter(
                 stringResource(
                     R.string.weather_icon_url,
@@ -54,32 +54,32 @@ fun Forecast(
             TextWithValue(
                 modifier = Modifier,
                 title = stringResource(R.string.weather_morning_temperature),
-                value = stringResource(R.string.weather_morning_temperature_value, item.temperatureMorning),
-                style = MaterialTheme.typography.subtitle2
+                value = stringResource(
+                    R.string.weather_morning_temperature_value,
+                    item.temperatureMorning,
+                    item.humidity
+                ),
+                style = MaterialTheme.typography.subtitle1
             )
             TextWithValue(
                 modifier = Modifier,
                 title = stringResource(R.string.weather_day_temperature),
-                value = stringResource(R.string.weather_day_temperature_value, item.temperatureDay),
-                style = MaterialTheme.typography.subtitle2
-            )
-            TextWithValue(
-                modifier = Modifier,
-                title = stringResource(R.string.weather_evening_temperature),
-                value = stringResource(R.string.weather_evening_temperature_value, item.temperatureEvening),
-                style = MaterialTheme.typography.subtitle2
+                value = stringResource(
+                    R.string.weather_day_temperature_value,
+                    item.temperatureDay,
+                    item.humidity
+                ),
+                style = MaterialTheme.typography.subtitle1
             )
             TextWithValue(
                 modifier = Modifier,
                 title = stringResource(R.string.weather_night_temperature),
-                value = stringResource(R.string.weather_night_temperature_value, item.temperatureNight),
-                style = MaterialTheme.typography.subtitle2
-            )
-            TextWithValue(
-                modifier = Modifier,
-                title = stringResource(R.string.weather_humidity),
-                value = stringResource(R.string.weather_humidity_value, item.humidity),
-                style = MaterialTheme.typography.subtitle2
+                value = stringResource(
+                    R.string.weather_night_temperature_value,
+                    item.temperatureNight,
+                    item.humidity
+                ),
+                style = MaterialTheme.typography.subtitle1
             )
             TextWithValue(
                 modifier = Modifier,
@@ -87,7 +87,7 @@ fun Forecast(
                 value = stringResource(R.string.weather_wind_value, item.windSpeed,
                     viewModel.windDegreeToDirection(item.windDirection)
                 ),
-                style = MaterialTheme.typography.subtitle2
+                style = MaterialTheme.typography.subtitle1
             )
         }
     }

@@ -21,7 +21,8 @@ import com.smsoft.smartdisplay.ui.screen.weather.WeatherViewModel
 fun CurrentWeather(
     modifier: Modifier,
     viewModel: WeatherViewModel,
-    currentWeather: WeatherCurrent
+    currentWeather: WeatherCurrent,
+    nightTemperature: Int? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -46,6 +47,14 @@ fun CurrentWeather(
                 style = MaterialTheme.typography.h3,
                 color = MaterialTheme.colors.primary
             )
+            if (nightTemperature != null) {
+                TextWithValue(
+                    modifier = Modifier,
+                    title = stringResource(R.string.weather_night_temperature),
+                    value = stringResource(R.string.weather_degrees_unit, nightTemperature),
+                    style = MaterialTheme.typography.h6
+                )
+            }
             TextWithValue(
                 modifier = Modifier,
                 title = stringResource(R.string.weather_humidity),

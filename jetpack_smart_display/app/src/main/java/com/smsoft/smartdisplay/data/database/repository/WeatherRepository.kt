@@ -16,7 +16,7 @@ class WeatherRepository@Inject constructor(
     private val weatherApi: WeatherApi
 ) {
     val CURRENT_ID = 1L
-    private val FORECAST_DAYS = 4
+    private val FORECAST_DAYS = 2
 
     private val weatherCurrentDao = smartDisplayDatabase.weatherCurrentDao()
     private val weatherForecastDao = smartDisplayDatabase.weatherForecastDao()
@@ -87,5 +87,6 @@ class WeatherRepository@Inject constructor(
                 weatherForecastDao.insert(weatherForecast)
             }
         }
+        weatherForecastDao.deleteBeyond(FORECAST_DAYS.toLong())
     }
 }
