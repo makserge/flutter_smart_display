@@ -1,0 +1,95 @@
+[versions]
+agp = "9.3.1"
+kotlin = "2.4.10"
+ksp = "2.3.9"
+hilt = "2.60.1"
+composeUi = "1.11.4"
+composeMaterialIconsExtended = "1.7.8"
+lifecycleRuntimeCompose = "2.11.0"
+androidxHilt = "1.4.0"
+navigationCompose = "2.9.8"
+accompanist = "0.37.3"
+androidxMedia = "1.8.0"
+media3 = "1.10.1"
+libvlcAll = "4.0.0-eap29"
+composePrefs = "1.0.6"
+datastorePreferences = "1.2.1"
+colorPicker = "0.7.0"
+room = "2.8.4"
+legacySupportV4 = "1.0.0"
+pahoMqttAndroid = "4.2"
+workRuntimeKtx = "2.11.2"
+retrofit = "3.0.0"
+moshi = "1.15.2"
+coilCompose = "2.7.0"
+jna = "5.19.1"
+voskAndroid = "0.3.75"
+junit = "4.13.2"
+androidxTestExtJunit = "1.3.0"
+espressoCore = "3.7.0"
+
+[libraries]
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "composeUi" }
+androidx-compose-material = { group = "androidx.compose.material", name = "material", version.ref = "composeUi" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "composeMaterialIconsExtended" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "composeUi" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "composeUi" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "composeUi" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
+
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHilt" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "androidxHilt" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidxHilt" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+
+# accompanist-flowlayout, -pager, -pager-indicators, and -systemuicontroller were removed
+# upstream in Accompanist v0.37.0 (superseded by androidx.compose.foundation.layout.FlowRow,
+# androidx.compose.foundation.pager, and androidx.activity's edge-to-edge APIs, respectively -
+# this app has migrated to those). accompanist-permissions is still actively maintained.
+accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
+
+androidx-media = { group = "androidx.media", name = "media", version.ref = "androidxMedia" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
+androidx-media3-exoplayer-rtsp = { group = "androidx.media3", name = "media3-exoplayer-rtsp", version.ref = "media3" }
+androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
+libvlc-all = { group = "org.videolan.android", name = "libvlc-all", version.ref = "libvlcAll" }
+
+composeprefs = { group = "com.github.JamalMulla", name = "ComposePrefs", version.ref = "composePrefs" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+
+godaddy-color-picker = { group = "com.godaddy.android.colorpicker", name = "compose-color-picker", version.ref = "colorPicker" }
+godaddy-color-picker-android = { group = "com.godaddy.android.colorpicker", name = "compose-color-picker-android", version.ref = "colorPicker" }
+
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+androidx-legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
+paho-mqtt-android = { group = "com.github.hannesa2", name = "paho.mqtt.android", version.ref = "pahoMqttAndroid" }
+
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+
+retrofit-converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
+moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
+
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
+
+# Kept as manual GAV notation (not libs.xxx) at the call site because these two need the
+# "@aar" artifact-type suffix, which the dependency accessor syntax doesn't support -
+# only their versions are pulled from this catalog.
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
+vosk-android = { group = "com.alphacephei", name = "vosk-android", version.ref = "voskAndroid" }
+
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
