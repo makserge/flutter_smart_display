@@ -3,6 +3,7 @@ package com.smsoft.smartdisplay.ui.screen.timers
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,20 +44,32 @@ fun TimersScreen(
     )
     val timerState: Map<Long, TimerState> by viewModel.timerState.collectAsStateWithLifecycle()
     val timerFinishedState: TimerState by viewModel.timerFinishedState.collectAsStateWithLifecycle()
+    val scrollToItemId by viewModel.scrollToItemId.collectAsStateWithLifecycle()
 
     var isModifyItems by remember { mutableStateOf(false) }
     var isOpenEditItemDialog by remember { mutableStateOf(false) }
     var currentEditItem by remember { mutableStateOf(emptyTimer) }
 
     val coroutineScope = rememberCoroutineScope()
-    if (command.type != VoiceCommandType.CLOCK) {
+    val listState = rememberLazyListState()
+
+    if (command.type == VoiceCommandType.TIMER_SET) {
         LaunchedEffect(command.timeStamp) {
-            command.let {
+            command.payload?.let { durationId ->
                 coroutineScope.launch {
-                    viewModel.processVoiceCommand(it.type)
+                    viewModel.processVoiceCommand(durationId)
                     onResetCommand()
                 }
             }
+        }
+    }
+
+    LaunchedEffect(scrollToItemId, items) {
+        val targetId = scrollToItemId ?: return@LaunchedEffect
+        val index = items?.indexOfFirst { it.id == targetId } ?: -1
+        if (index >= 0) {
+            listState.scrollToItem(index)
+            viewModel.consumeScrollToItem()
         }
     }
 
@@ -79,6 +92,7 @@ fun TimersScreen(
                         itemsTick = viewModel.timerTickMap,
                         itemsState = timerState,
                         editMode = isModifyItems,
+                        listState = listState,
                         onChangeItemState = { item ->
                             viewModel.changeItemState(item)
                         },
@@ -143,4 +157,3 @@ fun TimersScreen(
         }
     )
 }
-

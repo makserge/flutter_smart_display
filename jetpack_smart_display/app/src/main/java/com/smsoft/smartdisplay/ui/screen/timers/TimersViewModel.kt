@@ -11,9 +11,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.AlarmSoundToneType
 import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.data.TimerDurationType.Companion.getByCommand
+import com.smsoft.smartdisplay.data.TimerDurationType
 import com.smsoft.smartdisplay.data.TimerState
-import com.smsoft.smartdisplay.data.VoiceCommandType
 import com.smsoft.smartdisplay.data.database.entity.Timer
 import com.smsoft.smartdisplay.data.database.repository.TimerRepository
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
@@ -58,6 +57,9 @@ class TimersViewModel @Inject constructor(
 
     private val timerFinishedStateInt = MutableStateFlow<TimerState>(TimerState.Idle())
     val timerFinishedState = timerFinishedStateInt.asStateFlow()
+
+    private val scrollToItemIdInt = MutableStateFlow<Long?>(null)
+    val scrollToItemId = scrollToItemIdInt.asStateFlow()
 
     private var timerOffTimer: CountDownTimer? = null
 
@@ -116,15 +118,21 @@ class TimersViewModel @Inject constructor(
         when (state) {
             is TimerState.Idle -> {
                 timerHandler.startTimer(state.timer.duration, state.timer)
+                scrollToItemIdInt.value = state.timer.id
             }
             is TimerState.Running -> {
                 timerHandler.pauseTimer(state)
             }
             is TimerState.Paused -> {
                 timerHandler.startTimer(state.tick, state.timer)
+                scrollToItemIdInt.value = state.timer.id
             }
             is TimerState.Finished -> {}
         }
+    }
+
+    fun consumeScrollToItem() {
+        scrollToItemIdInt.value = null
     }
 
     private fun playTimerSound(timer: Timer) {
@@ -162,8 +170,8 @@ class TimersViewModel @Inject constructor(
         timerOffTimer!!.start()
     }
 
-    suspend fun processVoiceCommand(command: VoiceCommandType) {
-        val type = getByCommand(command) ?: return
+    suspend fun processVoiceCommand(durationId: String) {
+        val type = TimerDurationType.entries.find { it.id == durationId } ?: return
         val duration = type.id.toLong()
         val timers = getAll.first().filter {
             it.duration == duration
