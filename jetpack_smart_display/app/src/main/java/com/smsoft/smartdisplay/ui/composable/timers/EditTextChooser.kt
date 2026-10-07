@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.DialogProperties
-import com.jamal.composeprefs.ui.prefs.TextPref
+import com.smsoft.smartdisplay.ui.common.prefs.TextPref
 import com.smsoft.smartdisplay.R
 
 @ExperimentalComposeUiApi

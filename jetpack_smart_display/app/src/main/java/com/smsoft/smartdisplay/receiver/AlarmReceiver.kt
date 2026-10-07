@@ -17,10 +17,12 @@ class AlarmReceiver : BroadcastReceiver() {
     lateinit var alarmHandler: AlarmHandler
 
     override fun onReceive(context: Context, intent: Intent) {
-        val days = intent.extras!!.getInt(INTENT_ALARM_DAYS_OF_WEEK)
+        val alarmId = intent.getLongExtra(INTENT_ALARM_ID, 0L)
+        val days = intent.getIntExtra(INTENT_ALARM_DAYS_OF_WEEK, 0)
         if (alarmHandler.isAlarmToday(days)) {
-            val alarmId = intent.extras!!.getLong(INTENT_ALARM_ID)
             alarmHandler.fireAlarm(alarmId)
         }
+        // Alarms are exact one-shot entries now: schedule tomorrow's occurrence.
+        alarmHandler.scheduleNext(alarmId)
     }
 }

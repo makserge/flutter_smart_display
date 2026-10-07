@@ -7,11 +7,6 @@ enum class MPDState(private val id: String) {
     PAUSED("pause");
 
     companion object {
-        fun getById(id: String): MPDState {
-            val item = MPDState.values().filter {
-                it.id == id
-            }
-            return item[0]
-        }
+        fun getById(id: String): MPDState = entries.firstOrNull { it.id == id } ?: UNKNOWN
     }
 }

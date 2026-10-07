@@ -2,6 +2,7 @@ package com.smsoft.smartdisplay.ui.composable.clock.nightdream
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import com.smsoft.smartdisplay.utils.getStateFromFlow
@@ -27,9 +28,13 @@ data class AnalogClockConfig(
     var emphasizeHour12: Boolean = true,
     var tickWidthHours: Float = 0.01F,
     var tickWidthMinutes: Float = 0.01F,
+    // Share of the dial radius (setting 0..0.5, divided by 10)
     var innerCircleRadius: Float = DEFAULT_INNER_CIRCLE_RADIUS_ND / 10
 ) {
+    // Not restartable: a changed setting recomposes the caller, which then rebuilds what depends
+    // on it (for example the typeface of a new font)
     @Composable
+    @NonRestartableComposable
     fun InitDataStore(
         viewModel: ClockViewModel,
     ) {

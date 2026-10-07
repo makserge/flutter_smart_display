@@ -4,9 +4,8 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.smsoft.smartdisplay.service.mqtt.MqttCallbackDispatcher
-import com.smsoft.smartdisplay.ui.screen.sensors.MQTT_CLIENT_ID
 import com.smsoft.smartdisplay.utils.getMQTTHostCredentials
-import com.smsoft.smartdisplay.utils.getMac
+import com.smsoft.smartdisplay.utils.getMQTTClientId
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,7 +28,7 @@ class MQTTClientModule {
         return MqttAndroidClient(
             context = context,
             serverURI = getMQTTHostCredentials(dataStore),
-            clientId = MQTT_CLIENT_ID + getMac()
+            clientId = getMQTTClientId(context)
         ).apply {
             addCallback(mqttCallbackDispatcher)
         }

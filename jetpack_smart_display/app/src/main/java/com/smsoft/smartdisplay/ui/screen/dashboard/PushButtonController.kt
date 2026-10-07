@@ -12,12 +12,10 @@ import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_ON_PAYLOAD
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_STATUS_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.mqtt.DashboardMqttManager
 import com.smsoft.smartdisplay.ui.screen.dashboard.mqtt.DashboardMqttMessage
+import com.smsoft.smartdisplay.utils.observe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 class PushButtonController(
     private val dataStore: DataStore<Preferences>,
@@ -32,21 +30,13 @@ class PushButtonController(
     private var payloadOn = PUSH_BUTTON_DEFAULT_PAYLOAD_ON
     private var payloadOff = PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
 
+    /** Follows the push-button settings: they used to apply only after a restart. */
     fun start() {
-        scope.launch(Dispatchers.IO) {
-            val data = dataStore.data.first()
-            data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)]?.let {
-                statusTopic = it.trim()
-            }
-            data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_COMMAND_TOPIC.key)]?.let {
-                commandTopic = it.trim()
-            }
-            data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)]?.let {
-                payloadOn = it.trim()
-            }
-            data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_OFF.key)]?.let {
-                payloadOff = it.trim()
-            }
+        dataStore.observe(scope, ::readPushButtonConfig) {
+            statusTopic = it.statusTopic
+            commandTopic = it.commandTopic
+            payloadOn = it.payloadOn
+            payloadOff = it.payloadOff
         }
     }
 
@@ -74,3 +64,17 @@ class PushButtonController(
         )
     }
 }
+
+private data class PushButtonConfig(
+    val statusTopic: String,
+    val commandTopic: String,
+    val payloadOn: String,
+    val payloadOff: String
+)
+
+private fun readPushButtonConfig(data: Preferences) = PushButtonConfig(
+    statusTopic = data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)]?.trim() ?: PUSH_BUTTON_STATUS_DEFAULT_TOPIC,
+    commandTopic = data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_COMMAND_TOPIC.key)]?.trim() ?: PUSH_BUTTON_COMMAND_DEFAULT_TOPIC,
+    payloadOn = data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_ON.key)]?.trim() ?: PUSH_BUTTON_DEFAULT_PAYLOAD_ON,
+    payloadOff = data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_PAYLOAD_OFF.key)]?.trim() ?: PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
+)

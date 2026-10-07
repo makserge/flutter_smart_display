@@ -4,6 +4,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Android 14+ only starts a connectedDevice foreground service when the app also holds one
+         of its prerequisite permissions. The Bluetooth ones are runtime permissions that may not
+         be granted (fresh install), so SensorService relies on this install-time one; the service
+         relays the light/proximity sensors to network (MQTT) devices. -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
@@ -34,9 +39,14 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.SmartDisplay"
         android:usesCleartextTraffic="true">
+        <!-- singleTask like a launcher: a second launch reaches the running dashboard. Two
+             dashboards would both ring alarms, show the doorbell and run every voice command;
+             MainActivity also closes an older instance that Android started in a separate HOME
+             or normal task. -->
         <activity
             android:name=".ui.screen.MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="sensor"
             android:theme="@style/Theme.SmartDisplay">
             <intent-filter>
@@ -48,22 +58,36 @@
 
         </activity>
 
+        <!-- No MediaSessionService intent filter on purpose: with it, the service would become
+             the system media-button receiver and a Bluetooth/headset PLAY could start the radio
+             outside the radio page. -->
         <service android:name=".service.radio.RadioMediaService"
             android:foregroundServiceType="mediaPlayback"
-            android:permission="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-            />
+            android:exported="false" />
         <service android:name=".service.asr.SpeechRecognitionService"
             android:foregroundServiceType="microphone"
             android:permission="android.permission.RECORD_AUDIO"
         />
+        <!-- No android:permission here: it is the permission a *caller* needs, so the app itself
+             had to hold the runtime BLUETOOTH_SCAN permission to start its own light/proximity
+             sensor service, and crashed at launch without it. -->
         <service android:name=".service.sensor.SensorService"
             android:foregroundServiceType="connectedDevice"
-            android:permission="android.permission.BLUETOOTH_SCAN"
+            android:exported="false"
         />
+        <!-- Only WorkManager's automatic start is disabled: SmartDisplayApplication is a
+             Configuration.Provider, so WorkManager starts on first use with the Hilt worker
+             factory. Removing the whole provider also switched off the other library
+             initializers, e.g. profileinstaller (baseline profiles for a faster app start). -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
-            tools:node="remove">
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
         </provider>
         <receiver
             android:name=".receiver.AlarmReceiver"

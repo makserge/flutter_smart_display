@@ -3,12 +3,13 @@ package com.smsoft.smartdisplay.ui.composable.settings
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.jamal.composeprefs.ui.GroupHeader
-import com.jamal.composeprefs.ui.PrefsScope
-import com.jamal.composeprefs.ui.prefs.SliderPref
-import com.jamal.composeprefs.ui.prefs.SwitchPref
+import com.smsoft.smartdisplay.ui.common.prefs.GroupHeader
+import com.smsoft.smartdisplay.ui.common.prefs.PrefsScope
+import com.smsoft.smartdisplay.ui.common.prefs.SliderPref
+import com.smsoft.smartdisplay.ui.common.prefs.SwitchPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.utils.VOLUME_SETTING_SCALE
 
 @OptIn(ExperimentalMaterialApi::class)
 fun timerSettings(
@@ -34,12 +35,15 @@ fun timerSettings(
                 valueRange = 0.1F..1F,
                 defaultValue = TIMER_TIMEOUT_DEFAULT
             )
+            // Stores the player's gain (0.1..1) as before; the slider is even in loudness
             SliderPref(
                 modifier = modifier,
                 key = PreferenceKey.TIMER_SOUND_VOLUME.key,
                 title = stringResource(PreferenceKey.TIMER_SOUND_VOLUME.title),
-                valueRange = 0.1F..1F,
-                defaultValue = TIMER_SOUND_VOLUME_DEFAULT
+                valueRange = 0F..1F,
+                defaultValue = TIMER_SOUND_VOLUME_DEFAULT,
+                toStored = VOLUME_SETTING_SCALE::volume,
+                fromStored = VOLUME_SETTING_SCALE::position
             )
         }
     }

@@ -21,11 +21,12 @@ enum class Font(val font: Int, val titleId: Int) {
             return SEVEN_SEGMENT_DIGITAL.font
         }
 
+        // The stored id is the raw R.font value, which can change between builds. An unknown id
+        // falls back to the default font instead of crashing the clock page after an app update.
         fun getById(id: String): Font {
-            val item = entries.filter {
+            return entries.firstOrNull {
                 it.font.toString() == id
-            }
-            return item[0]
+            } ?: SEVEN_SEGMENT_DIGITAL
         }
     }
 }

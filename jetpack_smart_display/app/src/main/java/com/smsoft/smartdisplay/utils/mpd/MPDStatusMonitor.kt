@@ -1,130 +1,93 @@
 package com.smsoft.smartdisplay.utils.mpd
 
-import com.smsoft.smartdisplay.utils.mpd.data.MPDState
-import com.smsoft.smartdisplay.utils.mpd.event.StatusChangeListener
-import de.dixieflatline.mpcw.client.CommunicationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import android.util.Log
+import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
 
-const val DEFAULT_STATUS_UPDATE_DELAY = 2000L
+/** The subsystems whose changes the radio shows. */
+private val IDLE_SUBSYSTEMS = arrayOf("player", "playlist", "mixer", "options")
 
+/**
+ * After this long without news the monitor checks that the server is still there ("noidle").
+ * MPD does not time out clients in idle, but a powered-off server or a dropped network does not
+ * close the socket either; without the check the monitor waited forever.
+ */
+const val MPD_IDLE_CHECK_MS = 55_000
+
+private const val RETRY_MIN_MS = 1_000L
+private const val RETRY_MAX_MS = 30_000L
+
+/**
+ * Watches MPD on its own connection with "idle" and reports changes. Runs on its own thread from
+ * [start] until [stop]; one instance per prepare() of the player, so two monitors can never share
+ * a socket. Listener calls come from the monitor thread.
+ */
 class MPDStatusMonitor(
-    private val mpd: MPDHelper,
-    private var statusChangeListener: StatusChangeListener,
-    private val delay: Long = DEFAULT_STATUS_UPDATE_DELAY
+    private val credentials: MPDCredentials,
+    private val listener: Listener
 ) {
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var isTerminated = false
+    interface Listener {
+        /** true after every (re)connect: anything may have changed in between. */
+        fun onConnectionChanged(isConnected: Boolean)
 
-    init {
-        startMonitor()
+        fun onChanged(subsystems: Set<String>)
     }
 
-    private fun startMonitor() {
-        isTerminated = false
-        coroutineScope.launch {
-            processStatus()
-        }
+    @Volatile
+    private var isStopped = false
+    @Volatile
+    private var connection: Connection? = null
+    private val thread = Thread({ run() }, "MPD idle").apply { isDaemon = true }
+
+    fun start() {
+        thread.start()
     }
 
-    fun stopMonitor() {
-        isTerminated = true
+    /** Any thread. Closing the socket ends a blocked idle at once. */
+    fun stop() {
+        isStopped = true
+        connection?.close()
+        thread.interrupt()
     }
 
-    private suspend fun processStatus() {
-        var oldConnectionState = true
-        var oldPlaylistVersion = -1
-        var oldSong = -1
-        var oldElapsedTime = -1L
-        var oldState = MPDState.UNKNOWN
-        var oldVolume = -1
-        var oldRepeat = false
-        var oldRandom = false
-        var oldUpdating = false
-
-        while (!isTerminated) {
-            val connectionState = mpd.isConnected
-            var connectionStateChanged = false
-            if (oldConnectionState != connectionState) {
-                statusChangeListener.connectionStateChanged(connectionState)
-                oldConnectionState = connectionState
-                connectionStateChanged = true
-            }
-            if (!connectionState) {
-                continue
-            }
+    private fun run() {
+        var retryDelayMs = RETRY_MIN_MS
+        var isReportedConnected = false
+        while (!isStopped) {
+            val current = Connection(credentials.host, credentials.port, credentials.password)
+            connection = current
             try {
-                var statusChanged = false
-                if (connectionStateChanged) {
-                    statusChanged = true
-                } else {
-                    val changes = mpd.waitForChanges()
-                    if (changes.isEmpty()) {
-                        continue
-                    }
-                    for (change in changes) {
-                        if (change.startsWith("changed: database")
-                            || change.startsWith("changed: playlist")
-                            || change.startsWith("changed: player")
-                            || change.startsWith("changed: mixer")
-                            || change.startsWith("changed: output")
-                            || change.startsWith("changed: options")
-                        ) {
-                            statusChanged = true
-                            break
-                        }
+                current.connect()
+                if (isStopped) {
+                    break
+                }
+                retryDelayMs = RETRY_MIN_MS
+                isReportedConnected = true
+                listener.onConnectionChanged(true)
+                while (!isStopped) {
+                    val changes = current.idle(MPD_IDLE_CHECK_MS, *IDLE_SUBSYSTEMS)
+                    if (changes.isNotEmpty()) {
+                        listener.onChanged(changes.toSet())
                     }
                 }
-                if (!statusChanged) {
-                    continue
+            } catch (e: MpdException) {
+                current.close()
+                if (isStopped) {
+                    break
                 }
-                val status = mpd.getStatus()
-
-                if (connectionStateChanged
-                    || ((oldPlaylistVersion != status.playlistVersion) && (status.playlistVersion != -1))
-                ) {
-                    oldPlaylistVersion = status.playlistVersion
-                    statusChangeListener.playlistChanged(status, oldPlaylistVersion)
+                Log.w(TAG, "MPD idle connection failed: ${e.message}")
+                if (isReportedConnected) {
+                    isReportedConnected = false
+                    listener.onConnectionChanged(false)
                 }
-                if (connectionStateChanged || (oldSong != status.songPos)) {
-                    oldSong = status.songPos
-                    statusChangeListener.trackChanged(status, oldSong)
-                }
-                if (connectionStateChanged || (oldElapsedTime != status.elapsedTime)) {
-                    statusChangeListener.trackPositionChanged(status)
-                    oldElapsedTime = status.elapsedTime
-                }
-                if (connectionStateChanged || (oldState != status.state)) {
-                    oldState = status.state
-                    statusChangeListener.stateChanged(status, oldState)
-                }
-                if (connectionStateChanged || (oldVolume != status.volume)) {
-                    oldVolume = status.volume
-                    statusChangeListener.volumeChanged(status, oldVolume)
-                }
-                if (connectionStateChanged || (oldRepeat != status.isRepeat)) {
-                    oldRepeat = status.isRepeat
-                    statusChangeListener.repeatChanged(oldRepeat)
-                }
-                if (connectionStateChanged || (oldRandom != status.isRandom)) {
-                    oldRandom = status.isRandom
-                    statusChangeListener.randomChanged(oldRandom)
-                }
-                if (connectionStateChanged || (oldUpdating != status.isUpdating)) {
-                    oldUpdating = status.isUpdating
-                    statusChangeListener.libraryStateChanged(oldUpdating)
-                }
-            } catch (e: CommunicationException) {
                 try {
-                    mpd.reconnect()
-                } catch (ignored: Exception) {
+                    Thread.sleep(retryDelayMs)
+                } catch (_: InterruptedException) {
                 }
-            } catch (ignored: Exception) {
+                retryDelayMs = (retryDelayMs * 2).coerceAtMost(RETRY_MAX_MS)
             }
-            delay(delay)
         }
+        connection?.close()
     }
 }
+
+private const val TAG = "MPDStatusMonitor"

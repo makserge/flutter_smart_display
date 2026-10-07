@@ -2,7 +2,7 @@ package com.smsoft.smartdisplay.ui.composable.settings
 
 import android.content.Context
 import androidx.compose.ui.Modifier
-import com.jamal.composeprefs.ui.PrefsScope
+import com.smsoft.smartdisplay.ui.common.prefs.PrefsScope
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.analogClockViewPrefs
 import com.smsoft.smartdisplay.ui.composable.clock.clockview2.analogClockView2Prefs

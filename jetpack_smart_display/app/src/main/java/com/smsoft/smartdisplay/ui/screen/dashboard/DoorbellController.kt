@@ -6,12 +6,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.screen.dashboard.mqtt.DashboardMqttMessage
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.utils.observe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 class DoorbellController(
     private val dataStore: DataStore<Preferences>,
@@ -22,17 +20,19 @@ class DoorbellController(
 
     private var topic = DOORBELL_ALARM_DEFAULT_TOPIC
 
+    /** Follows the topic setting: a changed topic used to apply only after a restart. */
     fun start() {
-        scope.launch(Dispatchers.IO) {
-            val data = dataStore.data.first()
-            data[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)]?.let {
-                topic = it.trim()
-            }
+        dataStore.observe(
+            scope = scope,
+            read = { it[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)]?.trim() ?: DOORBELL_ALARM_DEFAULT_TOPIC }
+        ) {
+            topic = it
         }
     }
 
     fun onMqttMessage(message: DashboardMqttMessage) {
-        if (message.topic == topic) {
+        // A retained doorbell message is replayed on every (re)subscribe; it is not a new ring.
+        if ((message.topic == topic) && !message.isRetained) {
             doorBellAlarmStateInt.value = true
         }
     }

@@ -19,6 +19,8 @@ class TabAnimationUp(
     }
 
     override fun initMiddleTab() {
+        // Resting position is the lower half; needed when the animation is reset after a flip
+        middleTab.rotate(0)
     }
 
     override fun run() {
@@ -46,7 +48,8 @@ class TabAnimationUp(
         }
         if (time != -1L) {
             val delta = System.currentTimeMillis() - time
-            alpha = (180 * (1 - (1 * elapsedTime - delta) / (1 * elapsedTime))).toInt()
+            // Clamped, so a late last frame does not leave the tab tilted past its resting angle
+            alpha = (180 * (1 - (1 * elapsedTime - delta) / (1 * elapsedTime))).toInt().coerceIn(0, 180)
             middleTab.rotate(alpha)
         }
     }

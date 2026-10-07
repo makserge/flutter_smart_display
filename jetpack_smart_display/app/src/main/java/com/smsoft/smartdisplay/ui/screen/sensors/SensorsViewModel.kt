@@ -14,13 +14,10 @@ import com.smsoft.smartdisplay.service.ble.BluetoothScanState
 import com.smsoft.smartdisplay.service.mqtt.MqttCallbackDispatcher
 import com.smsoft.smartdisplay.utils.getSensorDataByBluetoothType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.mqtt.android.service.MqttAndroidClient
-import info.mqtt.android.service.QoS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
@@ -31,7 +28,6 @@ import javax.inject.Inject
 class SensorsViewModel @Inject constructor(
     val dataStore: DataStore<Preferences>,
     private val sensorRepository: SensorRepository,
-    private val mqttClient: MqttAndroidClient,
     private val mqttCallbackDispatcher: MqttCallbackDispatcher,
     private val bluetoothHandler: BluetoothHandler
 ) : ViewModel() {
@@ -45,85 +41,45 @@ class SensorsViewModel @Inject constructor(
     private val bleScanStateInt = MutableStateFlow<BluetoothScanState>(BluetoothScanState.Initial)
     val bleScanState = bleScanStateInt.asStateFlow()
 
+    // The dashboard's MQTT manager follows the sensor list and owns the broker subscriptions.
+    // Subscribing here as well unsubscribed topics that another sensor or a dashboard setting
+    // still used, and crashed when MQTT had never connected.
     fun addItem(item: Sensor) = viewModelScope.launch(Dispatchers.IO) {
         sensorRepository.insert(item)
-        subscribeToMQTTTopic(item)
     }
 
     fun deleteItem(item: Sensor) = viewModelScope.launch(Dispatchers.IO) {
         sensorRepository.delete(item)
-        unSubscribeMQTTTopic(item)
     }
 
     fun updateItem(item: Sensor) = viewModelScope.launch(Dispatchers.IO) {
-        val oldItem = sensorRepository.get(item.id)
-        unSubscribeMQTTTopic(oldItem)
         sensorRepository.update(item)
-        subscribeToMQTTTopic(item)
     }
 
-    private fun subscribeToMQTTTopic(item: Sensor) {
-        if (SensorType.isBluetooth(item.type)) {
-            return
-        }
-        if (item.topic1.isNotEmpty()) {
-            mqttClient.subscribe(
-                topic = item.topic1,
-                qos = QoS.AtMostOnce.value
-            )
-        }
-        if (item.topic2.isNotEmpty()) {
-            mqttClient.subscribe(
-                topic = item.topic2,
-                qos = QoS.AtMostOnce.value
-            )
-        }
-        if (item.topic3.isNotEmpty()) {
-            mqttClient.subscribe(
-                topic = item.topic3,
-                qos = QoS.AtMostOnce.value
-            )
-        }
-        if (item.topic4.isNotEmpty()) {
-            mqttClient.subscribe(
-                topic = item.topic4,
-                qos = QoS.AtMostOnce.value
-            )
-        }
-    }
+    /** Who needs BLE results right now; the shared scan runs while anyone does. */
+    private val bleScanClients = mutableSetOf<BleScanClient>()
 
-    private fun unSubscribeMQTTTopic(item: Sensor) {
-        if (SensorType.isBluetooth(item.type)) {
-            return
-        }
-        if (item.topic1.isNotEmpty()) {
-            mqttClient.unsubscribe(
-                topic = item.topic1
-            )
-        }
-        if (item.topic2.isNotEmpty()) {
-            mqttClient.unsubscribe(
-                topic = item.topic2
-            )
-        }
-        if (item.topic3.isNotEmpty()) {
-            mqttClient.unsubscribe(
-                topic = item.topic3
-            )
-        }
-        if (item.topic4.isNotEmpty()) {
-            mqttClient.unsubscribe(
-                topic = item.topic4
-            )
-        }
-    }
-
-    fun startBleScan() {
+    fun startBleScan(client: BleScanClient) {
+        bleScanClients += client
         bluetoothHandler.startScan()
     }
 
-    fun stopBleScan() {
-        bluetoothHandler.stopScan()
+    /** Scans again from scratch, e.g. "rescan" in the device picker. */
+    fun rescanBle(client: BleScanClient) {
+        bleScanClients += client
+        bluetoothHandler.rescan()
+    }
+
+    /**
+     * The sensor list and the sensor editor share one scan. Closing the editor used to stop it
+     * while the list still showed Bluetooth sensors, which froze their readings until the page
+     * was opened again.
+     */
+    fun stopBleScan(client: BleScanClient) {
+        bleScanClients -= client
+        if (bleScanClients.isEmpty()) {
+            bluetoothHandler.stopScan()
+        }
     }
 
     fun isBluetoothEnabled(): Boolean {
@@ -142,10 +98,10 @@ class SensorsViewModel @Inject constructor(
             message: MqttMessage
         ) {
             Log.d("MQTT", "messageArrived: $topic: $message")
-            mqttTopicDataInt.value.value[topic] = message.toString()
-            mqttTopicDataInt.value = MQTTData(
-                value = mqttTopicDataInt.value.value
-            )
+            // Called on an MQTT thread: update() replaces the immutable value atomically.
+            mqttTopicDataInt.update {
+                it.withValues(mapOf(topic to message.toString()))
+            }
         }
 
         override fun deliveryComplete(token: IMqttDeliveryToken) {}
@@ -154,32 +110,35 @@ class SensorsViewModel @Inject constructor(
     init {
         mqttCallbackDispatcher.addListener(mqttClientCallback)
         viewModelScope.launch {
-            val scanState = bluetoothHandler.scanState.stateIn(
-                initialValue = BluetoothScanState.Initial,
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000)
-            )
-            scanState.collect { state ->
-                Log.d("SensorsViewModel", state.toString())
+            bluetoothHandler.scanState.collect { state ->
                 bleScanStateInt.value = state
 
                 if (state is BluetoothScanState.Result) {
-                    val devices = state.devices
-                    devices.forEach { device ->
-                        mqttTopicDataInt.value = getSensorDataByBluetoothType(
-                            device = device,
-                            data = mqttTopicDataInt.value
-                        )
+                    mqttTopicDataInt.update { current ->
+                        state.devices.fold(current) { data, device ->
+                            getSensorDataByBluetoothType(
+                                device = device,
+                                data = data
+                            )
+                        }
                     }
                 }
-                Log.d("SensorsViewModel", mqttTopicDataInt.value.toString())
             }
         }
     }
 
     override fun onCleared() {
         mqttCallbackDispatcher.removeListener(mqttClientCallback)
+        if (bleScanClients.isNotEmpty()) {
+            bleScanClients.clear()
+            bluetoothHandler.stopScan()
+        }
     }
+}
+
+enum class BleScanClient {
+    SENSOR_LIST,
+    SENSOR_EDITOR
 }
 
 const val MQTT_CLIENT_ID = "SmartDisplay"

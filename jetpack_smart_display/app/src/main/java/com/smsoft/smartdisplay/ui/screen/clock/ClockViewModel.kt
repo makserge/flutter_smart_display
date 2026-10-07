@@ -1,11 +1,14 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
+import android.content.Context
+import android.text.format.DateFormat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.*
@@ -25,24 +28,56 @@ import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DEFAULT_REVERSE_RO
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.DEFAULT_TEXT_SIZE_FC
 import com.smsoft.smartdisplay.ui.composable.clock.rectangular.*
 import com.smsoft.smartdisplay.utils.getParamFlow
+import com.smsoft.smartdisplay.utils.is24HourFormatFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import java.util.*
 import javax.inject.Inject
-import kotlin.concurrent.fixedRateTimer
 
 @HiltViewModel
 class ClockViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     val dataStore: DataStore<Preferences>
 ) : ViewModel() {
     private val TIMER_INTERVAL = 100L //100ms
 
-    private val uiStatePrivate = MutableStateFlow(getTime())
-    val uiState = uiStatePrivate.asStateFlow()
+    /**
+     * Current time, refreshed every [TIMER_INTERVAL] while the clock is on screen.
+     *
+     * One coroutine shared by all collectors that stops 5 s after the clock page is left. It
+     * replaces a java.util.Timer thread that was started on every visit to the clock page and
+     * never cancelled, so a panel running for days collected hundreds of 10 Hz timer threads.
+     */
+    val uiState: StateFlow<ClockUiState> = flow {
+        while (true) {
+            emit(getTime())
+            // Aligned to the wall clock (a few ms after each 100 ms step): a plain delay drifted,
+            // so seconds changed 0-100 ms late and in uneven steps.
+            delay(TIMER_INTERVAL - System.currentTimeMillis() % TIMER_INTERVAL + TICK_LAG_MS)
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = getTime()
+    )
 
-    private var isTimerStarted = true
+    /**
+     * System 12/24-hour setting for the digital clocks, see [is24HourFormatFlow]. Stops at once
+     * when the page is left, so a return (or an activity recreated after a language change)
+     * reads it again. Starts on the value read when the ViewModel is created; on a return the
+     * last value is shown until the observer has read the setting again (normally the next
+     * frame).
+     */
+    val is24Hour: StateFlow<Boolean> = context.is24HourFormatFlow().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = DateFormat.is24HourFormat(context)
+    )
 
     val clockType = getParamFlow(
         dataStore = dataStore,
@@ -118,6 +153,16 @@ class ClockViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = DotStyle.getDefault()
     ) { preferences -> DotStyle.getById(preferences[stringPreferencesKey(PreferenceKey.DOT_STYLE_MC.key)] ?: DotStyle.getDefaultId()) }
+
+    val dotColorMC = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = null
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOT_COLOR_MC.key)] }
+
+    val isBlinkSeparatorMC = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = DEFAULT_BLINK_SEPARATOR_MC
+    ) { preferences -> preferences[booleanPreferencesKey(PreferenceKey.BLINK_SEPARATOR_MC.key)] }
 
     val isShowSecondsMC = getParamFlow(
         dataStore = dataStore,
@@ -274,47 +319,47 @@ class ClockViewModel @Inject constructor(
     val digitTextSizeCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_DIGIT_TEXT_SIZE_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DIGIT_TEXT_SIZE_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.DIGIT_TEXT_SIZE_CV2.key)] }
 
     val outerRimWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_OUTER_RIM_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.OUTER_RIM_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.OUTER_RIM_WIDTH_CV2.key)] }
 
     val innerRimWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_INNER_RIM_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.INNER_RIM_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.INNER_RIM_WIDTH_CV2.key)] }
 
     val thickMarkerWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_THICK_MARKER_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.THICK_MARKER_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.THICK_MARKER_WIDTH_CV2.key)] }
 
     val thinMarkerWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_THIN_MARKER_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.THIN_MARKER_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.THIN_MARKER_WIDTH_CV2.key)] }
 
     val hourHandWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_HOUR_HAND_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.HOUR_HAND_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.HOUR_HAND_WIDTH_CV2.key)] }
 
     val minuteHandWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_MINUTE_HAND_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MINUTE_HAND_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.MINUTE_HAND_WIDTH_CV2.key)] }
 
     val secondHandWidthCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_SECOND_HAND_WIDTH_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.SECOND_HAND_WIDTH_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.SECOND_HAND_WIDTH_CV2.key)] }
 
     val centerCircleRadiusCV2 = getParamFlow(
         dataStore = dataStore,
         defaultValue = DEFAULT_CENTER_CIRCLE_RADIUS_CV2
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CENTER_CIRCLE_RADIUS_CV2.key)] }
+    ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.CENTER_CIRCLE_RADIUS_CV2.key)] }
 
     val fontCV = getParamFlow(
         dataStore = dataStore,
@@ -464,38 +509,6 @@ class ClockViewModel @Inject constructor(
         defaultValue = AnalogClockConfig.DEFAULT_INNER_CIRCLE_RADIUS_ND
     ) { preferences -> preferences[floatPreferencesKey(PreferenceKey.INNER_CIRCLE_RADIUS_ND.key)] }
 
-    fun onStart() {
-        fixedRateTimer(
-            name= "default",
-            daemon = false,
-            initialDelay = 0L,
-            period = TIMER_INTERVAL
-        ) {
-
-            val cal = Calendar.getInstance()
-            uiStatePrivate.update {
-                it.copy(
-                    year = cal.get(Calendar.YEAR),
-                    month = cal.get(Calendar.MONTH),
-                    day = cal.get(Calendar.DATE),
-                    dayOfWeek = cal.get(Calendar.DAY_OF_WEEK),
-                    hour = cal.get(Calendar.HOUR_OF_DAY),
-                    minute = cal.get(Calendar.MINUTE),
-                    second = cal.get(Calendar.SECOND),
-                    milliSecond = cal.get(Calendar.MILLISECOND)
-                )
-            }
-
-            if (!isTimerStarted) {
-                cancel()
-            }
-        }
-    }
-
-    fun onStop() {
-        isTimerStarted = false
-    }
-
     private fun getTime(): ClockUiState {
         val cal = Calendar.getInstance()
         return ClockUiState(
@@ -510,6 +523,12 @@ class ClockViewModel @Inject constructor(
         )
     }
 }
+
+private const val TICK_LAG_MS = 2L
+
+/** The hour a clock shows: [hour] (0-23) in 24-hour format, otherwise 12, 1 .. 11. */
+fun displayHour(hour: Int, is24Hour: Boolean): Int =
+    if (is24Hour) hour else (hour + 11) % 12 + 1
 
 data class ClockUiState(
     val year: Int,

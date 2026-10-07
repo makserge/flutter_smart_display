@@ -14,9 +14,16 @@ object ExoPlayerImpl {
     private const val BUFFER_SIZE = 2L //in minutes
     private const val BUFFER_FOR_PLAYBACK_MS = 1000
 
+    /**
+     * @param handleAudioFocus true for players that own playback (radio, alarm, timer).
+     * Players used for short UI cues (wake-word / error chimes, message alerts) must pass
+     * false: every ExoPlayer with audio-focus handling requests AUDIOFOCUS_GAIN, which makes
+     * the radio player lose focus permanently and pause (it never resumes by itself).
+     */
     fun getExoPlayer(
         context: Context,
-        audioAttributes: AudioAttributes
+        audioAttributes: AudioAttributes,
+        handleAudioFocus: Boolean = true
     ) : ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
@@ -31,8 +38,8 @@ object ExoPlayerImpl {
             )
             .build()
         return ExoPlayer.Builder(context)
-            .setAudioAttributes(audioAttributes, true)
-            .setHandleAudioBecomingNoisy(true)
+            .setAudioAttributes(audioAttributes, handleAudioFocus)
+            .setHandleAudioBecomingNoisy(handleAudioFocus)
             .setTrackSelector(DefaultTrackSelector(context))
             .setLoadControl(loadControl)
             .build()

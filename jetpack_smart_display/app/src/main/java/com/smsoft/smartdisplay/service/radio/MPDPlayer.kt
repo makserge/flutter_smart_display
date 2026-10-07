@@ -1,1090 +1,410 @@
 package com.smsoft.smartdisplay.service.radio
 
-import android.media.AudioDeviceInfo
+import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.Surface
-import android.view.SurfaceHolder
-import android.view.SurfaceView
-import android.view.TextureView
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.AuxEffectInfo
 import androidx.media3.common.C
-import androidx.media3.common.DeviceInfo
-import androidx.media3.common.Effect
-import androidx.media3.common.Format
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
-import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
-import androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK
-import androidx.media3.common.PriorityTaskManager
-import androidx.media3.common.Timeline
-import androidx.media3.common.TrackSelectionParameters
-import androidx.media3.common.Tracks
-import androidx.media3.common.VideoSize
-import androidx.media3.common.text.CueGroup
-import androidx.media3.common.util.Clock
-import androidx.media3.common.util.Size
+import androidx.media3.common.SimpleBasePlayer
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.CodecParameters
-import androidx.media3.exoplayer.CodecParametersChangeListener
-import androidx.media3.exoplayer.DecoderCounters
-import androidx.media3.exoplayer.ExoPlaybackException
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.PlayerMessage
-import androidx.media3.exoplayer.Renderer
-import androidx.media3.exoplayer.ScrubbingModeParameters
-import androidx.media3.exoplayer.SeekParameters
-import androidx.media3.exoplayer.analytics.AnalyticsCollector
-import androidx.media3.exoplayer.analytics.AnalyticsListener
-import androidx.media3.exoplayer.image.ImageOutput
-import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.exoplayer.source.ShuffleOrder
-import androidx.media3.exoplayer.source.TrackGroupArray
-import androidx.media3.exoplayer.trackselection.TrackSelectionArray
-import androidx.media3.exoplayer.trackselection.TrackSelector
-import androidx.media3.exoplayer.video.VideoFrameMetadataListener
-import androidx.media3.exoplayer.video.spherical.CameraMotionListener
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import com.smsoft.smartdisplay.utils.mpd.MPDHelper
+import com.smsoft.smartdisplay.utils.mpd.MPDStatusMonitor
+import com.smsoft.smartdisplay.utils.mpd.MpdAckException
+import com.smsoft.smartdisplay.utils.mpd.MpdConnectionException
+import com.smsoft.smartdisplay.utils.mpd.MpdSetupException
+import com.smsoft.smartdisplay.utils.mpd.MpdSnapshot
+import com.smsoft.smartdisplay.utils.mpd.MpdSong
+import com.smsoft.smartdisplay.utils.mpd.MpdTimeoutException
 import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
 import com.smsoft.smartdisplay.utils.mpd.data.MPDState
 import com.smsoft.smartdisplay.utils.mpd.data.MPDStatus
-import com.smsoft.smartdisplay.utils.mpd.event.StatusChangeListener
-import de.dixieflatline.mpcw.client.CommunicationException
-import de.dixieflatline.mpcw.client.ProtocolException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.time.Duration.Companion.milliseconds
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.roundToInt
 
 private const val TAG = "MPDPlayer"
+private const val NO_GENERATION = -1
 
+/**
+ * The radio player for RadioType.MPD: a Media3 Player whose output is a Music Player Daemon.
+ *
+ * The playlist is MPD's queue (playlistid), the current item MPD's current song, playWhenReady
+ * MPD's play state. Commands go to MPD over one connection on one MPD thread, in call order;
+ * an [MPDStatusMonitor] reports changes made by MPD itself or by other clients while prepared.
+ *
+ * Threading: like every Player, it is used on the main (application) thread only. The model
+ * below is main-thread confined; MPD answers are applied to it on the main thread before the
+ * operation's future completes, so getState() always sees them.
+ */
 @UnstableApi
 class MPDPlayer(
-    private val helper: MPDHelper,
-    private val credentials: MPDCredentials
-): ExoPlayer {
-    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val credentials: MPDCredentials,
+    private val session: MPDHelper = MPDHelper(credentials)
+) : SimpleBasePlayer(Looper.getMainLooper()) {
 
-    private val listeners = CopyOnWriteArrayList<Player.Listener>()
-    private var playlist: List<MediaItem>? = null
-    private var status: MPDStatus? = null
-    private var preset = 0
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    // One MPD operation at a time, in call order: a stop() issued when the radio page is left
+    // finishes before the prepare() of the next visit. Every step has a timeout (Connection), so
+    // a hung server delays the queue by seconds, not forever.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+
+    // ---- Model: main thread only. ----
     private var isPrepared = false
-    @Volatile
-    private var released = false
+    /** MPD answered since prepare() and the monitor has not lost it since. */
+    private var isConnected = false
+    /** The queue was fetched at least once; an empty queue then means "nothing to play". */
+    private var hasQueue = false
+    private var queue: List<MpdSong> = emptyList()
+    private var items: List<MediaItemData> = emptyList()
+    private var status: MPDStatus? = null
+    private var currentSong: MpdSong? = null
+    private var playWhenReady = false
+    private var playWhenReadyReason = Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST
+    /** A station picked while MPD is not playing; MPD gets it with the next play. */
+    private var pendingIndex = C.INDEX_UNSET
+    private var error: PlaybackException? = null
+    private var monitor: MPDStatusMonitor? = null
+    private var isReleasedModel = false
 
-    private val availableCommands = Player.Commands.Builder()
-        .add(Player.COMMAND_PLAY_PAUSE)
-        .add(Player.COMMAND_STOP)
-        .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
-        .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
-        .add(Player.COMMAND_GET_CURRENT_MEDIA_ITEM)
-        .add(Player.COMMAND_GET_METADATA)
-        .add(Player.COMMAND_GET_VOLUME)
-        .add(Player.COMMAND_SET_VOLUME)
-        .add(Player.COMMAND_GET_TIMELINE)
-        .build()
+    /** Incremented by prepare, stop and errors: answers to older requests are dropped. */
+    // Bumped by prepare, stop and errors (not by release); operations from an older generation
+    // are skipped. Changed from the main and the MPD thread.
+    private val generation = AtomicInteger(0)
 
-    private val statusChangedListener = object: StatusChangeListener {
-        override fun connectionStateChanged(isConnected: Boolean) {
+    /** Monitor refresh requests not yet run: [REFRESH_STATUS] or [REFRESH_QUEUE] bits. */
+    private val refreshRequest = AtomicInteger(0)
+
+    override fun getState(): State {
+        val currentIndex = when {
+            items.isEmpty() -> C.INDEX_UNSET
+            pendingIndex != C.INDEX_UNSET -> pendingIndex.coerceIn(0, items.lastIndex)
+            else -> (status?.songPos ?: 0).coerceIn(0, items.lastIndex)
         }
-
-        override fun playlistChanged(newStatus: MPDStatus, playlistVersion: Int) {
-            status = newStatus
-            updatePlaylist()
-            if ((playlist != null) && playlist!!.isEmpty()) {
-                try {
-                    helper.pause()
-                } catch (_: CommunicationException) {
-                    reconnect {
-                        helper.pause()
-                    }
-                }
-            }
+        val playbackState = when {
+            !isPrepared || (error != null) -> Player.STATE_IDLE
+            items.isEmpty() -> if (hasQueue) Player.STATE_ENDED else Player.STATE_IDLE
+            !isConnected -> Player.STATE_BUFFERING
+            else -> Player.STATE_READY
         }
-
-        override fun trackChanged(newStatus: MPDStatus, track: Int) {
-            notifyListeners { it.onPlaybackStateChanged(ExoPlayer.STATE_BUFFERING) }
-
-            status = newStatus
-            preset = track
-
-            updatePlaylist()
-
-            coroutineScope.launch(Dispatchers.Main) {
-                delay(500.milliseconds)
-                notifyListeners { it.onPlaybackStateChanged(ExoPlayer.STATE_READY) }
-                notifyListeners { it.onIsPlayingChanged(isPlaying) }
-            }
-        }
-
-        override fun trackPositionChanged(newStatus: MPDStatus) {
-            status = newStatus
-            notifyListeners { it.onIsPlayingChanged(isPlaying) }
-        }
-
-        override fun volumeChanged(newStatus: MPDStatus, volume: Int) {
-            notifyListeners { it.onVolumeChanged(volume / 100F) }
-        }
+        val volume = status?.volume?.takeIf { it >= 0 }?.coerceAtMost(100)
+        return State.Builder()
+            .setAvailableCommands(commands(hasMixer = volume != null))
+            .setPlaylist(items)
+            .setCurrentMediaItemIndex(currentIndex)
+            .setPlayWhenReady(playWhenReady, playWhenReadyReason)
+            .setPlaybackState(playbackState)
+            .setPlayerError(if (playbackState == Player.STATE_IDLE) error else null)
+            .setVolume((volume ?: 100) / 100F)
+            .setContentPositionMs(status?.elapsedMs ?: 0L)
+            .build()
     }
 
-    init {
-        helper.statusChangedListener = statusChangedListener
-        coroutineScope.launch {
-            try {
-                helper.connect(credentials)
-            } catch (e: Exception) {
-                Log.e(TAG, "Initial MPD connect failed", e)
-            }
-        }
-    }
-
-    override fun addListener(listener: Player.Listener) {
-        listeners.addIfAbsent(listener)
-    }
-
-    override fun removeListener(listener: Player.Listener) {
-        listeners.remove(listener)
-    }
-
-    private inline fun notifyListeners(event: (Player.Listener) -> Unit) {
-        listeners.forEach(event)
-    }
-
-    override fun setMediaItems(mediaItems: MutableList<MediaItem>) {
-    }
-
-    override fun seekTo(positionMs: Long) {
-    }
-
-    override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
-        preset = mediaItemIndex
-
-        val mediaItem = currentMediaItem
-        if (mediaItem != MediaItem.EMPTY) {
-            coroutineScope.launch {
-                try {
-                    helper.playId(mediaItem.mediaId)
-                } catch (_: CommunicationException) {
-                    reconnect {
-                        helper.playId(mediaItem.mediaId)
-                    }
-                }
-            }
+    /** prepare() with a still unknown queue would show STATE_ENDED until MPD answered. */
+    override fun getPlaceholderState(suggestedPlaceholderState: State): State =
+        if ((suggestedPlaceholderState.playbackState == Player.STATE_ENDED) && !hasQueue) {
+            suggestedPlaceholderState.buildUpon().setPlaybackState(Player.STATE_IDLE).build()
+        } else {
+            suggestedPlaceholderState
         }
 
-        notifyListeners {
-            it.onMediaItemTransition(mediaItem, Player.MEDIA_ITEM_TRANSITION_REASON_SEEK)
+    override fun handlePrepare(): ListenableFuture<*> {
+        if (isPrepared && (error == null)) {
+            return Futures.immediateVoidFuture()
         }
-
-        notifyListeners {
-            it.onPositionDiscontinuity(
-                Player.PositionInfo(
-                    null,
-                    0,
-                    null,
-                    null,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                ),
-                Player.PositionInfo(
-                    null,
-                    0,
-                    null,
-                    null,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                ),
-                DISCONTINUITY_REASON_SEEK
-            )
-        }
-    }
-
-    override fun prepare() {
         isPrepared = true
-        coroutineScope.launch {
+        isConnected = false
+        error = null
+        val gen = generation.incrementAndGet()
+        startMonitor(gen)
+        val start = playWhenReady
+        val songId = if (start) takePendingSongId() else null
+        return runOnMpd(gen) { mpd ->
+            if (start) {
+                if (songId != null) mpd.playId(songId) else mpd.play()
+            }
+            mpd.fetch(includeQueue = true)
+        }
+    }
+
+    override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+        this.playWhenReady = playWhenReady
+        playWhenReadyReason = Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST
+        if (!isPrepared) {
+            // Remembered; prepare() starts MPD.
+            return Futures.immediateVoidFuture()
+        }
+        val songId = if (playWhenReady) takePendingSongId() else null
+        return runOnMpd(generation.get()) { mpd ->
+            when {
+                !playWhenReady -> mpd.pause()
+                songId != null -> mpd.playId(songId)
+                else -> mpd.play()
+            }
+            mpd.fetch(includeQueue = false)
+        }
+    }
+
+    override fun handleSeek(mediaItemIndex: Int, positionMs: Long, seekCommand: Int): ListenableFuture<*> {
+        // Unknown queue (before the first answer): MPD keeps its own current song.
+        val song = queue.getOrNull(mediaItemIndex) ?: return Futures.immediateVoidFuture()
+        if (!isPrepared || !playWhenReady) {
+            // "playid" would start playback: keep the choice for the next play.
+            pendingIndex = mediaItemIndex
+            return Futures.immediateVoidFuture()
+        }
+        pendingIndex = C.INDEX_UNSET
+        return runOnMpd(generation.get()) { mpd ->
+            mpd.playId(song.id)
+            mpd.fetch(includeQueue = false)
+        }
+    }
+
+    override fun handleStop(): ListenableFuture<*> {
+        // A session that ended in an error may have left MPD playing (fail() clears isPrepared),
+        // so it is stopped as well; otherwise the panel could not switch MPD off any more.
+        val wasPrepared = isPrepared || (error != null)
+        isPrepared = false
+        isConnected = false
+        error = null
+        val gen = generation.incrementAndGet()
+        stopMonitor()
+        // Best effort and silent: an unreachable server must not raise a player error while the
+        // radio page is being left.
+        return runOnMpd(gen, reportErrors = false) { mpd ->
             try {
-                playlist = helper.getPlaylist()
-                val currentStatus = helper.getStatus()
-                status = currentStatus
-                preset = currentStatus.songPos
-                when (currentStatus.state) {
-                    MPDState.PAUSED -> helper.play()
-                    MPDState.STOPPED -> {
-                        val mediaItem = currentMediaItem
-                        if (mediaItem != MediaItem.EMPTY) {
-                            helper.playId(mediaItem.mediaId)
+                if (wasPrepared) {
+                    mpd.stop()
+                }
+            } finally {
+                mpd.disconnect()
+            }
+            null
+        }
+    }
+
+    override fun handleSetVolume(volume: Float, volumeOperationType: Int): ListenableFuture<*> {
+        val value = (volume * 100).roundToInt()
+        // Volume also works while the radio is off (the voice command does that); a failure is
+        // only an error while the radio plays.
+        return runOnMpd(generation.get(), reportErrors = isPrepared) { mpd ->
+            mpd.setVolume(value)
+            mpd.fetch(includeQueue = false)
+        }
+    }
+
+    override fun handleRelease(): ListenableFuture<*> {
+        isReleasedModel = true
+        stopMonitor()
+        // No generation bump: operations already queued still run, in particular the stop() that
+        // comes before every release (RadioMediaServiceHandler.switchPlayer), so a player replaced
+        // while MPD plays does not leave that server playing. Their answers are dropped
+        // (isReleasedModel); then the connection is closed and the MPD thread ends.
+        scope.launch {
+            session.disconnect()
+        }.invokeOnCompletion {
+            scope.cancel()
+        }
+        return Futures.immediateVoidFuture()
+    }
+
+    /**
+     * Runs [operation] on the MPD thread. Its answer, or its error, is applied to the model on
+     * the main thread, unless a later prepare/stop made it obsolete; then the future completes
+     * and SimpleBasePlayer reads the new state.
+     */
+    private fun runOnMpd(
+        gen: Int,
+        reportErrors: Boolean = true,
+        operation: (MPDHelper) -> MpdSnapshot?
+    ): ListenableFuture<*> {
+        val future = SettableFuture.create<Unit>()
+        scope.launch {
+            var snapshot: MpdSnapshot? = null
+            var failure: Exception? = null
+            // Made obsolete while it waited (stop, error): do not send it, MPD would act on it.
+            if (gen == generation.get()) {
+                try {
+                    snapshot = operation(session)
+                } catch (e: Exception) {
+                    failure = e
+                }
+            }
+            // A failed command ends the session at once: commands queued behind it are skipped
+            // instead of each waiting for its own timeout.
+            val failedGen = if ((failure != null) && reportErrors &&
+                generation.compareAndSet(gen, gen + 1)) gen + 1 else NO_GENERATION
+            mainHandler.post {
+                if (!isReleasedModel) {
+                    when {
+                        failedGen == generation.get() -> fail(failure!!)
+                        gen != generation.get() -> Unit
+                        failure == null -> snapshot?.let { apply(it) }
+                        else -> Log.w(TAG, "MPD request failed: ${failure.message}")
+                    }
+                }
+                future.set(Unit)
+            }
+        }
+        return future
+    }
+
+    private fun apply(snapshot: MpdSnapshot) {
+        status = snapshot.status
+        currentSong = snapshot.currentSong
+        snapshot.queue?.let {
+            // SimpleBasePlayer rejects duplicate uids (IllegalArgumentException in getState()).
+            queue = it.distinctBy { song -> song.id }
+            hasQueue = true
+        }
+        if (pendingIndex >= queue.size) {
+            pendingIndex = C.INDEX_UNSET
+        }
+        if (isPrepared) {
+            isConnected = true
+            // MPD is the truth: a pause, stop or play by MPD itself or by another client.
+            val isPlaying = snapshot.status.state == MPDState.PLAYING
+            if (isPlaying != playWhenReady) {
+                playWhenReady = isPlaying
+                playWhenReadyReason = Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE
+            }
+        }
+        items = queue.map { song ->
+            val playing = currentSong?.takeIf { it.id == song.id }
+            MediaItemData.Builder(song.uid)
+                .setMediaItem(song.toMediaItem())
+                .setMediaMetadata(playing?.toPlayingMetadata())
+                .setIsDynamic(true)
+                .setIsSeekable(false)
+                .build()
+        }
+        Log.i(TAG, "MPD state=${snapshot.status.state} song=${snapshot.status.songPos} " +
+                "volume=${snapshot.status.volume} queue=${queue.size} prepared=$isPrepared")
+    }
+
+    private fun fail(e: Exception) {
+        Log.w(TAG, "MPD request failed", e)
+        isPrepared = false
+        isConnected = false
+        error = toPlaybackException(e)
+        generation.incrementAndGet()
+        stopMonitor()
+        scope.launch {
+            session.disconnect()
+        }
+    }
+
+    /**
+     * CONNECTION_FAILED makes the radio page open Settings (see RadioMediaServiceHandler); it is
+     * used for what Settings can fix: wrong host, port or password, server not reachable.
+     */
+    private fun toPlaybackException(e: Exception): PlaybackException = when (e) {
+        is MpdTimeoutException -> PlaybackException(
+            "MPD did not answer", e, PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+        )
+        is MpdConnectionException, is MpdSetupException -> PlaybackException(
+            "MPD connection failed", e, PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+        )
+        is MpdAckException -> PlaybackException(
+            "MPD refused a command", e, PlaybackException.ERROR_CODE_REMOTE_ERROR
+        )
+        else -> PlaybackException("MPD command failed", e, PlaybackException.ERROR_CODE_REMOTE_ERROR)
+    }
+
+    private fun takePendingSongId(): Int? {
+        val songId = queue.getOrNull(pendingIndex)?.id
+        pendingIndex = C.INDEX_UNSET
+        return songId
+    }
+
+    private fun startMonitor(gen: Int) {
+        stopMonitor()
+        monitor = MPDStatusMonitor(credentials, object : MPDStatusMonitor.Listener {
+            override fun onConnectionChanged(isConnected: Boolean) {
+                if (isConnected) {
+                    requestRefresh(gen, includeQueue = true)
+                } else {
+                    mainHandler.post {
+                        if (!isReleasedModel && (gen == generation.get()) && isPrepared) {
+                            this@MPDPlayer.isConnected = false
+                            invalidateState()
                         }
                     }
-                    else -> {}
-                }
-                helper.startMonitor()
-                coroutineScope.launch(Dispatchers.Main) {
-                    delay(500.milliseconds)
-                    notifyListeners { it.onIsPlayingChanged(isPlaying) }
-                    notifyListeners { it.onMediaMetadataChanged(mediaMetadata) }
-                    notifyListeners { it.onPlaybackStateChanged(ExoPlayer.STATE_READY) }
-                }
-            } catch (_: CommunicationException) {
-                reconnect {
-                    prepare()
-                }
-            } catch (e: ProtocolException) {
-                notifyListeners {
-                    it.onPlayerError(
-                        PlaybackException(
-                            "MPD protocol error",
-                            e,
-                            PlaybackException.ERROR_CODE_REMOTE_ERROR
-                        )
-                    )
                 }
             }
+
+            override fun onChanged(subsystems: Set<String>) {
+                requestRefresh(gen, includeQueue = "playlist" in subsystems)
+            }
+        }).also {
+            it.start()
         }
     }
 
-    private fun reconnect(callback: () -> Unit) {
-        try {
-            helper.reconnect()
-            callback()
-        } catch(_: Exception) {
-            notifyListeners {
-                it.onPlayerError(
-                    PlaybackException(
-                        "Connection Failed",
-                        null,
-                        PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
-                    )
-                )
-            }
+    private fun stopMonitor() {
+        monitor?.stop()
+        monitor = null
+    }
+
+    /** Monitor thread. Requests that arrive while one is queued are merged into it. */
+    private fun requestRefresh(gen: Int, includeQueue: Boolean) {
+        val flags = if (includeQueue) REFRESH_QUEUE else REFRESH_STATUS
+        if (refreshRequest.getAndUpdate { it or flags } != 0) {
+            return
         }
-    }
-
-    private fun updatePlaylist() {
-        playlist = helper.updatePlaylist()
-        notifyListeners { it.onMediaMetadataChanged(mediaMetadata) }
-    }
-
-    override fun setPlayWhenReady(playWhenReady: Boolean) {
-    }
-
-    override fun getMediaItemCount(): Int {
-        return if (playlist != null) playlist!!.size else 1
-    }
-
-    override fun isPlaying(): Boolean {
-        return status?.state == MPDState.PLAYING
-    }
-
-    override fun play() {
-        coroutineScope.launch {
-            try {
-                helper.play()
-            } catch (_: CommunicationException) {
-                reconnect {
-                    helper.play()
-                }
+        scope.launch {
+            val requested = refreshRequest.getAndSet(0)
+            if (gen != generation.get()) {
+                return@launch
             }
-            status?.state = MPDState.PLAYING
-            withContext(Dispatchers.Main) {
-                notifyListeners { it.onIsPlayingChanged(true) }
+            val snapshot = try {
+                session.fetch(includeQueue = (requested and REFRESH_QUEUE) == REFRESH_QUEUE)
+            } catch (e: Exception) {
+                // The monitor notices a server that is gone; a refresh error alone is no reason
+                // to stop the radio.
+                Log.w(TAG, "MPD refresh failed: ${e.message}")
+                null
             }
-        }
-    }
-
-    override fun pause() {
-        coroutineScope.launch {
-            try {
-                helper.pause()
-            } catch (_: CommunicationException) {
-                reconnect {
-                    helper.pause()
-                }
-            }
-            status?.state = MPDState.PAUSED
-            withContext(Dispatchers.Main) {
-                notifyListeners { it.onIsPlayingChanged(false) }
-            }
-        }
-    }
-
-    override fun seekToPreviousMediaItem() {
-        coroutineScope.launch {
-            if (!isPrepared) {
-                prepare()
-                delay(500.milliseconds)
-            }
-            try {
-                helper.previous()
-            } catch (_: CommunicationException) {
-                reconnect {
-                    helper.previous()
+            mainHandler.post {
+                if ((snapshot != null) && !isReleasedModel && (gen == generation.get()) && isPrepared) {
+                    apply(snapshot)
+                    invalidateState()
                 }
             }
         }
     }
 
-    override fun seekToNextMediaItem() {
-        coroutineScope.launch {
-            if (!isPrepared) {
-                prepare()
-                delay(500.milliseconds)
-            }
-            try {
-                helper.next()
-            } catch (_: CommunicationException) {
-                reconnect {
-                    helper.next()
-                }
-            }
-        }
-    }
-
-    override fun getMediaMetadata(): MediaMetadata {
-        return currentMediaItem.mediaMetadata
-    }
-
-    override fun getApplicationLooper(): Looper {
-        return Looper.getMainLooper()
-    }
-
-    override fun setMediaItems(mediaItems: MutableList<MediaItem>, resetPosition: Boolean) {
-    }
-
-    override fun setMediaItems(
-        mediaItems: MutableList<MediaItem>,
-        startIndex: Int,
-        startPositionMs: Long
-    ) {
-    }
-
-    override fun setMediaItem(mediaItem: MediaItem) {
-    }
-
-    override fun setMediaItem(mediaItem: MediaItem, startPositionMs: Long) {
-    }
-
-    override fun setMediaItem(mediaItem: MediaItem, resetPosition: Boolean) {
-    }
-
-    override fun addMediaItem(mediaItem: MediaItem) {
-    }
-
-    override fun addMediaItem(index: Int, mediaItem: MediaItem) {
-    }
-
-    override fun addMediaItems(mediaItems: MutableList<MediaItem>) {
-    }
-
-    override fun addMediaItems(index: Int, mediaItems: MutableList<MediaItem>) {
-    }
-
-    override fun moveMediaItem(currentIndex: Int, newIndex: Int) {
-    }
-
-    override fun moveMediaItems(fromIndex: Int, toIndex: Int, newIndex: Int) {
-    }
-
-    override fun replaceMediaItem(index: Int, mediaItem: MediaItem) {
-    }
-
-    override fun replaceMediaItems(
-        fromIndex: Int,
-        toIndex: Int,
-        mediaItems: MutableList<MediaItem>
-    ) {
-    }
-
-    override fun removeMediaItem(index: Int) {
-    }
-
-    override fun removeMediaItems(fromIndex: Int, toIndex: Int) {
-    }
-
-    override fun clearMediaItems() {
-    }
-
-    override fun isCommandAvailable(command: Int): Boolean {
-        return availableCommands.contains(command)
-    }
-
-    override fun canAdvertiseSession(): Boolean {
-        return false
-    }
-
-    override fun getAvailableCommands(): Player.Commands {
-        return availableCommands
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun prepare(mediaSource: MediaSource) {
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun prepare(mediaSource: MediaSource, resetPosition: Boolean, resetState: Boolean) {
-    }
-
-    override fun getPlaybackState(): Int {
-        return Player.STATE_IDLE
-    }
-
-    override fun getPlaybackSuppressionReason(): Int {
-        return Player.PLAYBACK_SUPPRESSION_REASON_NONE
-    }
-    override fun getPlayerError(): ExoPlaybackException? {
-        return null
-    }
-    override fun getPlayWhenReady(): Boolean {
-        return true
-    }
-
-    override fun setRepeatMode(repeatMode: Int) {
-    }
-
-    override fun getRepeatMode(): Int {
-        return Player.REPEAT_MODE_OFF
-    }
-
-    override fun setShuffleModeEnabled(shuffleModeEnabled: Boolean) {
-    }
-
-    override fun getShuffleModeEnabled(): Boolean {
-        return false
-    }
-
-    override fun isLoading(): Boolean {
-        return false
-    }
-
-    override fun seekToDefaultPosition() {
-    }
-
-    override fun seekToDefaultPosition(mediaItemIndex: Int) {
-    }
-    override fun getSeekBackIncrement(): Long {
-        return 0
-    }
-
-    override fun seekBack() {
-    }
-
-    override fun getSeekForwardIncrement(): Long {
-        return 0
-    }
-
-    override fun seekForward() {
-    }
-
-    override fun hasPreviousMediaItem(): Boolean {
-        return getPreviousMediaItemIndex() != C.INDEX_UNSET
-    }
-
-    override fun getMaxSeekToPreviousPosition(): Long {
-        return 0
-    }
-
-    override fun seekToPrevious() {
-    }
-
-    override fun hasNextMediaItem(): Boolean {
-        return getNextMediaItemIndex() != C.INDEX_UNSET
-    }
-
-    override fun seekToNext() {
-    }
-
-    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
-    }
-
-    override fun setPlaybackSpeed(speed: Float) {
-    }
-
-    override fun getPlaybackParameters(): PlaybackParameters {
-        return PlaybackParameters.DEFAULT
-    }
-
-    override fun stop() {
-        coroutineScope.launch {
-            try {
-                helper.stop()
-            } catch (_: CommunicationException) {
-                reconnect {
-                    helper.stop()
-                }
-            }
-            helper.stopMonitor()
-            helper.disconnect()
-        }
-    }
-
-    override fun release() {
-        try {
-            helper.stopMonitor()
-            helper.disconnect()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error disconnecting MPD helper on release", e)
-        }
-        listeners.clear()
-        coroutineScope.cancel()
-        released = true
-    }
-
-    override fun getCurrentTracks(): Tracks {
-        return Tracks.EMPTY
-    }
-
-    override fun getTrackSelectionParameters(): TrackSelectionParameters {
-        return TrackSelectionParameters.DEFAULT
-    }
-
-    override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
-    }
-
-    override fun getPlaylistMetadata(): MediaMetadata {
-        return MediaMetadata.EMPTY
-    }
-
-    override fun setPlaylistMetadata(mediaMetadata: MediaMetadata) {
-    }
-
-    override fun getCurrentManifest(): Any? {
-        return null
-    }
-
-    override fun getCurrentTimeline(): Timeline {
-        return Timeline.EMPTY
-    }
-
-    override fun getCurrentPeriodIndex(): Int {
-        return 0
-    }
-
-    @Deprecated("Deprecated in Java", ReplaceWith("0"))
-    override fun getCurrentWindowIndex(): Int {
-        return 0
-    }
-
-    override fun getCurrentMediaItemIndex(): Int {
-        return preset
-    }
-
-    override fun getCurrentMediaItem(): MediaItem {
-        val currentPlaylist = playlist
-        if (currentPlaylist.isNullOrEmpty()) {
-            return MediaItem.EMPTY
-        }
-        if (preset > currentPlaylist.size - 1) {
-            preset = currentPlaylist.size - 1
-        }
-        if (preset < 0) {
-            preset = 0
-        }
-        return currentPlaylist.getOrNull(preset) ?: MediaItem.EMPTY
-    }
-
-    @Deprecated("Deprecated in Java", ReplaceWith("0"))
-    override fun getNextWindowIndex(): Int {
-        return 0
-    }
-
-    override fun getNextMediaItemIndex(): Int {
-        val size = playlist?.size ?: 0
-        return if ((status == null) || (size == 0) || (preset >= size - 1))
-            C.INDEX_UNSET else preset + 1
-    }
-
-    @Deprecated("Deprecated in Java", ReplaceWith("0"))
-    override fun getPreviousWindowIndex(): Int {
-        return 0
-    }
-
-    override fun getPreviousMediaItemIndex(): Int {
-        val size = playlist?.size ?: 0
-        return if ((status == null) || (size == 0) || (preset <= 0))
-            C.INDEX_UNSET else preset - 1
-    }
-
-    override fun getMediaItemAt(index: Int): MediaItem {
-        return playlist?.getOrNull(index) ?: MediaItem.EMPTY
-    }
-
-    override fun getDuration(): Long {
-        return status?.totalTime ?: 0
-    }
-
-    override fun getCurrentPosition(): Long {
-        return (status?.elapsedTime ?: 0) * 1000
-    }
-
-    override fun setVolume(audioVolume: Float) {
-        coroutineScope.launch {
-            try {
-                helper.setVolume((audioVolume * 100).toInt())
-            } catch (_: CommunicationException) {
-                reconnect {
-                    helper.setVolume((audioVolume * 100).toInt())
-                }
-            }
-        }
-    }
-
-    override fun getVolume(): Float {
-        return status?.let { it.volume.toFloat() / 100 } ?: -1F
-    }
-
-    override fun mute() {
-        TODO("Not yet implemented")
-    }
-
-    override fun unmute() {
-        TODO("Not yet implemented")
-    }
-
-    override fun getBufferedPosition(): Long {
-        return 0
-    }
-
-    override fun getBufferedPercentage(): Int {
-        return 0
-    }
-
-    override fun getTotalBufferedDuration(): Long {
-        return 0
-    }
-
-    @Deprecated("Deprecated in Java", ReplaceWith("false"))
-    override fun isCurrentWindowDynamic(): Boolean {
-        return false
-    }
-
-    override fun isCurrentMediaItemDynamic(): Boolean {
-        return false
-    }
-
-    @Deprecated("Deprecated in Java", ReplaceWith("false"))
-    override fun isCurrentWindowLive(): Boolean {
-        return false
-    }
-
-    override fun isCurrentMediaItemLive(): Boolean {
-        return false
-    }
-
-    override fun getCurrentLiveOffset(): Long {
-        return 0
-    }
-
-    @Deprecated("Deprecated in Java", ReplaceWith("false"))
-    override fun isCurrentWindowSeekable(): Boolean {
-        return false
-    }
-
-    override fun isCurrentMediaItemSeekable(): Boolean {
-        return false
-    }
-
-    override fun isPlayingAd(): Boolean {
-        return false
-    }
-
-    override fun getCurrentAdGroupIndex(): Int {
-        return 0
-    }
-
-    override fun getCurrentAdIndexInAdGroup(): Int {
-        return 0
-    }
-
-    override fun getContentDuration(): Long {
-        return 0
-    }
-
-    override fun getContentPosition(): Long {
-        return 0
-    }
-
-    override fun getContentBufferedPosition(): Long {
-        return 0
-    }
-
-    override fun getAudioAttributes(): AudioAttributes {
-        return AudioAttributes.DEFAULT
-    }
-
-    override fun clearVideoSurface() {
-    }
-
-    override fun clearVideoSurface(surface: Surface?) {
-    }
-
-    override fun setVideoSurface(surface: Surface?) {
-    }
-
-    override fun setVideoSurfaceHolder(surfaceHolder: SurfaceHolder?) {
-    }
-
-    override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?) {
-    }
-
-    override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
-    }
-
-    override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-    }
-
-    override fun setVideoTextureView(textureView: TextureView?) {
-    }
-
-    override fun clearVideoTextureView(textureView: TextureView?) {
-    }
-
-    override fun getVideoSize(): VideoSize {
-        return VideoSize.UNKNOWN
-    }
-
-    override fun getSurfaceSize(): Size {
-        return Size.UNKNOWN
-    }
-
-    override fun getCurrentCues(): CueGroup {
-        return CueGroup.EMPTY_TIME_ZERO
-    }
-
-    override fun getDeviceInfo(): DeviceInfo {
-        return DeviceInfo.Builder(DeviceInfo.PLAYBACK_TYPE_LOCAL).build()
-    }
-
-    override fun getDeviceVolume(): Int {
-        return 0
-    }
-
-    override fun isDeviceMuted(): Boolean {
-        return false
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun setDeviceVolume(volume: Int) {
-    }
-
-    override fun setDeviceVolume(volume: Int, flags: Int) {
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun increaseDeviceVolume() {
-    }
-
-    override fun increaseDeviceVolume(flags: Int) {
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun decreaseDeviceVolume() {
-    }
-
-    override fun decreaseDeviceVolume(flags: Int) {
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun setDeviceMuted(muted: Boolean) {
-    }
-
-    override fun setDeviceMuted(muted: Boolean, flags: Int) {
-    }
-
-    override fun addAudioOffloadListener(listener: ExoPlayer.AudioOffloadListener) {
-    }
-
-    override fun removeAudioOffloadListener(listener: ExoPlayer.AudioOffloadListener) {
-    }
-
-    override fun getAnalyticsCollector(): AnalyticsCollector {
-        TODO("Not yet implemented")
-    }
-
-    override fun addAnalyticsListener(listener: AnalyticsListener) {
-    }
-
-    override fun removeAnalyticsListener(listener: AnalyticsListener) {
-    }
-
-    override fun getRendererCount(): Int {
-        return 0
-    }
-
-    override fun getRendererType(index: Int): Int {
-        return 0
-    }
-
-    override fun getRenderer(index: Int): Renderer {
-        TODO("Not yet implemented")
-    }
-
-    override fun getSecondaryRenderer(index: Int): Renderer? {
-        return null
-    }
-
-    override fun getTrackSelector(): TrackSelector? {
-        return null
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun getCurrentTrackGroups(): TrackGroupArray {
-        TODO("Not yet implemented")
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun getCurrentTrackSelections(): TrackSelectionArray {
-        TODO("Not yet implemented")
-    }
-
-    override fun getPlaybackLooper(): Looper {
-        return Looper.getMainLooper()
-    }
-
-    override fun getClock(): Clock {
-        return Clock.DEFAULT
-    }
-
-    override fun setMediaSources(mediaSources: MutableList<MediaSource>) {
-    }
-
-    override fun setMediaSources(mediaSources: MutableList<MediaSource>, resetPosition: Boolean) {
-    }
-
-    override fun setMediaSources(
-        mediaSources: MutableList<MediaSource>,
-        startMediaItemIndex: Int,
-        startPositionMs: Long
-    ) {
-    }
-
-    override fun setMediaSource(mediaSource: MediaSource) {
-    }
-
-    override fun setMediaSource(mediaSource: MediaSource, startPositionMs: Long) {
-    }
-
-    override fun setMediaSource(mediaSource: MediaSource, resetPosition: Boolean) {
-    }
-
-    override fun addMediaSource(mediaSource: MediaSource) {
-    }
-
-    override fun addMediaSource(index: Int, mediaSource: MediaSource) {
-    }
-
-    override fun addMediaSources(mediaSources: MutableList<MediaSource>) {
-    }
-
-    override fun addMediaSources(index: Int, mediaSources: MutableList<MediaSource>) {
-    }
-
-    override fun setShuffleOrder(shuffleOrder: ShuffleOrder) {
-    }
-
-    override fun getShuffleOrder(): ShuffleOrder {
-        TODO("Provide the return value")
-    }
-
-    override fun setPreloadConfiguration(preloadConfiguration: ExoPlayer.PreloadConfiguration) {
-    }
-
-    override fun getPreloadConfiguration(): ExoPlayer.PreloadConfiguration {
-        TODO("Provide the return value")
-    }
-
-    override fun setAudioAttributes(audioAttributes: AudioAttributes, handleAudioFocus: Boolean) {
-    }
-
-    override fun setAudioSessionId(audioSessionId: Int) {
-    }
-
-    override fun getAudioSessionId(): Int {
-        return 0
-    }
-
-    override fun setAuxEffectInfo(auxEffectInfo: AuxEffectInfo) {
-    }
-
-    override fun clearAuxEffectInfo() {
-    }
-
-    override fun setPreferredAudioDevice(audioDeviceInfo: AudioDeviceInfo?) {
-    }
-
-    override fun setVirtualDeviceId(virtualDeviceId: Int) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setSkipSilenceEnabled(skipSilenceEnabled: Boolean) {
-    }
-
-    override fun getSkipSilenceEnabled(): Boolean {
-        return false
-    }
-
-    override fun setScrubbingModeEnabled(scrubbingModeEnabled: Boolean) {
-        TODO("Not yet implemented")
-    }
-
-    override fun isScrubbingModeEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun setScrubbingModeParameters(scrubbingModeParameters: ScrubbingModeParameters) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getScrubbingModeParameters(): ScrubbingModeParameters {
-        TODO("Not yet implemented")
-    }
-
-    override fun setVideoEffects(videoEffects: MutableList<Effect>) {
-    }
-
-    override fun setVideoScalingMode(videoScalingMode: Int) {
-    }
-
-    override fun getVideoScalingMode(): Int {
-        return 0
-    }
-
-    override fun setVideoChangeFrameRateStrategy(videoChangeFrameRateStrategy: Int) {
-    }
-
-    override fun getVideoChangeFrameRateStrategy(): Int {
-        return 0
-    }
-
-    override fun setVideoFrameMetadataListener(listener: VideoFrameMetadataListener) {
-    }
-
-    override fun clearVideoFrameMetadataListener(listener: VideoFrameMetadataListener) {
-    }
-
-    override fun setCameraMotionListener(listener: CameraMotionListener) {
-    }
-
-    override fun clearCameraMotionListener(listener: CameraMotionListener) {
-    }
-
-    override fun createMessage(target: PlayerMessage.Target): PlayerMessage {
-        TODO("Not yet implemented")
-    }
-
-    override fun setSeekParameters(seekParameters: SeekParameters?) {
-    }
-
-    override fun getSeekParameters(): SeekParameters {
-        return SeekParameters.DEFAULT
-    }
-
-    override fun setSeekBackIncrementMs(seekBackIncrementMs: Long) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setSeekForwardIncrementMs(seekForwardIncrementMs: Long) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setMaxSeekToPreviousPositionMs(maxSeekToPreviousPositionMs: Long) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setForegroundMode(foregroundMode: Boolean) {
-    }
-
-    override fun setPauseAtEndOfMediaItems(pauseAtEndOfMediaItems: Boolean) {
-    }
-
-    override fun getPauseAtEndOfMediaItems(): Boolean {
-        return false
-    }
-
-    override fun getAudioFormat(): Format? {
-        return null
-    }
-
-    override fun getVideoFormat(): Format? {
-        return null
-    }
-
-    override fun getAudioDecoderCounters(): DecoderCounters? {
-        return null
-    }
-
-    override fun getVideoDecoderCounters(): DecoderCounters? {
-        return null
-    }
-
-    override fun setHandleAudioBecomingNoisy(handleAudioBecomingNoisy: Boolean) {
-    }
-
-    override fun setWakeMode(wakeMode: Int) {
-    }
-
-    override fun setPriority(priority: Int) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setPriorityTaskManager(priorityTaskManager: PriorityTaskManager?) {
-    }
-
-    override fun isSleepingForOffload(): Boolean {
-        return false
-    }
-
-    override fun isTunnelingEnabled(): Boolean {
-        return false
-    }
-
-    override fun isReleased(): Boolean {
-        return released
-    }
-
-    override fun setImageOutput(imageOutput: ImageOutput?) {
-    }
-
-    override fun setAudioCodecParameters(codecParameters: CodecParameters) {
-        TODO("Not yet implemented")
-    }
-
-    override fun addAudioCodecParametersChangeListener(
-        listener: CodecParametersChangeListener,
-        keys: List<String>
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override fun removeAudioCodecParametersChangeListener(listener: CodecParametersChangeListener) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setVideoCodecParameters(codecParameters: CodecParameters) {
-        TODO("Not yet implemented")
-    }
-
-    override fun addVideoCodecParametersChangeListener(
-        listener: CodecParametersChangeListener,
-        keys: List<String>
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override fun removeVideoCodecParametersChangeListener(listener: CodecParametersChangeListener) {
-        TODO("Not yet implemented")
-    }
+    private fun commands(hasMixer: Boolean): Player.Commands = Player.Commands.Builder()
+        .addAll(
+            Player.COMMAND_PLAY_PAUSE,
+            Player.COMMAND_PREPARE,
+            Player.COMMAND_STOP,
+            Player.COMMAND_RELEASE,
+            Player.COMMAND_SEEK_TO_DEFAULT_POSITION,
+            Player.COMMAND_SEEK_TO_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_NEXT,
+            Player.COMMAND_SEEK_TO_PREVIOUS,
+            Player.COMMAND_GET_CURRENT_MEDIA_ITEM,
+            Player.COMMAND_GET_TIMELINE,
+            Player.COMMAND_GET_METADATA
+        )
+        // Without a mixer MPD reports no volume; the radio page then hides the volume value.
+        .addIf(Player.COMMAND_GET_VOLUME, hasMixer)
+        .addIf(Player.COMMAND_SET_VOLUME, hasMixer)
+        .build()
 }
+
+private const val REFRESH_STATUS = 1
+private const val REFRESH_QUEUE = 3

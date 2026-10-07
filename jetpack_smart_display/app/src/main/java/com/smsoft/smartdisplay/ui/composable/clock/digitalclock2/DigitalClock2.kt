@@ -1,47 +1,44 @@
 package com.smsoft.smartdisplay.ui.composable.clock.digitalclock2
 
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
-import com.smsoft.smartdisplay.utils.getColor
+import com.smsoft.smartdisplay.ui.screen.clock.displayHour
 import com.smsoft.smartdisplay.utils.getStateFromFlow
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun DigitalClock2(
-    modifier: Modifier = Modifier
-        .fillMaxSize()
-        .wrapContentSize(Alignment.Center),
+    modifier: Modifier = Modifier,
     viewModel: ClockViewModel,
     scale: Float,
     primaryColor: Color,
     hour: Int,
     minute: Int,
-    second: Int
+    second: Int,
+    is24Hour: Boolean
 ) {
     val isShowSeconds = getStateFromFlow(
         flow = viewModel.isShowSecondsDC2,
         defaultValue = DEFAULT_SHOW_SECONDS_DC2
     ) as Boolean
 
-    val fontSize = getStateFromFlow(
+    val fontSize = scale * getStateFromFlow(
         flow = viewModel.fontSizeDC2,
         defaultValue = DEFAULT_FONT_SIZE_DC2
     ) as Float
 
-    val shadowRadius = scale * getStateFromFlow(
+    val shadowRadius = getStateFromFlow(
         flow = viewModel.shadowRadiusDC2,
         defaultValue = DEFAULT_SHADOW_RADIUS_DC2
     ) as Float
@@ -51,166 +48,120 @@ fun DigitalClock2(
         defaultValue = DEFAULT_ANIMATION_DURATION_DC2
     ) as Float
 
-    val configuration = LocalConfiguration.current
-    val width = with(LocalDensity.current) {
-        configuration.screenWidthDp.dp.toPx()
-    }.toInt()
-    val height = with(LocalDensity.current) {
-        configuration.screenHeightDp.dp.toPx()
-    }.toInt()
-
-    var scaleVal by remember { mutableStateOf(1F) }
-    if (scaleVal != scale) {
-        scaleVal = scale
-        nums.clear()
+    val shownHour = displayHour(hour, is24Hour)
+    // 12-hour format has no leading zero: the tens digit stays dark (all segments unlit) below
+    // 10. The number of digits stays the same, so the layout does not move.
+    val hourTens = if (!is24Hour && (shownHour < 10)) BLANK_DIGIT else shownHour / 10
+    val values = if (isShowSeconds) {
+        intArrayOf(hourTens, shownHour % 10, minute / 10, minute % 10, second / 10, second % 10)
+    } else {
+        intArrayOf(hourTens, shownHour % 10, minute / 10, minute % 10)
     }
 
-    var isShowSecondsVal by remember { mutableStateOf(isShowSeconds) }
-    if (isShowSecondsVal != isShowSeconds) {
-        isShowSecondsVal = isShowSeconds
-        nums.clear()
+    // The digits belong to this composition (no process-wide cache), start on the current time
+    // and are laid out from the Canvas size on every draw, so rotation, a size change or a new
+    // setting always takes effect.
+    val digits = remember(isShowSeconds) {
+        List(values.size) {
+            Number(values[it])
+        }
+    }
+    digits.forEachIndexed { index, digit ->
+        val value = values[index]
+        LaunchedEffect(digit, value, animationDuration) {
+            digit.morphTo(
+                value = value,
+                durationMillis = animationDuration.toInt()
+            )
+        }
     }
 
-    initClock(
-        color = primaryColor,
-        width = (width * scale).toInt(),
-        fontSize = fontSize,
-        height = height,
-        isShowSeconds = isShowSeconds,
-        shadowRadius = shadowRadius,
-        animationDuration = animationDuration
-    )
-
-    setTime(
-        isShowSeconds = isShowSeconds,
-        hour = hour,
-        minute = minute,
-        second = second
-    )
     OnDraw(
-        modifier = Modifier,
-        second = second
+        modifier = modifier,
+        digits = digits,
+        color = primaryColor,
+        fontSize = fontSize,
+        shadowRadius = shadowRadius
     )
 }
 
-@Suppress("UNUSED_EXPRESSION")
+/**
+ * Draws the digits centred in the page, with a wider gap between HH, MM and SS. At font size 1
+ * the clock uses [PAGE_FILL] of the page; tall pages stack the groups when that gives bigger
+ * digits.
+ */
 @Composable
 fun OnDraw(
     modifier: Modifier,
-    second: Int
+    digits: List<Number>,
+    color: Color,
+    fontSize: Float,
+    shadowRadius: Float
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
+    val paint = remember {
+        Paint().apply {
+            isAntiAlias = true
+        }
+    }
+    val argb = color.toArgb()
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
     ) {
-        Canvas(
-            modifier = modifier
-                .fillMaxSize(),
-        ) {
-            second
-            for (i in nums.indices) {
-                nums[i].onDraw(this)
+        // Sizes in digit widths: a digit is 1 wide and 2 tall
+        val groups = digits.size / 2
+        val groupWidth = 2F + DIGIT_GAP
+        val rowWidth = groups * groupWidth + (groups - 1) * GROUP_GAP
+        val stackHeight = groups * 2F + (groups - 1) * ROW_GAP
+        val maxWidth = size.width * PAGE_FILL
+        val maxHeight = size.height * PAGE_FILL
+        val rowLength = min(maxWidth / rowWidth, maxHeight / 2F)
+        val stackLength = min(maxWidth / groupWidth, maxHeight / stackHeight)
+        val isStacked = stackLength > rowLength
+        val length = max(rowLength, stackLength) * fontSize
+        val left = (size.width - length * (if (isStacked) groupWidth else rowWidth)) / 2F
+        val top = (size.height - length * (if (isStacked) stackHeight else 2F)) / 2F
+
+        paint.color = argb
+        paint.strokeWidth = length / 25F
+        // Glow in the digit colour, set per segment by Number.draw; the setting is in tenths of
+        // the segment width
+        val glow = paint.strokeWidth * shadowRadius / 10F
+
+        drawIntoCanvas {
+            val canvas = it.nativeCanvas
+            digits.forEachIndexed { index, digit ->
+                val group = index / 2
+                val inGroup = (index % 2) * (1F + DIGIT_GAP) * length
+                val x = if (isStacked) {
+                    left + inGroup
+                } else {
+                    left + group * (groupWidth + GROUP_GAP) * length + inGroup
+                }
+                val y = if (isStacked) top + group * (2F + ROW_GAP) * length else top
+                digit.draw(
+                    canvas = canvas,
+                    paint = paint,
+                    x = x,
+                    y = y,
+                    length = length,
+                    argb = argb,
+                    glow = glow
+                )
             }
         }
     }
 }
 
-private var nums = ArrayList<Number>()
-val numbers = arrayOf(
-    intArrayOf(1, 1, 1, 0, 1, 1, 1),
-    intArrayOf(0, 0, 1, 0, 0, 1, 0),
-    intArrayOf(1, 0, 1, 1, 1, 0, 1),
-    intArrayOf(1, 0, 1, 1, 0, 1, 1),
-    intArrayOf(0, 1, 1, 1, 0, 1, 0),
-    intArrayOf(1, 1, 0, 1, 0, 1, 1),
-    intArrayOf(1, 1, 0, 1, 1, 1, 1),
-    intArrayOf(1, 0, 1, 0, 0, 1, 0),
-    intArrayOf(1, 1, 1, 1, 1, 1, 1),
-    intArrayOf(1, 1, 1, 1, 0, 1, 1)
-)
+// Gaps in digit widths: between the two digits of a group, between HH, MM and SS in a row,
+// and between stacked groups
+private const val DIGIT_GAP = 0.2F
+private const val GROUP_GAP = 0.7F
+private const val ROW_GAP = 0.5F
 
-private fun setTime(
-    isShowSeconds: Boolean,
-    hour: Int,
-    minute: Int,
-    second: Int
-) {
-    updateNumber(
-        index = 0,
-        value = hour / 10
-    )
-    updateNumber(
-        index = 1,
-        value = hour % 10
-    )
-    updateNumber(
-        index = 2,
-        value = minute / 10
-    )
-    updateNumber(
-        index = 3,
-        value = minute % 10
-    )
-    if (isShowSeconds) {
-        updateNumber(
-            index = 4,
-            value = second / 10
-        )
-        updateNumber(
-            index = 5,
-            value = second % 10
-        )
-    }
-}
-
-private fun initClock(
-    color: Color,
-    width: Int,
-    height: Int,
-    fontSize: Float,
-    isShowSeconds: Boolean,
-    shadowRadius: Float,
-    animationDuration: Float
-) {
-    val initialColor = getColor(color)
-    if (nums.isEmpty()) {
-        val length = (if (isShowSeconds) {
-            width / 9
-        } else {
-            width / 6
-        } * fontSize).toInt() // Digits height
-        val textMargin = width / 35 //total 7 margin 0.2 width
-        val marginTop = height / 2 - length
-        var x = width / 10
-        val digits = if (isShowSeconds) 5 else 3
-        for (i in 0..digits) {
-            nums.add(
-                Number(
-                    startX = x,
-                    startY = marginTop,
-                    lineLength = length,
-                    initialColor = initialColor,
-                    shadowRadius = shadowRadius.toInt(),
-                    animationDuration = animationDuration.toInt()
-                )
-            )
-            x += length + textMargin
-        }
-    }
-}
-
-private fun updateNumber(
-    index: Int,
-    value: Int
-) {
-    if (nums.isEmpty()) {
-        return
-    }
-    nums[index].updateNumber(
-        value = value
-    )
-}
+// Share of the page width and height the clock may use at font size 1; the rest keeps the
+// strokes and the glow off the page edges.
+private const val PAGE_FILL = 0.9F
 
 const val DEFAULT_SHOW_SECONDS_DC2 = false
 const val DEFAULT_FONT_SIZE_DC2 = 1F

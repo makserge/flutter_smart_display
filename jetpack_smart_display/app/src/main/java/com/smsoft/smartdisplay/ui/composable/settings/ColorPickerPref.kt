@@ -34,8 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import com.godaddy.android.colorpicker.toColorInt
-import com.jamal.composeprefs.ui.LocalPrefsDataStore
-import com.jamal.composeprefs.ui.prefs.TextPref
+import com.smsoft.smartdisplay.ui.common.prefs.LocalPrefsDataStore
+import com.smsoft.smartdisplay.ui.common.prefs.TextPref
 import com.smsoft.smartdisplay.R
 import kotlinx.coroutines.launch
 

@@ -9,10 +9,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.smsoft.smartdisplay.utils.getColor
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 
 @Composable
@@ -25,82 +28,115 @@ fun NightdreamAnalogClock(
     primaryColor: Color,
     secondaryColor: Color
 ) {
-    val config by remember { mutableStateOf(AnalogClockConfig()) }
-    LocalConfig = staticCompositionLocalOf { config }
+    val config = remember { AnalogClockConfig() }
 
-    LaunchedEffect(Unit) {
-        initCounter()
-    }
     Init(
         viewModel = viewModel,
+        config = config,
         primaryColor = primaryColor,
         secondaryColor = secondaryColor
     )
-    CompositionLocalProvider(
-        LocalConfig provides config
-    ) {
-        OnDraw(
-            modifier = modifier,
-            hour = hour,
-            minute = minute,
-            second = second
-        )
-    }
+    OnDraw(
+        modifier = modifier,
+        config = config,
+        // The config is changed in place, so its values (and the colours) form the redraw key
+        settingsKey = 31 * (31 * config.hashCode() + primaryColor.hashCode()) + secondaryColor.hashCode(),
+        hour = hour,
+        minute = minute,
+        // Without a second hand the dial only has to be redrawn once a minute
+        second = if (config.showSecondHand) second else 0
+    )
 }
 
 @Composable
-fun OnDraw(
+private fun OnDraw(
     modifier: Modifier,
+    config: AnalogClockConfig,
+    settingsKey: Int,
     hour: Int,
     minute: Int,
     second: Int
 ) {
-    val config = LocalConfig.current
+    // A new key gives a new Canvas, so changed settings are drawn even while the time is unchanged
+    key(settingsKey) {
+        Canvas(
+            modifier = modifier
+                .fillMaxSize(),
+        ) {
+            drawIntoCanvas {
+                val canvas = it.nativeCanvas
 
-    Canvas(
-        modifier = modifier
-            .fillMaxSize(),
-    ) {
-        drawIntoCanvas {
-            val canvas = it.nativeCanvas
+                val centerX = size.width / 2F
+                val centerY = size.height / 2F
+                // The shorter side decides, so the dial also fits in portrait. The margin is in dp;
+                // the radius is chosen so that the outermost hand, tick or digit ends at the margin.
+                val maxRadius = (min(size.width, size.height) / 2F - DIAL_MARGIN.toPx()).coerceAtLeast(1F)
+                val radius = (maxRadius / dialExtent(maxRadius.toInt(), config)).toInt()
+                paint.isAntiAlias = true
+                paint.color = android.graphics.Color.WHITE
 
-            centerX = size.width / 2F
-            centerY = size.height / 2F
-            radius = size.height.toInt() / 2 - 20
-            paint.isAntiAlias = true
-            paint.color = android.graphics.Color.WHITE
-
-            val hourAngle = (hour.toDouble() / 6.0 * Math.PI - Math.PI / 2.0 + minute.toDouble() / 60.0 * Math.PI / 6.0)
-            val minAngle = minute.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
-            val secAngle = second.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
-            paint.alpha = 255
-            paint.color = android.graphics.Color.WHITE
-            drawTicks(
-                canvas = canvas,
-                centerX = centerX,
-                centerY = centerY,
-                radius = radius,
-                config = config
-            )
-            drawHourDigits(
-                canvas = canvas,
-                centerX = centerX,
-                centerY = centerY,
-                radius = radius,
-                config = config
-            )
-            drawHands(
-                canvas = canvas,
-                centerX = centerX,
-                centerY = centerY,
-                radius = radius,
-                hourAngle = hourAngle,
-                minAngle = minAngle,
-                secAngle = secAngle,
-                config = config
-            )
+                val hourAngle = (hour.toDouble() / 6.0 * Math.PI - Math.PI / 2.0 + minute.toDouble() / 60.0 * Math.PI / 6.0)
+                val minAngle = minute.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
+                val secAngle = second.toDouble() / 30.0 * Math.PI - Math.PI / 2.0
+                paint.alpha = 255
+                paint.color = android.graphics.Color.WHITE
+                drawTicks(
+                    canvas = canvas,
+                    centerX = centerX,
+                    centerY = centerY,
+                    radius = radius,
+                    config = config
+                )
+                drawHourDigits(
+                    canvas = canvas,
+                    centerX = centerX,
+                    centerY = centerY,
+                    radius = radius,
+                    config = config
+                )
+                drawHands(
+                    canvas = canvas,
+                    centerX = centerX,
+                    centerY = centerY,
+                    radius = radius,
+                    hourAngle = hourAngle,
+                    minAngle = minAngle,
+                    secAngle = secAngle,
+                    outlineWidth = HUB_OUTLINE_WIDTH.toPx(),
+                    config = config
+                )
+            }
         }
     }
+}
+
+/**
+ * How far the hands, ticks and digits reach from the centre, in units of the radius.
+ */
+private fun dialExtent(
+    radius: Int,
+    config: AnalogClockConfig
+): Float {
+    // Nothing is drawn out to the full radius, so start from the hands instead of 1: with the
+    // default ticks ending at 0.942 the dial stayed about 6 % smaller than the page allows. Never
+    // below MIN_DIAL_EXTENT, or with ticks and digits off the hand length setting would zoom
+    // the whole dial instead of changing the hands.
+    var extent = maxOf(config.handLengthMinutes, config.handLengthHours, MIN_DIAL_EXTENT)
+    if (config.tickStyleMinutes != AnalogClockConfig.TickStyle.NONE) {
+        extent = max(extent, config.tickStartMinutes + config.tickLengthMinutes)
+    }
+    if (config.tickStyleHours != AnalogClockConfig.TickStyle.NONE) {
+        // The triangle at 12 sticks out a little further than the circles
+        extent = max(extent, config.tickStartHours + config.tickLengthHours * 1.12F)
+    }
+    val digitsExtent = drawHourDigits(
+        canvas = null,
+        centerX = 0F,
+        centerY = 0F,
+        radius = radius,
+        config = config
+    )
+    return max(extent, digitsExtent / radius)
 }
 
 private fun drawTicks(
@@ -161,16 +197,20 @@ private fun drawTicks(
     }
 }
 
+/**
+ * Draws the hour digits, or only measures them when [canvas] is null.
+ * Returns how far the digits reach from the centre, in px.
+ */
 private fun drawHourDigits(
-    canvas: Canvas,
+    canvas: Canvas?,
     centerX: Float,
     centerY: Float,
     radius: Int,
     config: AnalogClockConfig
-) {
-    if (config.digitStyle === AnalogClockConfig.DigitStyle.NONE) return
+): Float {
+    if (config.digitStyle === AnalogClockConfig.DigitStyle.NONE) return 0F
 
-    paint.typeface = typeface
+    paint.typeface = regularTypeface
     val fontSizeBig = config.fontSize * radius
     val fontSizeSmall = 0.75F * config.fontSize * radius
     val textSizeBig = fontSizeForWidth(
@@ -188,9 +228,13 @@ private fun drawHourDigits(
     val defaultDigitPosition = config.digitPosition * radius
     val maxDigitPosition = minTickStart * radius
     val minDigitPosition = maxTickStart * radius
+    val bounds = Rect()
+    var extent = 0F
     for (digitCounter in 0..11) {
         val currentHour = (digitCounter + 2) % 12 + 1
         paint.apply {
+            // The global typefaces are named apart from Paint.typeface: inside apply a plain
+            // "typeface = typeface" assigned the paint's own (often bold) typeface back to itself
             if (config.highlightQuarterOfHour && currentHour % 3 == 0) {
                 // 3,6,9,12
                 colorFilter = customColorFilter
@@ -199,7 +243,7 @@ private fun drawHourDigits(
             } else {
                 colorFilter = secondaryColorFilter
                 textSize = textSizeSmall
-                typeface = typeface
+                typeface = regularTypeface
             }
         }
         val currentHourText = getHourTextOfDigitStyle(
@@ -207,7 +251,6 @@ private fun drawHourDigits(
             digitStyle = config.digitStyle
         )
 
-        val bounds = Rect()
         paint.getTextBounds(
             currentHourText,
             0,
@@ -236,6 +279,9 @@ private fun drawHourDigits(
                 correctedAbsoluteDigitPosition = minDigitPosition + distanceDigitCenterToBorder
             }
         }
+        extent = max(extent, correctedAbsoluteDigitPosition + distanceDigitCenterToBorder)
+        if (canvas == null) continue
+
         var x = (centerX + correctedAbsoluteDigitPosition * HOUR_ANGLES_COS[digitCounter]).toFloat()
         var y = (centerY + correctedAbsoluteDigitPosition * HOUR_ANGLES_SIN[digitCounter]).toFloat()
 
@@ -248,6 +294,7 @@ private fun drawHourDigits(
             paint
         )
     }
+    return extent
 }
 
 private fun drawHands(
@@ -258,10 +305,14 @@ private fun drawHands(
     hourAngle: Double,
     minAngle: Double,
     secAngle: Double,
+    outlineWidth: Float,
     config: AnalogClockConfig
 ) {
     paint.style = Paint.Style.FILL
     paint.shader = null
+    // Hands are in the secondary colour; set it here instead of relying on what was drawn last
+    paint.colorFilter = secondaryColorFilter
+    paint.alpha = 255
     // minute hand
     canvas.save()
     canvas.rotate(
@@ -280,25 +331,6 @@ private fun drawHands(
     )
     canvas.restore()
 
-    // second hand
-    if (config.showSecondHand) {
-        canvas.save()
-        canvas.rotate(
-            radiansToDegrees(secAngle),
-            centerX,
-            centerY
-        )
-        drawHand(
-            canvas = canvas,
-            paint = paint,
-            baseX = centerX,
-            baseY = centerY,
-            height = (config.handLengthMinutes * radius).toInt(),
-            width = (config.handWidthMinutes / 3 * radius).toInt(),
-            handStyle = config.handStyle
-        )
-        canvas.restore()
-    }
     // hour hand
     canvas.save()
     canvas.rotate(
@@ -316,9 +348,34 @@ private fun drawHands(
         handStyle = config.handStyle
     )
     canvas.restore()
+    // second hand, last and in the primary colour like the emphasized numerals: in the hands'
+    // colour, and drawn before the hour hand, it disappeared wherever it crossed the hour hand
+    if (config.showSecondHand) {
+        paint.colorFilter = customColorFilter
+        canvas.save()
+        canvas.rotate(
+            radiansToDegrees(secAngle),
+            centerX,
+            centerY
+        )
+        drawHand(
+            canvas = canvas,
+            paint = paint,
+            baseX = centerX,
+            baseY = centerY,
+            height = (config.handLengthMinutes * radius).toInt(),
+            width = (config.handWidthMinutes / 3 * radius).toInt(),
+            handStyle = config.handStyle
+        )
+        canvas.restore()
+    }
     drawInnerCircle(
         canvas = canvas,
-        innerCircleRadius = config.innerCircleRadius
+        centerX = centerX,
+        centerY = centerY,
+        // The setting is a share of the dial radius; it used to be drawn as px (0.045 px: invisible)
+        innerCircleRadius = config.innerCircleRadius * radius,
+        outlineWidth = outlineWidth
     )
 }
 
@@ -393,11 +450,15 @@ private fun drawHandTriangle(
 
 private fun drawInnerCircle(
     canvas: Canvas,
-    innerCircleRadius: Float
+    centerX: Float,
+    centerY: Float,
+    innerCircleRadius: Float,
+    outlineWidth: Float
 ) {
     paint.apply {
         colorFilter = secondaryColorFilter
         alpha = 255
+        style = Paint.Style.FILL
         canvas.drawCircle(
             centerX,
             centerY,
@@ -406,7 +467,7 @@ private fun drawInnerCircle(
         )
         colorFilter = null
         color = android.graphics.Color.BLACK
-        strokeWidth = 2F
+        strokeWidth = 2 * outlineWidth
         canvas.drawPoint(
             centerX,
             centerY,
@@ -414,6 +475,7 @@ private fun drawInnerCircle(
         )
         style = Paint.Style.STROKE
         color = android.graphics.Color.WHITE
+        strokeWidth = outlineWidth
     }
     canvas.drawCircle(
         centerX,
@@ -490,52 +552,51 @@ private fun distanceHourTextBoundsCenterToBorder(
     }
 }
 
-private fun initCounter() {
-    for (minuteCounter in 0..59) {
-        val angle = minuteCounter.toDouble() * (Math.PI / 30.0)
-        MINUTE_ANGLES_SIN[minuteCounter] = sin(angle)
-        MINUTE_ANGLES_COS[minuteCounter] = cos(angle)
-    }
-    for (hourCounter in 0..11) {
-        val angle = hourCounter.toDouble() * (Math.PI / 6.0)
-        HOUR_ANGLES_SIN[hourCounter] = sin(angle)
-        HOUR_ANGLES_COS[hourCounter] = cos(angle)
-    }
-}
-
 @Composable
 private fun Init(
     viewModel: ClockViewModel,
+    config: AnalogClockConfig,
     primaryColor: Color,
     secondaryColor: Color
 ) {
-    val current = LocalConfig.current
-    current.InitDataStore(
+    config.InitDataStore(
         viewModel = viewModel
     )
 
-    current.apply {
-        typeface = FontCache[LocalContext.current, fontUri]
-        boldTypeface = Typeface.create(typeface, Typeface.BOLD)
+    // Built only when the font or a colour changes, not on every tick
+    val context = LocalContext.current
+    val fontUri = config.fontUri
+    val typefaces = remember(fontUri) {
+        val regular = FontCache[context, fontUri] ?: Typeface.DEFAULT
+        Pair(regular, Typeface.create(regular, Typeface.BOLD))
     }
-    customColorFilter = LightingColorFilter(getColor(primaryColor), 1)
-    secondaryColorFilter = LightingColorFilter(getColor(secondaryColor), 1)
+    regularTypeface = typefaces.first
+    boldTypeface = typefaces.second
+    customColorFilter = remember(primaryColor) {
+        LightingColorFilter(getColor(primaryColor), 1)
+    }
+    secondaryColorFilter = remember(secondaryColor) {
+        LightingColorFilter(getColor(secondaryColor), 1)
+    }
 }
+
+// Gap between the dial and the shorter side of the page
+private val DIAL_MARGIN = 12.dp
+// Where the default minute ticks end, in units of the radius; the dial extent never goes below.
+private const val MIN_DIAL_EXTENT = 0.94F
+// Outline of the centre hub
+private val HUB_OUTLINE_WIDTH = 1.dp
 
 private val ROMAN_DIGITS = arrayOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
 private val COS_OF_30_DEGREE = cos(Math.PI / 6.0).toFloat()
-private val MINUTE_ANGLES_SIN = DoubleArray(60)
-private val MINUTE_ANGLES_COS = DoubleArray(60)
-private val HOUR_ANGLES_SIN = DoubleArray(12)
-private val HOUR_ANGLES_COS = DoubleArray(12)
+// Filled when the class loads, so the very first frame is already drawn at the right angles
+private val MINUTE_ANGLES_SIN = DoubleArray(60) { sin(it * Math.PI / 30.0) }
+private val MINUTE_ANGLES_COS = DoubleArray(60) { cos(it * Math.PI / 30.0) }
+private val HOUR_ANGLES_SIN = DoubleArray(12) { sin(it * Math.PI / 6.0) }
+private val HOUR_ANGLES_COS = DoubleArray(12) { cos(it * Math.PI / 6.0) }
 
-private var centerX = 0F
-private var centerY = 0F
-private var radius = 0
 private var paint = Paint()
 private var customColorFilter = LightingColorFilter(android.graphics.Color.WHITE, 1)
 private var secondaryColorFilter = LightingColorFilter(android.graphics.Color.WHITE, 1)
-private var typeface = Typeface.DEFAULT
-private var boldTypeface = Typeface.DEFAULT
-
-private lateinit var LocalConfig: ProvidableCompositionLocal<AnalogClockConfig>
+private var regularTypeface: Typeface = Typeface.DEFAULT
+private var boldTypeface: Typeface = Typeface.DEFAULT

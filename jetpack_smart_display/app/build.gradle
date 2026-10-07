@@ -6,19 +6,19 @@ plugins {
 }
 
 android {
-    namespace "com.smsoft.smartdisplay"
-    compileSdk 37
+    namespace = "com.smsoft.smartdisplay"
+    compileSdk = 37
 
     defaultConfig {
-        applicationId "com.smsoft.smartdisplay"
-        minSdk 26
-        targetSdk 37
-        versionCode 5
-        versionName "1.5"
+        applicationId = "com.smsoft.smartdisplay"
+        minSdk = 26
+        targetSdk = 37
+        versionCode = 5
+        versionName = "1.5"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
-            useSupportLibrary true
+            useSupportLibrary = true
         }
         ksp {
             arg('room.schemaLocation', "$projectDir/schemas")
@@ -27,7 +27,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
         buildTypes.each {
@@ -37,19 +37,32 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
-        compose true
+        compose = true
         // AGP 9 removed the global android.defaults.buildfeatures.buildconfig gradle.properties
         // flag; buildConfig must now be opted into per-module since this module uses
         // buildConfigField (OWM_API_KEY).
-        buildConfig true
+        buildConfig = true
     }
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    // One APK per ABI for panels that install the APK by hand: libVLC's native libraries are
+    // most of the app (libvlc.so alone is 40 to 54 MB per ABI), and the single APK carried all
+    // four. The universal APK (app-universal-<build type>.apk) is still built; an unsigned
+    // release build (no signingConfig here) ends in -release-unsigned.apk. An app bundle ignores
+    // this block; Play already delivers the libraries per ABI from the bundle.
+    splits {
+        abi {
+            enable = true
+            reset()
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            universalApk = true
         }
     }
 }
@@ -61,37 +74,34 @@ kotlin {
 }
 
 dependencies {
+    implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material
     implementation libs.androidx.compose.material.icons.extended
-    implementation libs.androidx.compose.ui.tooling
+    // Only the @Preview annotations ship in release builds; the tooling itself is debug-only below.
+    implementation libs.androidx.compose.ui.tooling.preview
     implementation libs.androidx.lifecycle.runtime.compose
 
     implementation libs.hilt.android
     ksp libs.hilt.compiler
-    implementation libs.androidx.hilt.navigation.compose
+    implementation libs.androidx.hilt.lifecycle.viewmodel.compose
     implementation libs.androidx.navigation.compose
 
     implementation libs.accompanist.permissions
 
-    implementation libs.androidx.media
     implementation libs.androidx.media3.exoplayer
-    implementation libs.androidx.media3.ui
-    implementation libs.androidx.media3.exoplayer.rtsp
     implementation libs.androidx.media3.session
 
     implementation libs.libvlc.all
 
-    implementation libs.composeprefs
     implementation libs.androidx.datastore.preferences
 
     implementation libs.godaddy.color.picker
-    implementation libs.godaddy.color.picker.android
 
     implementation libs.androidx.room.ktx
     ksp libs.androidx.room.compiler
 
-    implementation libs.androidx.legacy.support.v4
     implementation libs.paho.mqtt.android
 
     implementation libs.androidx.work.runtime.ktx
@@ -103,6 +113,7 @@ dependencies {
     ksp libs.moshi.kotlin.codegen
 
     implementation libs.coil.compose
+    implementation libs.coil.network.okhttp
 
     // "@aar" forces the aar artifact type and isn't expressible via the libs.xxx accessor,
     // so these two keep manual GAV notation but still pull their version from the catalog.
@@ -113,6 +124,7 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.androidx.test.ext.junit
     androidTestImplementation libs.androidx.test.espresso.core
+    androidTestImplementation platform(libs.androidx.compose.bom)
     androidTestImplementation libs.androidx.compose.ui.test.junit4
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.androidx.compose.ui.test.manifest

@@ -1,325 +1,180 @@
 package com.smsoft.smartdisplay.utils.mpd
 
+import android.os.SystemClock
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import com.smsoft.smartdisplay.utils.mpd.data.MPDCommand
 import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
 import com.smsoft.smartdisplay.utils.mpd.data.MPDStatus
-import com.smsoft.smartdisplay.utils.mpd.event.StatusChangeListener
-import de.dixieflatline.mpcw.client.AuthenticationException
-import de.dixieflatline.mpcw.client.CommunicationException
-import de.dixieflatline.mpcw.client.ProtocolException
-import java.net.ConnectException
-import java.util.*
 
-class MPDHelper {
-    val isConnected: Boolean
-        get() = this::statusConnection.isInitialized && statusConnection.isConnected
+/** A song (radio station) in the MPD queue. */
+data class MpdSong(
+    val id: Int,
+    val pos: Int,
+    val file: String,
+    val name: String?,
+    val title: String?
+) {
+    /** Unique within the queue: MPD never reuses a song id while the song is queued. */
+    val uid: String
+        get() = "mpd-$id"
 
-    var statusChangedListener: StatusChangeListener? = null
+    /** icy-name or Artist when MPD knows it, else the "#label" of a stream URI, else the title. */
+    val stationName: String
+        get() = name
+            ?: file.substringAfter('#', "").takeIf { file.contains("://") && it.isNotEmpty() }
+            ?: title
+            ?: ""
 
-    private lateinit var commandConnection: Connection
-    private lateinit var statusConnection: Connection
-    private lateinit var statusMonitor: MPDStatusMonitor
-
-    fun connect(credentials: MPDCredentials): Boolean {
-        commandConnection = Connection(
-            host = credentials.host,
-            port = credentials.port,
-            password = credentials.password
+    fun toMediaItem(): MediaItem = MediaItem.Builder()
+        .setMediaId(id.toString())
+        .setUri(file)
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setDisplayTitle(stationName)
+                .setStation(stationName)
+                .build()
         )
-        statusConnection = Connection(
-            host = credentials.host,
-            port = credentials.port,
-            password = credentials.password
+        .build()
+
+    /** Metadata of the playing stream: station as display title, StreamTitle as title. */
+    fun toPlayingMetadata(): MediaMetadata = MediaMetadata.Builder()
+        .setDisplayTitle(stationName)
+        .setStation(stationName)
+        .setTitle(title)
+        .build()
+}
+
+/** Answer of one refresh. [queue] is null when it was not requested. */
+class MpdSnapshot(
+    val status: MPDStatus,
+    val currentSong: MpdSong?,
+    val queue: List<MpdSong>?
+)
+
+/**
+ * The command side of the MPD client: one lazily (re)connected connection.
+ * Every method blocks; all calls must come from MPDPlayer's single MPD thread.
+ */
+class MPDHelper(private val credentials: MPDCredentials) {
+    private var connection: Connection? = null
+
+    /** status + currentsong (+ playlistid) in one command list. */
+    @Throws(MpdException::class)
+    fun fetch(includeQueue: Boolean): MpdSnapshot = withConnection { c ->
+        val answers = if (includeQueue) {
+            c.commandList(listOf("status"), listOf("currentsong"), listOf("playlistid"))
+        } else {
+            c.commandList(listOf("status"), listOf("currentsong"))
+        }
+        MpdSnapshot(
+            status = MPDStatus(answers[0]),
+            currentSong = parseSongs(answers[1]).firstOrNull(),
+            queue = if (includeQueue) parseSongs(answers[2]) else null
         )
-        return try {
-            reconnect()
-            true
-        } catch (e: CommunicationException) {
-            if (e.cause is ConnectException) {
-                return false
-            }
-            return connect(credentials)
-        }
-        catch (e: AuthenticationException) {
-            false
-        } catch (e: Exception) {
-            false
-        }
     }
 
-    @Throws(CommunicationException::class, AuthenticationException::class)
-    fun reconnect() {
-        if (commandConnection.isConnected) {
-            commandConnection.disconnect()
-        }
-        commandConnection.connect()
-        if (statusConnection.isConnected) {
-            statusConnection.disconnect()
-        }
-        statusConnection.connect()
-    }
+    fun play() = playback("play")
 
-    @Throws(CommunicationException::class)
+    fun playId(songId: Int) = playback("playid", songId.toString())
+
+    /** Explicit "pause 1": a bare "pause" toggles and could resume playback instead. */
+    fun pause() = playback("pause", "1")
+
+    fun stop() = playback("stop")
+
+    fun setVolume(volume: Int) = playback("setvol", volume.coerceIn(0, 100).toString())
+
+    /** Closes the command connection; the next call opens a new one. */
     fun disconnect() {
+        connection?.close()
+        connection = null
+    }
+
+    /**
+     * A refused playback command (e.g. "playid" of a song another client just removed) is only
+     * logged: the refresh that follows shows what MPD really does.
+     */
+    @Throws(MpdException::class)
+    private fun playback(name: String, vararg args: String) {
         try {
-            if (commandConnection.isConnected) {
-                commandConnection.disconnect()
+            withConnection { it.command(name, *args) }
+        } catch (e: MpdAckException) {
+            Log.w(TAG, "MPD refused \"$name\": ${e.message}")
+        }
+    }
+
+    /**
+     * Runs [block] on the command connection. A connection that MPD may already have dropped
+     * (silent for longer than its connection_timeout) is replaced first; a connection lost during
+     * the command is reopened once and the command repeated (all commands sent here are idempotent).
+     * Timeouts are not repeated: that would only double the wait for a hung server.
+     * "No permission" means the password setting is missing or wrong (MpdSetupException).
+     */
+    @Throws(MpdException::class)
+    private fun <T> withConnection(block: (Connection) -> T): T {
+        try {
+            val current = connection?.takeIf {
+                it.isConnected && (SystemClock.elapsedRealtime() - it.lastAnswerAt) < STALE_AFTER_MS
+            } ?: reconnect()
+            return try {
+                block(current)
+            } catch (_: MpdConnectionException) {
+                block(reconnect())
             }
-        } catch(ignored: Exception) {
-        }
-        try {
-            if (statusConnection.isConnected) {
-                statusConnection.disconnect()
+        } catch (e: MpdAckException) {
+            if ((e.code == MpdAckException.ACK_ERROR_PERMISSION) || (e.code == MpdAckException.ACK_ERROR_PASSWORD)) {
+                throw MpdSetupException("MPD refused \"${e.command}\": ${e.message}", e)
             }
-        } catch(ignored: Exception) {
+            throw e
         }
     }
 
-    fun startMonitor() {
-        statusMonitor = MPDStatusMonitor(
-            mpd = this,
-            statusChangeListener = statusChangedListener!!
-        )
+    @Throws(MpdException::class)
+    private fun reconnect(): Connection {
+        connection?.close()
+        val newConnection = Connection(credentials.host, credentials.port, credentials.password)
+        connection = newConnection
+        newConnection.connect()
+        return newConnection
     }
 
-    fun stopMonitor() {
-        if (this::statusMonitor.isInitialized) {
-            statusMonitor.stopMonitor()
-        }
-    }
-
-    @Throws(CommunicationException::class, ProtocolException::class)
-    fun waitForChanges(): List<String> {
-        if (this::statusConnection.isInitialized) {
-            return statusConnection.sendCommand(MPDCommand.IDLE)
-        } else {
-            throw CommunicationException("")
-        }
-    }
-
-    @Throws(CommunicationException::class, ProtocolException::class)
-    fun getStatus(): MPDStatus {
-        if (this::statusConnection.isInitialized) {
-            val response = statusConnection.sendCommand(MPDCommand.STATUS)
-            return MPDStatus(response)
-        } else {
-            throw CommunicationException("")
-        }
-    }
-
-    @Throws(CommunicationException::class, ProtocolException::class)
-    fun getPlaylist(): List<MediaItem> {
-        if (this::statusConnection.isInitialized) {
-            val response = statusConnection.sendCommand(MPDCommand.PLAYLIST)
-            return parsePlayList(response)
-        } else {
-            throw CommunicationException("")
-        }
-    }
-
-    fun updatePlaylist(playlistVersion: Int = -1): List<MediaItem>? {
-        try {
-            if (commandConnection.isConnected) {
-                val response = statusConnection.sendCommand(
-                    MPDCommand.PLAYLIST_CHANGES,
-                    playlistVersion.toString()
+    private fun parseSongs(lines: List<String>): List<MpdSong> {
+        val songs = ArrayList<MpdSong>()
+        var fields = HashMap<String, String>()
+        fun flush() {
+            val file = fields["file"]
+            val id = fields["Id"]?.toIntOrNull()
+            if (file != null && id != null) {
+                songs.add(
+                    MpdSong(
+                        id = id,
+                        pos = fields["Pos"]?.toIntOrNull() ?: songs.size,
+                        file = file,
+                        name = fields["Name"] ?: fields["Artist"],
+                        title = fields["Title"]
+                    )
                 )
-                return parsePlayList(response)
-            } else {
-                reconnect()
-                updatePlaylist(playlistVersion)
             }
-        } catch(e: CommunicationException) {
-            try {
-                reconnect()
-                updatePlaylist(playlistVersion)
-            } catch(ignored: AuthenticationException) {
-            } catch(ignored: CommunicationException) {
-            }
-        } catch(ignored: ProtocolException) {
+            fields = HashMap()
         }
-        return null
-    }
-
-    fun play() {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.PLAY)
-            } else {
-                reconnect()
-                play()
+        for (line in lines) {
+            val colon = line.indexOf(": ")
+            if (colon <= 0) {
+                continue
             }
-        } catch(e: CommunicationException) {
-            try {
-                reconnect()
-                play()
-            } catch(ignored: AuthenticationException) {
-            } catch(ignored: CommunicationException) {
+            val key = line.substring(0, colon)
+            if ((key == "file") && fields.isNotEmpty()) {
+                flush()
             }
-        } catch(ignored: ProtocolException) {
+            // The first value wins: a stream may repeat Title.
+            fields.putIfAbsent(key, line.substring(colon + 2))
         }
-    }
-
-    fun pause() {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.PAUSE)
-            } else {
-                reconnect()
-                pause()
-            }
-        } catch(e: CommunicationException) {
-            reconnect()
-            pause()
-        } catch(ignored: ProtocolException) {
-        }
-    }
-
-    fun stop() {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.STOP)
-            } else {
-                reconnect()
-                pause()
-            }
-        } catch(e: CommunicationException) {
-            reconnect()
-            stop()
-        } catch(ignored: ProtocolException) {
-        }
-    }
-
-    fun previous() {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.PREVIOUS)
-            } else {
-                reconnect()
-                previous()
-            }
-        } catch(e: CommunicationException) {
-            reconnect()
-            previous()
-        } catch(ignored: ProtocolException) {
-        }
-    }
-
-    fun next() {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.NEXT)
-            } else {
-                reconnect()
-                next()
-            }
-        } catch(e: CommunicationException) {
-            reconnect()
-            next()
-        } catch(ignored: ProtocolException) {
-        }
-    }
-
-    fun playId(mediaId: String) {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.PLAY_ID, mediaId)
-            } else {
-                reconnect()
-                playId(mediaId)
-            }
-        } catch(e: CommunicationException) {
-            reconnect()
-            playId(mediaId)
-        } catch(ignored: ProtocolException) {
-        }
-    }
-
-    fun setVolume(volume: Int) {
-        try {
-            if (commandConnection.isConnected) {
-                commandConnection.sendCommand(MPDCommand.SET_VOLUME, volume.toString())
-            } else {
-                reconnect()
-                setVolume(volume)
-            }
-        } catch(e: CommunicationException) {
-            reconnect()
-            setVolume(volume)
-        } catch(ignored: ProtocolException) {
-        }
-    }
-
-    private fun parsePlayList(response: List<String>): ArrayList<MediaItem> {
-        val result = ArrayList<MediaItem>()
-        val lineCache = LinkedList<String>()
-        for (line in response) {
-            if (line.startsWith("file: ")) {
-                if (lineCache.size != 0) {
-                    result.add(parsePlayListItem(lineCache))
-                    lineCache.clear()
-                }
-            }
-            lineCache.add(line)
-        }
-        if (lineCache.size != 0) {
-            result.add(parsePlayListItem(lineCache))
-        }
-        return result
-    }
-
-    private fun parsePlayListItem(lineCache: LinkedList<String>): MediaItem {
-        var songId = "0"
-        var uri = ""
-        var name = ""
-        var title = ""
-        for (line in lineCache) {
-            if (line.startsWith("Id:")) {
-                try {
-                    songId = line.substring("Id: ".length)
-                } catch (ignored: NumberFormatException) {
-                }
-            } else if (line.startsWith("file:")) {
-                uri = line.substring("file: ".length)
-                if (uri.contains("://")) {
-                    getStreamName(uri)?.let {
-                        name = it
-                    }
-                }
-            }
-            else if (line.startsWith("Name:")) {
-                name = line.substring("Name: ".length)
-            }
-            else if (line.startsWith("Artist:")) {
-                name = line.substring("Artist: ".length)
-            }
-            else if (title.isEmpty() &&line.startsWith("Title:")) {
-                title = line.substring("Title: ".length)
-            }
-        }
-        if (name.isEmpty()) {
-            name = title
-        }
-        return MediaItem.Builder()
-            .setMediaId(songId)
-            .setUri(uri)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setDisplayTitle(name)
-                    .setTitle(title)
-                    .build()
-            ).build()
-    }
-
-    private fun getStreamName(path: String): String? {
-        if (path.isNotEmpty()) {
-            val pos = path.indexOf("#")
-            if (pos > 1) {
-                return path.substring(pos + 1, path.length)
-            }
-        }
-        return null
+        flush()
+        return songs
     }
 }
+
+/** Reconnect before MPD's default connection_timeout (60 s) can have closed the connection. */
+private const val STALE_AFTER_MS = 50_000L
+private const val TAG = "MPDHelper"

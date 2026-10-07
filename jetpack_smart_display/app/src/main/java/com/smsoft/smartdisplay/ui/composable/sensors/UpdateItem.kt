@@ -25,6 +25,7 @@ import com.smsoft.smartdisplay.data.BluetoothDevice
 import com.smsoft.smartdisplay.data.SensorType
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.emptyBluetoothDevice
+import com.smsoft.smartdisplay.ui.screen.sensors.BleScanClient
 import com.smsoft.smartdisplay.ui.screen.sensors.SensorsViewModel
 import com.smsoft.smartdisplay.utils.getBluetoothDeviceByType
 import com.smsoft.smartdisplay.utils.getSensorByBluetoothType
@@ -139,7 +140,7 @@ fun UpdateItem(
                             selectedBleDevice = it
                         },
                         onRescan = {
-                            viewModel.startBleScan()
+                            viewModel.rescanBle(BleScanClient.SENSOR_EDITOR)
                         }
                     )
                 } else {
@@ -278,11 +279,11 @@ fun UpdateItem(
             isEnabled = viewModel.isBluetoothEnabled(),
             onAllowed = {
                 isShowBlePermissions = false
-                viewModel.startBleScan()
+                viewModel.startBleScan(BleScanClient.SENSOR_EDITOR)
             },
             onDenied = {
                 isShowBlePermissions = false
-                viewModel.stopBleScan()
+                viewModel.stopBleScan(BleScanClient.SENSOR_EDITOR)
             }
         )
     }
@@ -294,7 +295,8 @@ private fun onClose(
     onCloseDialog: () -> Unit
 ) {
     if (SensorType.isBluetooth(type)) {
-        viewModel.stopBleScan()
+        // Only the editor's request ends; the sensor list may still need the scan.
+        viewModel.stopBleScan(BleScanClient.SENSOR_EDITOR)
     }
     onCloseDialog()
 }

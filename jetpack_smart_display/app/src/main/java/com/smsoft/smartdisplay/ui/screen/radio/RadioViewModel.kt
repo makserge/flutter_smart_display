@@ -5,36 +5,33 @@ import android.content.Context
 import android.content.Intent
 import android.os.CountDownTimer
 import android.text.Html
+import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.ContextCompat
 import androidx.core.text.HtmlCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
-import com.smsoft.smartdisplay.data.PreferenceKey
-import com.smsoft.smartdisplay.data.RadioType
 import com.smsoft.smartdisplay.data.VoiceCommandType
 import com.smsoft.smartdisplay.service.radio.MediaState
 import com.smsoft.smartdisplay.service.radio.PlayerEvent
 import com.smsoft.smartdisplay.service.radio.RadioMediaService
 import com.smsoft.smartdisplay.service.radio.RadioMediaServiceHandler
+import com.smsoft.smartdisplay.service.radio.RadioVolume
 import com.smsoft.smartdisplay.utils.getRadioPreset
-import com.smsoft.smartdisplay.utils.getRadioType
-import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
+import com.smsoft.smartdisplay.utils.radioPresetKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,7 +49,8 @@ class RadioViewModel @Inject constructor(
     var progressString = mutableStateOf("00:00")
     var isPlaying = mutableStateOf(false)
     var metaTitle = mutableStateOf("")
-    var volume = mutableFloatStateOf(-1F)
+    /** The volume as a slider position 0..1, even in loudness (RadioVolume), or UNKNOWN. */
+    var volume = mutableFloatStateOf(RadioVolume.UNKNOWN)
 
     private val isShowVolumeInt = MutableStateFlow(false)
     val isShowVolume = isShowVolumeInt.asStateFlow()
@@ -62,26 +60,13 @@ class RadioViewModel @Inject constructor(
 
     private var volumeHideTimer: CountDownTimer? = null
 
+    /** True between [onEnter] and [onLeave], i.e. while the radio page is the settled page. */
+    private var isEntered = false
+
+    /** Whether the radio is the internal player; follows the radio type setting. */
+    val isInternalRadio = mutableStateOf(radioMediaServiceHandler.isInternalPlayer)
+
     init {
-        viewModelScope.launch {
-            if (isInternalPlayer()) {
-                val mediaItemList = mutableListOf<MediaItem>()
-                val m3uStream = context.assets.open(PLAYLIST)
-                val streamEntries = M3uParser.parse(m3uStream.reader())
-                streamEntries.forEach {
-                    mediaItemList.add(
-                        MediaItem.Builder()
-                            .setUri(it.location.url.toString())
-                            .setMediaMetadata(
-                                MediaMetadata.Builder()
-                                    .setDisplayTitle(it.title)
-                                    .build()
-                            ).build()
-                    )
-                }
-                radioMediaServiceHandler.addMediaItemList(mediaItemList)
-            }
-        }
         viewModelScope.launch {
             radioMediaServiceHandler.mediaState.collect { mediaState ->
                 when (mediaState) {
@@ -102,49 +87,85 @@ class RadioViewModel @Inject constructor(
         viewModelScope.launch {
             radioMediaServiceHandler.mediaMetadata.collect { mediaMetadata ->
                 mediaMetadata.title?.let {
-                    metaTitle.value = convertCharset(it as String)
+                    metaTitle.value = convertCharset(it.toString())
                 }
             }
         }
         viewModelScope.launch {
+            var isInitialValue = true
             radioMediaServiceHandler.playerState.collect { playerState ->
+                val isFirst = isInitialValue
+                isInitialValue = false
                 playerState.volume.let {
-                    if (it == -1F) {
+                    if (it == RadioVolume.UNKNOWN) {
                         return@let
                     }
                     volume.floatValue = it
-                    isShowVolumeInt.value = true
-                    reStartVolumeHideTimer {
-                        isShowVolumeInt.value = false
+                    // Only real volume changes show the slider, not the value read on creation.
+                    if (!isFirst) {
+                        setShowVolume()
                     }
+                }
+            }
+        }
+        viewModelScope.launch {
+            // The radio settings changed and the handler switched to a new player (carrying on if
+            // the radio was on). Forget what the old one showed; the media service runs for the
+            // internal player only.
+            radioMediaServiceHandler.currentPlayer.drop(1).collect { newPlayer ->
+                isInternalRadio.value = isInternalPlayer()
+                // The new player's volume: UNKNOWN for MPD until it answers, so a voice volume
+                // step waits for MPD instead of being dropped. The playerState collector skips
+                // UNKNOWN and would keep the old player's value.
+                volume.floatValue = radioMediaServiceHandler.volumePosition(newPlayer)
+                volumeHideTimer?.cancel()
+                isShowVolumeInt.value = false
+                presetTitle.value = ""
+                // The metadata collector skips missing titles, so the old song is cleared here.
+                metaTitle.value = ""
+                duration.longValue = 0L
+                calculateProgressValues(0L)
+                if (isEntered) {
+                    if (isInternalPlayer()) ensureServiceStarted() else stopRadioService()
                 }
             }
         }
     }
 
     fun isInternalPlayer(): Boolean {
-        return getRadioType(dataStore) == RadioType.INTERNAL
+        return radioMediaServiceHandler.isInternalPlayer
     }
 
     private fun saveCurrentPreset(
         currentMediaItemIndex: Int
     ) {
+        // Chosen now, not in the edit: the index belongs to the list of the player that reported
+        // it, and a later switch of the radio type must not file it under the new type.
+        val key = radioPresetKey(radioMediaServiceHandler.radioType)
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[intPreferencesKey(PreferenceKey.RADIO_PRESET.key)] = currentMediaItemIndex
+                preferences[key] = currentMediaItemIndex
             }
         }
     }
 
+    /** The saved station of the current radio type; the internal list and the MPD queue differ. */
+    private fun savedPreset(): Int {
+        return getRadioPreset(dataStore, radioMediaServiceHandler.radioType)
+    }
+
     override fun onCleared() {
-        viewModelScope.launch {
-            radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Stop)
-        }
+        volumeHideTimer?.cancel()
+        onLeave()
+        super.onCleared()
     }
 
     fun onUIEvent(
         uiEvent: UIEvent
-    ) = viewModelScope.launch {
+    ) {
+        if (uiEvent != UIEvent.Pause) {
+            ensureServiceStarted()
+        }
         when (uiEvent) {
             UIEvent.Backward -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Previous)
             UIEvent.Forward -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Next)
@@ -195,37 +216,75 @@ class RadioViewModel @Inject constructor(
         return data
     }
 
-    @UnstableApi
-    fun onStartService() {
-        if (isInternalPlayer()) {
-            val intent = Intent(context, RadioMediaService::class.java)
-            ContextCompat.startForegroundService(context, intent)
+    /**
+     * The radio page became the settled pager page. Starts the media service and the saved
+     * station, unless [pendingCommand] (a voice command that brought the user here) switches
+     * the radio off or picks the station itself. Repeated calls are ignored until [onLeave].
+     */
+    fun onEnter(
+        pendingCommand: VoiceCommandType?
+    ) {
+        if (isEntered) {
+            return
+        }
+        isEntered = true
+        ensureServiceStarted()
+        val isStartedByCommand = when (pendingCommand) {
+            VoiceCommandType.INTERNET_RADIO_OFF,
+            VoiceCommandType.INTERNET_RADIO_PREV_ITEM,
+            VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> true
+            else -> false
+        }
+        if (!isStartedByCommand) {
+            radioMediaServiceHandler.ensurePlaying(savedPreset())
         }
     }
 
-    @UnstableApi
-    internal fun onStopService() {
-        if (isInternalPlayer()) {
-            context.stopService(Intent(context, RadioMediaService::class.java))
+    /**
+     * Starts the media service (session, notification, foreground state) if it is not running.
+     * Called before every playback start: the system may stop the service while the radio is
+     * paused and the screen is off, and the page would not start it again by itself.
+     */
+    private fun ensureServiceStarted() {
+        if (!isInternalPlayer() || !isEntered) {
+            return
         }
-        onCleared()
+        try {
+            context.startService(Intent(context, RadioMediaService::class.java))
+        } catch (e: IllegalStateException) {
+            // Not allowed while the app is in the background; playback still works without it.
+            Log.w(TAG, "Radio media service not started", e)
+        }
+    }
+
+    /** The radio page was left: the radio stops first, then its media service. */
+    fun onLeave() {
+        if (!isEntered) {
+            return
+        }
+        isEntered = false
+        radioMediaServiceHandler.stop()
+        // Also for MPD: the radio type may have changed since the service was started.
+        stopRadioService()
+    }
+
+    private fun stopRadioService() {
+        context.stopService(Intent(context, RadioMediaService::class.java))
     }
 
     internal fun resetState() {
         uiStateInt.value = UIState.Initial
+        radioMediaServiceHandler.clearError()
     }
 
+    /** Sets the volume to the slider [position] 0..1 (see RadioVolume). */
     internal fun setVolume(
-        value: Float
+        position: Float
     ) {
         radioMediaServiceHandler.setVolume(
-            value = value
+            position = position
         )
-
-        isShowVolumeInt.value = true
-        reStartVolumeHideTimer {
-            isShowVolumeInt.value = false
-        }
+        setShowVolume()
     }
 
     fun setShowVolume() {
@@ -238,10 +297,7 @@ class RadioViewModel @Inject constructor(
     private fun reStartVolumeHideTimer(
         callback: () -> Unit
     ) {
-        if (volumeHideTimer != null) {
-            volumeHideTimer!!.cancel()
-            volumeHideTimer = null
-        }
+        volumeHideTimer?.cancel()
         volumeHideTimer = object : CountDownTimer(VOLUME_HIDE_TIMER, 1000) {
             override fun onTick(millisUntilFinished: Long) {
             }
@@ -249,26 +305,32 @@ class RadioViewModel @Inject constructor(
             override fun onFinish() {
                 callback()
             }
+        }.also {
+            it.start()
         }
-        volumeHideTimer!!.start()
     }
 
+    /** Handles one radio voice command. Each command is delivered once (see RadioScreen). */
     fun processVoiceCommand(
         command: VoiceCommandType
     ) {
-        if (radioMediaServiceHandler.mediaItemCount() == 0) {
+        // Without radio.m3u the internal player has no stations. The MPD queue is unknown before
+        // the first connect: the handler then starts MPD and steps once the queue is known.
+        if (isInternalPlayer() && (radioMediaServiceHandler.mediaItemCount() == 0)) {
             return
         }
+        if (command != VoiceCommandType.INTERNET_RADIO_OFF) {
+            ensureServiceStarted()
+        }
         when (command) {
-            VoiceCommandType.INTERNET_RADIO_OFF -> onUIEvent(UIEvent.Pause)
-            VoiceCommandType.INTERNET_RADIO_PREV_ITEM -> onUIEvent(UIEvent.Backward)
-            VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> onUIEvent(UIEvent.Forward)
+            VoiceCommandType.INTERNET_RADIO_OFF -> radioMediaServiceHandler.stop()
+            VoiceCommandType.INTERNET_RADIO_PREV_ITEM -> radioMediaServiceHandler.previous(savedPreset())
+            VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> radioMediaServiceHandler.next(savedPreset())
             VoiceCommandType.INTERNET_RADIO_VOL_DOWN -> changeVolume(isForward = false)
             VoiceCommandType.INTERNET_RADIO_VOL_UP -> changeVolume(isForward = true)
-            else -> {
-                val preset = getRadioPreset(dataStore)
-                radioMediaServiceHandler.playItem(preset)
-            }
+            VoiceCommandType.INTERNET_RADIO,
+            VoiceCommandType.INTERNET_RADIO_ON -> radioMediaServiceHandler.ensurePlaying(savedPreset())
+            else -> {}
         }
     }
 
@@ -276,24 +338,17 @@ class RadioViewModel @Inject constructor(
         isForward: Boolean
     ) {
         viewModelScope.launch {
-            if (volume.floatValue == -1F) { //No value from MPD
-                val preset = getRadioPreset(dataStore)
-                radioMediaServiceHandler.playItem(preset)
+            if (volume.floatValue == RadioVolume.UNKNOWN) { //No value from MPD yet
+                radioMediaServiceHandler.ensurePlaying(savedPreset())
                 delay(500)
-            }
-            if (isForward) {
-                if (volume.floatValue < VOLUME_MAX) {
-                    setVolume(
-                        value = volume.floatValue + VOLUME_STEP
-                    )
-                }
-            } else {
-                if (volume.floatValue > VOLUME_MIN) {
-                    setVolume(
-                        value = volume.floatValue - VOLUME_STEP
-                    )
+                if (volume.floatValue == RadioVolume.UNKNOWN) {
+                    return@launch
                 }
             }
+            // 5 % of the slider: 2 dB on the internal player at any volume
+            setVolume(
+                position = RadioVolume.step(volume.floatValue, isUp = isForward)
+            )
         }
     }
 }
@@ -314,8 +369,5 @@ sealed class UIState {
 }
 
 const val PLAYLIST = "radio.m3u"
+private const val TAG = "RadioViewModel"
 private const val VOLUME_HIDE_TIMER = 3000L //3s
-
-private const val VOLUME_MIN = 0F
-private const val VOLUME_MAX = 1F
-private const val VOLUME_STEP = 0.05F //5%

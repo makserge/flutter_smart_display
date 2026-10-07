@@ -23,6 +23,10 @@ internal class Grid {
 
     private lateinit var grid: Array<IntArray>
     private lateinit var digits: Array<Digit>
+    private var separatorColumns = BooleanArray(0)
+
+    /** True for the columns of the ":" separators (they blink). */
+    fun isSeparatorColumn(x: Int): Boolean = separatorColumns[x]
 
     fun changeDot(
         x: Int,
@@ -31,18 +35,40 @@ internal class Grid {
     ) {
         val current = grid[x][y]
         if (on) {
-            if (current == 0 || current == 1) {
+            if (!isLitState(current)) {
                 grid[x][y] = 2
             }
         } else {
-            if (current == 2 || current == 3) {
+            if (isLitState(current)) {
                 grid[x][y] = 1
             }
         }
     }
 
-    fun getDotState(x: Int, y: Int): Int {
-        return grid[x][y]
+    /**
+     * Whether the dot is lit. Dot states: 2 and 3 lit; 0 (never lit) and 1 (switched off) unlit.
+     * The drawing and the centring both use this, so they always agree on the lit dots.
+     */
+    fun isLit(x: Int, y: Int): Boolean = isLitState(grid[x][y])
+
+    private fun isLitState(state: Int) = (state == 2) || (state == 3)
+
+    /**
+     * The columns from the left-most to the right-most lit dot, or null when no dot is lit.
+     * Separator dots count as lit even while they blink off, so the blink never moves anything.
+     */
+    fun litColumns(): IntRange? {
+        var first = -1
+        var last = -1
+        for (x in 0 until columns) {
+            if (grid[x].any { isLitState(it) }) {
+                if (first < 0) {
+                    first = x
+                }
+                last = x
+            }
+        }
+        return if (first < 0) null else first..last
     }
 
     fun setFormat(format: String) {
@@ -54,17 +80,37 @@ internal class Grid {
         digits = extractDigits(glyphs)
         var gridHeight = 0
         var column = paddingColumnsLeft
+        val separatorAt = ArrayList<Int>(2)
         for (glyph in glyphs) {
             glyph.setColumn(column)
             glyph.setRow(paddingRowsTop)
+            if (glyph is Separator) {
+                separatorAt += column
+            }
             column += glyph.width
             gridHeight = max(gridHeight, glyph.height)
         }
         columns = column + paddingRight
         rows = paddingTop + gridHeight + paddingBottom
         grid = Array(columns) { IntArray(rows) }
+        separatorColumns = BooleanArray(columns).also { flags ->
+            separatorAt.forEach { flags[it] = true }
+        }
         for (glyph in glyphs) {
             glyph.draw()
+        }
+    }
+
+    /**
+     * Shows [values] in the digits from left to right; [BLANK_DIGIT] leaves a digit dark. Every
+     * digit is set, so a digit that is not needed any more (e.g. the tens of the hour at 0:00)
+     * goes dark instead of keeping its last number.
+     */
+    fun setDigits(vararg values: Int) {
+        values.forEachIndexed { i, value ->
+            if (i < digits.size) {
+                digits[i].number = value
+            }
         }
     }
 
@@ -160,3 +206,5 @@ internal class Grid {
         return glyphs.toTypedArray()
     }
 }
+/** Digit value that switches all dots of a digit off. */
+internal const val BLANK_DIGIT = 10

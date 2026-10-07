@@ -29,7 +29,7 @@ fun HorizontalPagerScreen(
     modifier: Modifier = Modifier,
     pagerState: PagerState,
     pageCount: Int,
-    command: VoiceCommand,
+    command: VoiceCommand?,
     onResetCommand: () -> Unit,
     onSettingsClick: () -> Unit,
     onClick: () -> Unit
@@ -54,6 +54,7 @@ fun HorizontalPagerScreen(
                 RenderScreen(
                     modifier = Modifier,
                     index = index,
+                    isSettled = !pagerState.isScrollInProgress && (pagerState.settledPage == index),
                     command = command,
                     onResetCommand = onResetCommand,
                     onSettingsClick = onSettingsClick
@@ -77,7 +78,8 @@ fun HorizontalPagerScreen(
 fun RenderScreen(
     modifier: Modifier,
     index: Int,
-    command: VoiceCommand,
+    isSettled: Boolean,
+    command: VoiceCommand?,
     onResetCommand: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
@@ -93,7 +95,9 @@ fun RenderScreen(
             onResetCommand = onResetCommand
         )
         DashboardItem.INTERNET_RADIO -> RadioScreen(
+            isSettled = isSettled,
             command = command,
+            onCommandHandled = onResetCommand,
             onSettingsClick = onSettingsClick
         )
         else -> DoorbellScreen(

@@ -5,11 +5,11 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.jamal.composeprefs.ui.GroupHeader
-import com.jamal.composeprefs.ui.PrefsScope
-import com.jamal.composeprefs.ui.prefs.ListPref
-import com.jamal.composeprefs.ui.prefs.SliderPref
-import com.jamal.composeprefs.ui.prefs.SwitchPref
+import com.smsoft.smartdisplay.ui.common.prefs.GroupHeader
+import com.smsoft.smartdisplay.ui.common.prefs.PrefsScope
+import com.smsoft.smartdisplay.ui.common.prefs.ListPref
+import com.smsoft.smartdisplay.ui.common.prefs.SliderPref
+import com.smsoft.smartdisplay.ui.common.prefs.SwitchPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.data.PreferenceKey
@@ -48,6 +48,13 @@ fun clockSettings(
                 useSelectedAsSummary = true,
                 entries = ClockType.toMap(context),
             )
+            // Switches to a random other clock type every day at 00:00 (DailyClockChanger).
+            SwitchPref(
+                modifier = modifier,
+                key = PreferenceKey.RANDOM_CLOCK_DAILY.key,
+                title = stringResource(PreferenceKey.RANDOM_CLOCK_DAILY.title),
+                defaultChecked = RANDOM_CLOCK_DAILY_DEFAULT
+            )
         }
         colorPrefs(
             modifier = modifier,
@@ -61,3 +68,5 @@ fun clockSettings(
         )
     }
 }
+
+const val RANDOM_CLOCK_DAILY_DEFAULT = true

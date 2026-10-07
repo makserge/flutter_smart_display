@@ -1,142 +1,137 @@
 package com.smsoft.smartdisplay.ui.composable.clock.digitalclock2
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ValueAnimator
-import android.graphics.Color
+import android.graphics.Canvas
 import android.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 
-class Number(
-    startX: Int,
-    startY: Int,
-    val lineLength: Int,
-    var initialColor: Int = Color.parseColor("#66CCFF"),
-    var shadowRadius: Int,
-    val animationDuration: Int
-) {
-    private var margin = 2
-    private val offset = 10
+/**
+ * One seven-segment digit that morphs from the digit it shows to the next one.
+ *
+ * The digits and the morph progress are snapshot state that is read only while drawing, so each
+ * animation frame redraws the Canvas without recomposing the clock. The geometry is passed in on
+ * every draw, so nothing depends on the screen size the digit was created for.
+ */
+@Stable
+class Number(value: Int) {
+    private var fromDigit by mutableIntStateOf(segmentsOf(value))
+    private var toDigit by mutableIntStateOf(segmentsOf(value))
 
-    private var currentStatus = 0
-    private var nextStatus = currentStatus
-    private var process = 0F
-    private var animator: ValueAnimator? = null
-    private val paint = Paint()
+    // 0..MORPH_END; the second half of each segment follows MORPH_LAG behind the first half
+    private val progress = Animatable(MORPH_END)
 
-    private var lines = arrayOf(
-        intArrayOf(startX, startY, 0),
-        intArrayOf(startX, startY, 1),
-        intArrayOf(startX + lineLength, startY, 1),
-        intArrayOf(startX, startY + lineLength, 0),
-        intArrayOf(startX, startY + lineLength, 1),
-        intArrayOf(startX + lineLength, startY + lineLength, 1),
-        intArrayOf(startX, startY + 2 * lineLength, 0)
-    )
-
-    init {
-        paint.apply{
-            isAntiAlias = true
-            setShadowLayer(
-                shadowRadius.toFloat(),
-                0F,
-                0F,
-                color
+    /**
+     * Morphs to [value] (0-9 or [BLANK_DIGIT]); a morph that was cut short is finished first,
+     * then the new one starts.
+     */
+    suspend fun morphTo(
+        value: Int,
+        durationMillis: Int
+    ) {
+        val digit = segmentsOf(value)
+        if (digit != toDigit) {
+            fromDigit = toDigit
+            toDigit = digit
+            progress.snapTo(0F)
+        }
+        val remaining = (MORPH_END - progress.value) / MORPH_END
+        if (remaining > 0F) {
+            // Fast start, so the new digit is readable right after the change
+            progress.animateTo(
+                targetValue = MORPH_END,
+                animationSpec = tween(
+                    durationMillis = (durationMillis * remaining).toInt(),
+                    easing = LinearOutSlowInEasing
+                )
             )
-            color = initialColor
-            strokeWidth = (lineLength / 25).toFloat()
         }
     }
 
-    fun onDraw(
-        scope: DrawScope,
+    /**
+     * Draws the digit [length] wide and 2 * [length] tall with its top-left corner at [x], [y]
+     * in the colour [argb], with a [glow] radius in px (0: none).
+     */
+    fun draw(
+        canvas: Canvas,
+        paint: Paint,
+        x: Float,
+        y: Float,
+        length: Float,
+        argb: Int,
+        glow: Float
     ) {
-        scope.drawIntoCanvas {
-            val canvas = it.nativeCanvas
-
-            for (i in lines.indices) {
-                val line = lines[i]
-                if (line[2] == 0) {
-                    setDrawPaint(getProcessIndex(i, 0))
-                    canvas.drawLine(
-                        (line[0] + margin).toFloat(),
-                        line[1] + offset * (1 - getProcessIndex(i, 0)),
-                        (line[0] + lineLength / 2 - margin).toFloat(),
-                        line[1] + offset * (1 - getProcessIndex(i, 0)),
-                        paint
-                    )
-                    setDrawPaint(getProcessIndex(i, 1))
-                    canvas.drawLine(
-                        (line[0] + lineLength / 2 + margin).toFloat(),
-                        line[1] + offset * (1 - getProcessIndex(i, 1)) / 2,
-                        (line[0] + lineLength - margin).toFloat(),
-                        line[1] + offset * (1 - getProcessIndex(i, 1)) / 2,
-                        paint
-                    )
+        val alpha = argb ushr 24
+        val from = SEGMENTS[fromDigit]
+        val to = SEGMENTS[toDigit]
+        val process = progress.value
+        // Gaps and the shift of unlit segments were px tuned for a 426 px digit
+        val unit = length / REFERENCE_LENGTH
+        val halfLength = length / 2F
+        for (segment in SEGMENT_X.indices) {
+            val segmentX = x + SEGMENT_X[segment] * length
+            val segmentY = y + SEGMENT_Y[segment] * length
+            for (half in 0..1) {
+                val t = (process - half * MORPH_LAG).coerceIn(0F, 1F)
+                val lit = from[segment] + (to[segment] - from[segment]) * t
+                paint.alpha = ((35F + 220F * lit) * alpha / 255F).toInt()
+                // Only lit segments glow, fading with the morph. An opaque shadow colour would
+                // give the dim unlit segments the full glow of a lit one.
+                val glowAlpha = (lit * alpha).toInt()
+                if ((glow > 0F) && (glowAlpha > 0)) {
+                    paint.setShadowLayer(glow, 0F, 0F, (argb and 0xFFFFFF) or (glowAlpha shl 24))
                 } else {
-                    setDrawPaint(getProcessIndex(i, 0))
-                    canvas.drawLine(
-                        line[0] + offset * (1 - getProcessIndex(i, 0)),
-                        (line[1] + margin).toFloat(),
-                        line[0] + offset * (1 - getProcessIndex(i, 0)),
-                        (line[1] + lineLength / 2 - margin).toFloat(),
-                        paint
-                    )
-                    setDrawPaint(getProcessIndex(i, 1))
-                    canvas.drawLine(
-                        line[0] + offset * (1 - getProcessIndex(i, 1)) / 2,
-                        (line[1] + lineLength / 2 + margin).toFloat(),
-                        line[0] + offset * (1 - getProcessIndex(i, 1)) / 2,
-                        (line[1] + lineLength - margin).toFloat(),
-                        paint
-                    )
+                    paint.clearShadowLayer()
+                }
+                val margin = unit * (2F + (1F - lit) * 10F)
+                // Both halves are offset by the same amount, so an unlit segment stays straight;
+                // the second half used to move half as far, which looked staggered
+                val shift = unit * UNLIT_SHIFT * (1F - lit)
+                val start = half * halfLength + margin
+                val end = (half + 1) * halfLength - margin
+                if (SEGMENT_HORIZONTAL[segment]) {
+                    canvas.drawLine(segmentX + start, segmentY + shift, segmentX + end, segmentY + shift, paint)
+                } else {
+                    canvas.drawLine(segmentX + shift, segmentY + start, segmentX + shift, segmentY + end, paint)
                 }
             }
-        }
-    }
-
-    private fun setDrawPaint(process: Float) {
-        paint.alpha = (35 + 220 * process).toInt()
-        margin = 2 + ((1 - process) * 10).toInt()
-    }
-
-    private fun getProcessIndex(
-        lineIndex: Int,
-        subLineIndex: Int
-    ): Float {
-        var trueProcess = if (subLineIndex == 1) process - 0.2F else process
-        if (trueProcess > 1.0F) trueProcess = 1.0F
-        if (trueProcess < 0F) trueProcess = 0F
-        val from = numbers[currentStatus][lineIndex]
-        val to = numbers[nextStatus][lineIndex]
-        return from + (to - from) * trueProcess
-    }
-
-    fun updateNumber(
-        value: Int
-    ) {
-        var newStatus = value
-        newStatus %= 10
-        nextStatus = newStatus
-        if (nextStatus != currentStatus) {
-            animator = if ((animator != null) && (animator!!.isRunning)) {
-                animator!!.end()
-                ValueAnimator.ofFloat(1.2F - process, 1.2F).setDuration(animationDuration.toLong())
-            } else {
-                ValueAnimator.ofFloat(0F, 1.2F).setDuration(animationDuration.toLong())
-            }
-            animator!!.addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    super.onAnimationEnd(animation)
-                    currentStatus = nextStatus
-                }
-            })
-            animator!!.addUpdateListener { valueAnimator: ValueAnimator ->
-                process = valueAnimator.animatedValue as Float
-            }
-            animator!!.start()
         }
     }
 }
+
+/** A digit with every segment unlit, e.g. the tens of the hour before 10:00 in 12-hour format. */
+internal const val BLANK_DIGIT = 10
+
+// Index into SEGMENTS; BLANK_DIGIT must not become 0 like any other value % 10
+private fun segmentsOf(value: Int) = if (value == BLANK_DIGIT) BLANK_DIGIT else value % 10
+
+private const val MORPH_LAG = 0.2F
+private const val MORPH_END = 1F + MORPH_LAG
+private const val REFERENCE_LENGTH = 426F
+// How far an unlit segment moves in, in px of the 426 px reference digit
+private const val UNLIT_SHIFT = 7.5F
+
+// Segments: top, upper left, upper right, middle, lower left, lower right, bottom.
+// Start point in digit widths and whether the segment is horizontal.
+private val SEGMENT_X = floatArrayOf(0F, 0F, 1F, 0F, 0F, 1F, 0F)
+private val SEGMENT_Y = floatArrayOf(0F, 0F, 0F, 1F, 1F, 1F, 2F)
+private val SEGMENT_HORIZONTAL = booleanArrayOf(true, false, false, true, false, false, true)
+
+// Lit segments of the digits 0 to 9, then of BLANK_DIGIT
+private val SEGMENTS = arrayOf(
+    intArrayOf(1, 1, 1, 0, 1, 1, 1),
+    intArrayOf(0, 0, 1, 0, 0, 1, 0),
+    intArrayOf(1, 0, 1, 1, 1, 0, 1),
+    intArrayOf(1, 0, 1, 1, 0, 1, 1),
+    intArrayOf(0, 1, 1, 1, 0, 1, 0),
+    intArrayOf(1, 1, 0, 1, 0, 1, 1),
+    intArrayOf(1, 1, 0, 1, 1, 1, 1),
+    intArrayOf(1, 0, 1, 0, 0, 1, 0),
+    intArrayOf(1, 1, 1, 1, 1, 1, 1),
+    intArrayOf(1, 1, 1, 1, 0, 1, 1),
+    intArrayOf(0, 0, 0, 0, 0, 0, 0)
+)

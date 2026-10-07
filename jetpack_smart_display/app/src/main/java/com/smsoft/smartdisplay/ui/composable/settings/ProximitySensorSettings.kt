@@ -4,9 +4,9 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.jamal.composeprefs.ui.GroupHeader
-import com.jamal.composeprefs.ui.PrefsScope
-import com.jamal.composeprefs.ui.prefs.EditTextPref
+import com.smsoft.smartdisplay.ui.common.prefs.GroupHeader
+import com.smsoft.smartdisplay.ui.common.prefs.PrefsScope
+import com.smsoft.smartdisplay.ui.common.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF

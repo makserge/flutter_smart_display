@@ -24,6 +24,12 @@ import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
         WeatherForecast::class
     ],
     autoMigrations = [
+        // Version 2 added sensors.type (default 'MQTT') and its index. Without this, a panel still
+        // on a version-1 database could not open it ("A migration from 1 to 2 was required").
+        AutoMigration (
+            from = 1,
+            to = 2
+        ),
         AutoMigration (
             from = 2,
             to = 3

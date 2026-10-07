@@ -5,11 +5,11 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.jamal.composeprefs.ui.GroupHeader
-import com.jamal.composeprefs.ui.PrefsScope
-import com.jamal.composeprefs.ui.prefs.ListPref
-import com.jamal.composeprefs.ui.prefs.SliderPref
-import com.jamal.composeprefs.ui.prefs.SwitchPref
+import com.smsoft.smartdisplay.ui.common.prefs.GroupHeader
+import com.smsoft.smartdisplay.ui.common.prefs.PrefsScope
+import com.smsoft.smartdisplay.ui.common.prefs.ListPref
+import com.smsoft.smartdisplay.ui.common.prefs.SliderPref
+import com.smsoft.smartdisplay.ui.common.prefs.SwitchPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.AnalogClockConfig.Companion.DEFAULT_DIGIT_EMP_QUARTERS_ND

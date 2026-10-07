@@ -33,8 +33,6 @@ import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_STATUS_DEFAULT_TO
 import com.smsoft.smartdisplay.utils.getParamFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import info.mqtt.android.service.MqttAndroidClient
-import info.mqtt.android.service.QoS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -46,8 +44,7 @@ import javax.inject.Inject
 @UnstableApi
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    val dataStore: DataStore<Preferences>,
-    private val mqttClient: MqttAndroidClient
+    val dataStore: DataStore<Preferences>
 ) : ViewModel() {
 
     private val asrPermissionsStateInt = MutableStateFlow(false)
@@ -106,7 +103,7 @@ class SettingsViewModel @Inject constructor(
     val doorbellAlarmTopic = getParamFlow(
         dataStore = dataStore,
         defaultValue = ""
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)] ?: "" }
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)] ?: DOORBELL_ALARM_DEFAULT_TOPIC }
 
     val doorbellStreamURL = getParamFlow(
         dataStore = dataStore,
@@ -116,7 +113,7 @@ class SettingsViewModel @Inject constructor(
     val pushButtonStatusTopic = getParamFlow(
         dataStore = dataStore,
         defaultValue = PUSH_BUTTON_STATUS_DEFAULT_TOPIC
-    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)] ?: PUSH_BUTTON_COMMAND_DEFAULT_TOPIC }
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)] ?: PUSH_BUTTON_STATUS_DEFAULT_TOPIC }
 
     val pushButtonCommandTopic = getParamFlow(
         dataStore = dataStore,
@@ -188,83 +185,10 @@ class SettingsViewModel @Inject constructor(
         defaultValue = MESSAGE_DEFAULT_TOPIC
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)] ?: MESSAGE_DEFAULT_TOPIC }
 
+    // The dashboard's MQTT manager follows the topic settings and owns the subscriptions; this
+    // screen used to subscribe on its own, only while it was open.
     init {
-        updateDoorbellAlarmTopic()
-        updateButtonSwitchStatusTopic()
         updateAsrServiceState()
-        updateMessageTopic()
-    }
-
-    private fun updateDoorbellAlarmTopic() {
-        if (!mqttClient.isConnected) {
-            return
-        }
-        viewModelScope.launch {
-            var prevValue = ""
-            doorbellAlarmTopic.collectLatest { newValue ->
-                if (newValue == prevValue) {
-                    return@collectLatest
-                }
-                if (prevValue.isNotEmpty()) {
-                    mqttClient.unsubscribe(
-                        topic = prevValue
-                    )
-                }
-                mqttClient.subscribe(
-                    topic = (newValue as String).trim(),
-                    qos = QoS.AtMostOnce.value
-                )
-                prevValue = newValue.trim()
-            }
-        }
-    }
-
-    private fun updateButtonSwitchStatusTopic() {
-        if (!mqttClient.isConnected) {
-            return
-        }
-        viewModelScope.launch {
-            var prevValue = ""
-            pushButtonStatusTopic.collectLatest { newValue ->
-                if (newValue == prevValue) {
-                    return@collectLatest
-                }
-                if (prevValue.isNotEmpty()) {
-                    mqttClient.unsubscribe(
-                        topic = prevValue
-                    )
-                }
-                mqttClient.subscribe(
-                    topic = (newValue as String).trim(),
-                    qos = QoS.AtMostOnce.value
-                )
-                prevValue = newValue.trim()
-            }
-        }
-    }
-
-    private fun updateMessageTopic() {
-        if (!mqttClient.isConnected) {
-            return
-        }
-        viewModelScope.launch {
-            var prevValue = ""
-            messageTopic.collectLatest { newValue ->
-                if (newValue == prevValue) {
-                    return@collectLatest
-                }
-                if (prevValue.isNotEmpty()) {
-                    mqttClient.unsubscribe(
-                        topic = prevValue
-                    )
-                }
-                mqttClient.subscribe(
-                    topic = (newValue as String).trim(),
-                    qos = QoS.AtMostOnce.value
-                )
-                prevValue = newValue.trim()
-            }
-        }
     }
 
     @UnstableApi

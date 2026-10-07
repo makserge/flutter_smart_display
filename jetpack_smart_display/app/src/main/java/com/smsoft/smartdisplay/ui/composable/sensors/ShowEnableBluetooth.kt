@@ -7,7 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 
 @Composable
@@ -19,7 +19,8 @@ fun ShowEnableBluetooth(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         onResult(result.resultCode == Activity.RESULT_OK)
     }
-    SideEffect {
+    // Ask once per appearance; SideEffect relaunched the system dialog on every recomposition.
+    LaunchedEffect(Unit) {
         launcher.launch(intent)
     }
 }

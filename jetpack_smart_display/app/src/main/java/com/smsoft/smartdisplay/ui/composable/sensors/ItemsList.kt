@@ -19,7 +19,6 @@ fun ItemsList(
     onEnableItemModification: () -> Unit,
     onEditItem: (item: Sensor) -> Unit
 ) {
-    val itemsDataValue = itemsData.lastUpdated
     LazyColumn(
         modifier = Modifier
             .fillMaxSize(),

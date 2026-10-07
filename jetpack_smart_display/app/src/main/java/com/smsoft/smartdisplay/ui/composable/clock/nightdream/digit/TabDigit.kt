@@ -4,57 +4,75 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
-import androidx.core.view.ViewCompat
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit.MatrixHelper.rotateX
 import com.smsoft.smartdisplay.ui.composable.clock.nightdream.digit.MatrixHelper.translate
+import kotlin.math.ceil
+import kotlin.math.max
 
 /**
  * Created by Eugeni on 16/10/2016.
  */
 class TabDigit : View, Runnable {
+    private val DEFAULT_BACKGROUND_COLOR = "#2C2C2C"
+
     /*
      * false: rotate upwards
      * true: rotate downwards
      */
-    private val DEFAULT_BACKGROUND_COLOR = "#2C2C2C"
-
     var reverseRotation = true
+        set (value) {
+            if (field == value) return
+            field = value
+            // The direction is built into the animation object, so it has to be replaced
+            tabAnimation = createTabAnimation()
+            setChar(shown)
+        }
 
     var cornerSize = 0F
         set (value) {
+            if (field == value) return
             field = value
             invalidate()
         }
     var background = Color.parseColor(DEFAULT_BACKGROUND_COLOR)
         set (value) {
+            if (field == value) return
             backgroundPaint.color = value
             field = value
             invalidate()
         }
     var dividerColor = Color.WHITE
         set (value) {
+            if (field == value) return
             dividerPaint.color = value
             field = value
             invalidate()
         }
     var padding = 16F
         set (value) {
+            if (field == value) return
             field = value
             requestLayout()
+            invalidate()
         }
     var textSize: Float
         get() = numberPaint.textSize
         set(size) {
+            if (numberPaint.textSize == size) return
             numberPaint.textSize = size
             requestLayout()
+            invalidate()
         }
 
     var textColor = 0
         set(value) {
             numberPaint.color = value
             field = value
+            invalidate()
         }
 
+    // Own camera: its distance is set from the card height, see onMeasure
+    private val camera = Camera()
     private var topTab = Tab()
     private var bottomTab = Tab()
     private var middleTab = Tab()
@@ -65,6 +83,9 @@ class TabDigit : View, Runnable {
     private var dividerPaint = Paint()
     private var backgroundPaint = Paint()
     private val textMeasured = Rect()
+
+    // Index of the character shown, or being flipped to
+    private var shown = 0
 
     var chars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
@@ -108,7 +129,12 @@ class TabDigit : View, Runnable {
         // middle Tab
         middleTab = Tab()
         tabs.add(middleTab)
-        tabAnimation =
+        tabAnimation = createTabAnimation()
+        setInternalChar(0)
+    }
+
+    private fun createTabAnimation(): AbstractTabAnimation {
+        val animation =
             if (reverseRotation) {
                 TabAnimationDown(
                     topTab = topTab,
@@ -123,13 +149,35 @@ class TabDigit : View, Runnable {
                     middleTab = middleTab
                 )
             }
-        tabAnimation.initMiddleTab()
-        setInternalChar(0)
+        animation.initMiddleTab()
+        return animation
     }
 
+    /**
+     * Shows the character at [index] at once, without a flip.
+     */
     fun setChar(index: Int) {
-        setInternalChar(index)
+        shown = if (index in chars.indices) index else 0
+        tabAnimation.reset()
+        setInternalChar(shown)
         invalidate()
+    }
+
+    /**
+     * Shows the character at [index]. Only a single step to the next character is animated. Any
+     * other change (the screen was off, the time was set, a flip is still running) jumps straight
+     * to it, so the digit always ends up on the right character.
+     */
+    fun flipTo(index: Int) {
+        if (index == shown) {
+            return
+        }
+        if (!tabAnimation.isRunning && index == (shown + 1) % chars.size) {
+            shown = index
+            start()
+        } else {
+            setChar(index)
+        }
     }
 
     private fun setInternalChar(index: Int) {
@@ -143,16 +191,26 @@ class TabDigit : View, Runnable {
         heightMeasureSpec: Int
     ) {
         calculateTextSize(textMeasured)
+        val tabWidth = textMeasured.width() + padding.toInt()
+        val tabHeight = max(1, textMeasured.height() + padding.toInt())
+        // The camera distance grows with the card, so the flip keeps the same perspective at any
+        // size. With the fixed default distance big cards bulge out and from ~1150 px degenerate.
+        camera.setLocation(
+            0F,
+            0F,
+            -CAMERA_DISTANCE_RATIO * tabHeight / PIXELS_PER_INCH
+        )
+        dividerPaint.strokeWidth = max(1F, textSize / 400F)
         measureTabs(
-            width = textMeasured.width() + padding.toInt(),
-            height = textMeasured.height() + padding.toInt()
+            width = tabWidth,
+            height = tabHeight
         )
         val resolvedWidth = resolveSize(
-            middleTab.maxWith(),
+            ceil(tabWidth * SLOT_WIDTH_RATIO).toInt(),
             widthMeasureSpec
         )
         val resolvedHeight = resolveSize(
-            2 * middleTab.maxHeight(),
+            ceil(tabHeight * SLOT_HEIGHT_RATIO).toInt(),
             heightMeasureSpec
         )
         setMeasuredDimension(
@@ -201,13 +259,15 @@ class TabDigit : View, Runnable {
     }
 
     private fun drawDivider(canvas: Canvas) {
+        // Across the card only: the view is wider than the card to leave room for the flip
+        val halfWidth = (textMeasured.width() + padding.toInt()) / 2F
         canvas.apply{
             save()
             concat(projectionMatrix)
             drawLine(
-                -width / 2F,
+                -halfWidth,
                 0F,
-                width / 2F,
+                halfWidth,
                 0F,
                 dividerPaint
             )
@@ -216,15 +276,13 @@ class TabDigit : View, Runnable {
     }
 
     private fun calculateTextSize(rect: Rect) {
-        numberPaint.getTextBounds(
-            "8",
-            0,
-            1,
-            rect
+        measureDigits(
+            paint = numberPaint,
+            rect = rect
         )
     }
 
-    fun start() {
+    private fun start() {
         tabAnimation.start()
         invalidate()
     }
@@ -232,16 +290,21 @@ class TabDigit : View, Runnable {
     override fun onDraw(canvas: Canvas) {
         drawTabs(canvas)
         drawDivider(canvas)
-        ViewCompat.postOnAnimationDelayed(
-            this,
-            this,
-            40
-        )
+        // Step the animation once per frame while a flip runs; an idle digit is not redrawn at all
+        if (tabAnimation.isRunning) {
+            removeCallbacks(this)
+            postOnAnimation(this)
+        }
     }
 
     override fun run() {
         tabAnimation.run()
         invalidate()
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(this)
+        super.onDetachedFromWindow()
     }
 
     inner class Tab {
@@ -252,8 +315,6 @@ class TabDigit : View, Runnable {
         private val endBounds = RectF()
         private var currIndex = 0
         private var alpha = 0
-        private val measuredMatrixHeight = Matrix()
-        private val measuredMatrixWidth = Matrix()
 
         fun measure(width: Int, height: Int) {
             val area = Rect(
@@ -270,39 +331,8 @@ class TabDigit : View, Runnable {
             )
         }
 
-        fun maxWith(): Int {
-            val rect = RectF(startBounds)
-            val projectionMatrix = Matrix()
-            translate(
-                projectionMatrix,
-                startBounds.left,
-                -startBounds.top,
-                0F
-            )
-            measuredMatrixWidth.apply {
-                reset()
-                setConcat(projectionMatrix, MatrixHelper.ROTATE_X_90)
-                mapRect(rect)
-            }
-            return rect.width().toInt()
-        }
-
-        fun maxHeight(): Int {
-            val rect = RectF(startBounds)
-            val projectionMatrix = Matrix()
-            measuredMatrixHeight.apply {
-                reset()
-                setConcat(
-                    projectionMatrix,
-                    MatrixHelper.ROTATE_X_0
-                )
-                mapRect(rect)
-            }
-            return rect.height().toInt()
-        }
-
         fun setChar(index: Int) {
-            currIndex = if (index > chars.size) 0 else index
+            currIndex = if (index in chars.indices) index else 0
         }
 
         operator fun next() {
@@ -315,10 +345,14 @@ class TabDigit : View, Runnable {
         fun rotate(alpha: Int) {
             this.alpha = alpha
             rotateX(
+                camera,
                 rotationModelViewMatrix,
                 alpha
             )
         }
+
+        // Bounds of the digit being drawn, reused for every frame
+        private val charBounds = Rect()
 
         fun draw(canvas: Canvas) {
             drawBackground(canvas)
@@ -360,11 +394,16 @@ class TabDigit : View, Runnable {
             )
             canvas.apply{
                 clipRect(clip)
+                // Centred on its own glyph across the card: placed at the centre of the box around
+                // all digits, a narrow "1" sat right of centre. Vertically all digits keep the same
+                // baseline.
+                val char = chars[currIndex].toString()
+                numberPaint.getTextBounds(char, 0, 1, charBounds)
                 drawText(
-                    chars[currIndex].toString(),
+                    char,
                     0,
                     1,
-                    -textMeasured.centerX().toFloat(),
+                    -charBounds.exactCenterX(),
                     -textMeasured.centerY().toFloat(),
                     numberPaint
                 )
@@ -386,4 +425,59 @@ class TabDigit : View, Runnable {
             }
         }
     }
-}
+
+    companion object {
+        // Camera distance per px of card height: the camera's default 576 px for the 342 px card
+        // of the original 440 px text, so every size keeps the original look
+        private const val CAMERA_DISTANCE_RATIO = 576F / 342F
+
+        // Camera locations are given in inches of 72 px
+        private const val PIXELS_PER_INCH = 72F
+
+        /**
+         * View width per card width. Half-way through a flip the tab points at the camera, so its
+         * outer edge is drawn this much wider than the card (1.42).
+         */
+        const val SLOT_WIDTH_RATIO = CAMERA_DISTANCE_RATIO / (CAMERA_DISTANCE_RATIO - 0.5F)
+
+        /**
+         * View height per card height. Early and late in a flip the tilted tab reaches up to about
+         * 2.5 % of the card height past its top or bottom edge.
+         */
+        const val SLOT_HEIGHT_RATIO = 1.05F
+
+        /**
+         * Size of the box around all digits per 1 px of text size, in the typeface the digits are
+         * drawn with. A card is this box plus the padding.
+         */
+        fun digitSizeRatio(): PointF {
+            val bounds = Rect()
+            measureDigits(
+                paint = Paint().apply {
+                    textSize = 1000F
+                },
+                rect = bounds
+            )
+            return PointF(
+                bounds.width() / 1000F,
+                bounds.height() / 1000F
+            )
+        }
+
+        /**
+         * Sets [rect] to the union of the bounds of the digits 0 to 9. Every card is this wide,
+         * because in most fonts "4" is wider than "8" and was cut off at the card edges.
+         */
+        private fun measureDigits(
+            paint: Paint,
+            rect: Rect
+        ) {
+            val digit = Rect()
+            rect.setEmpty()
+            for (char in '0'..'9') {
+                paint.getTextBounds(char.toString(), 0, 1, digit)
+                rect.union(digit)
+            }
+        }
+    }
+}

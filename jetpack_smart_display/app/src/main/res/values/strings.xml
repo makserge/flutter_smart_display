@@ -93,7 +93,7 @@
     <string name="center_circle_radius">Center circle radius</string>
     <string name="reverse_rotation_flip_clock">Reverse rotation</string>
     <string name="padding_flip_clock">Padding</string>
-    <string name="font_size_flip_clock">Font size</string>
+    <string name="font_size_flip_clock">Digit size</string>
     <string name="dot_style_square">Square</string>
     <string name="dot_style_round">Round</string>
     <string name="dot_style_matrix_clock">Dot style</string>
@@ -174,6 +174,7 @@
     <string name="doorbell">Doorbell</string>
     <string name="doorbell_alarm_topic">MQTT alarm topic</string>
     <string name="doorbell_stream_url">RTSP stream URL</string>
+    <string name="doorbell_stream_url_rtsps">rtsps:// (RTSP over TLS) is not supported, use rtsp://</string>
     <string name="push_button">Push button MQTT settings</string>
     <string name="push_button_status_topic">Status topic</string>
     <string name="push_button_command_topic">Command topic</string>
@@ -344,4 +345,18 @@
     <string name="message_timeout">Timeout</string>
     <string name="message_sound_volume">Volume</string>
     <string name="message_topic">MQTT topic</string>
+    <string name="weather_error_network">No connection to the weather service</string>
+    <string name="weather_error_auth">Weather service rejected the API key (HTTP %d)</string>
+    <string name="weather_error_server">Weather service error (HTTP %d)</string>
+    <string name="weather_error_parse">Weather service sent an invalid response</string>
+    <string name="weather_error_unknown">Weather update failed</string>
+    <string name="weather_waiting">Waiting for weather data. Check the network connection.</string>
+    <string name="weather_retrying">Retrying automatically</string>
+    <string name="weather_retry">Retry now</string>
+    <string name="weather_no_location">Weather location is not set or invalid</string>
+    <string name="weather_open_settings">Open settings</string>
+    <string name="weather_stale">Showing data from %s</string>
+    <string name="blink_separator_matrix_clock">Blink separator</string>
+    <string name="dot_color_matrix_clock">Dot color</string>
+    <string name="random_clock_daily">Random clock every day</string>
 </resources>

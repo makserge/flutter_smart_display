@@ -26,7 +26,6 @@ import com.smsoft.smartdisplay.data.TimerDurationType
 import com.smsoft.smartdisplay.data.database.entity.Timer
 import com.smsoft.smartdisplay.ui.common.ListChooser
 import com.smsoft.smartdisplay.ui.screen.timers.TimersViewModel
-import com.smsoft.smartdisplay.utils.playAlarmSound
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @UnstableApi
@@ -93,11 +92,7 @@ fun UpdateItem(
                         value = soundTone,
                         onChange = {
                             soundTone = it
-                            playAlarmSound(
-                                player = viewModel.player,
-                                soundToneType = AlarmSoundToneType.getById(it),
-                                soundVolume = 1F
-                            )
+                            viewModel.previewTone(it)
                         },
                     )
                 }

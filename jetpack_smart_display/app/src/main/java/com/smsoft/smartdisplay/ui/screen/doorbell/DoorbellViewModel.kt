@@ -1,125 +1,80 @@
 package com.smsoft.smartdisplay.ui.screen.doorbell
 
-import android.net.Uri
-import android.os.CountDownTimer
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_BACK_TIMER_DEFAULT_DELAY
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_STREAM_DEFAULT_URL
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import org.videolan.libvlc.LibVLC
-import org.videolan.libvlc.Media
-import org.videolan.libvlc.MediaPlayer
+import kotlinx.coroutines.launch
 import org.videolan.libvlc.util.VLCVideoLayout
-import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
 class DoorbellViewModel @Inject constructor(
-    private val libVlc: LibVLC,
-    private val mediaPlayer: MediaPlayer,
+    private val streamPlayer: DoorbellStreamPlayer,
     val dataStore: DataStore<Preferences>
 ) : ViewModel() {
 
-    private var backTimer: CountDownTimer? = null
-    private val backTimerStateInt = MutableStateFlow(false)
-    val backTimerState = backTimerStateInt.asStateFlow()
+    // The current visit of this screen and its stream start and back timer. onStop() cancels the
+    // job, so a visit that ends while the settings are still being read never starts the stream.
+    private var visit: DoorbellStreamPlayer.Visit? = null
+    private var visitJob: Job? = null
+
+    private val backRequestsInt = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    /** Emits once when the back timer of the current visit has run out. */
+    val backRequests: SharedFlow<Unit> = backRequestsInt.asSharedFlow()
 
     fun onStart(
+        videoLayout: VLCVideoLayout,
         isBackTimerEnabled: Boolean
-    ) {
-        startVideo()
-        if (isBackTimerEnabled) {
-            startBackTimer()
-        }
-    }
-
-    fun onStop() {
-        backTimer?.cancel()
-
-        mediaPlayer.apply {
-            stop()
-            detachViews()
-        }
-    }
-
-    fun attachView(
-        vlcVideoLayout: VLCVideoLayout
-    ) {
-        mediaPlayer.attachViews(vlcVideoLayout, null, false, false)
-    }
-
-    fun resetBackTimerState() {
-        backTimerStateInt.value = false
-    }
-
-    private fun startVideo() {
-        mediaPlayer.setEventListener {
-            Log.d("DoorbellScreen", "VLC state:" + it.type.toString())
-        }
-        try {
-            val uri = Uri.parse(getDoorbellStreamUrl(dataStore))
-            val media = Media(libVlc, uri)
-
-            media.apply {
-                setHWDecoderEnabled(true, false)
-                addOption(":file-caching=0")
-                addOption(":network-caching=500")
-                addOption(":live-caching=0")
-                addOption(":clock-jitter=0")
-                addOption(":clock-synchro=0")
-                addOption(":drop-late-frames")
-                addOption(":skip-frames")
-                addOption(":low-delay")
-
-                mediaPlayer.media = this
-            }.release()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        mediaPlayer.play()
-    }
-
-    private fun startBackTimer() {
-        var countDownInterval = DOORBELL_BACK_TIMER_DEFAULT_DELAY
-        runBlocking {
+    ): DoorbellStreamPlayer.Visit {
+        visitJob?.cancel()
+        visit?.end()
+        val newVisit = streamPlayer.startVisit(videoLayout)
+        visit = newVisit
+        visitJob = viewModelScope.launch {
+            // Read here instead of with runBlocking on the main thread.
             val data = dataStore.data.first()
-            data[floatPreferencesKey(PreferenceKey.DOORBELL_BACK_TIMER_DELAY.key)]?.let {
-                countDownInterval = it
+            newVisit.play(getDoorbellStreamUrl(data))
+            if (isBackTimerEnabled) {
+                val delaySeconds = data[floatPreferencesKey(PreferenceKey.DOORBELL_BACK_TIMER_DELAY.key)]
+                    ?: DOORBELL_BACK_TIMER_DEFAULT_DELAY
+                delay((delaySeconds * 1000L).toLong())
+                backRequestsInt.tryEmit(Unit)
             }
         }
-        backTimer = object : CountDownTimer((countDownInterval * 1000L).toLong(), 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-            }
-
-            override fun onFinish() {
-                backTimerStateInt.value = true
-            }
-        }
-        backTimer!!.start()
+        return newVisit
     }
 
-    private fun getDoorbellStreamUrl(dataStore: DataStore<Preferences>): String {
-        var url = DOORBELL_STREAM_DEFAULT_URL
-        runBlocking {
-            val data = dataStore.data.first()
-            data[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)]?.let {
-                if (it.trim().isNotEmpty()) {
-                    url = it.trim()
-                }
-            }
+    /** Ends [visit]; the stream keeps playing if another doorbell screen took the player over. */
+    fun onStop(visit: DoorbellStreamPlayer.Visit) {
+        visit.end()
+        if (visit === this.visit) {
+            visitJob?.cancel()
+            visitJob = null
+            this.visit = null
         }
-        return url
     }
 
+    override fun onCleared() {
+        visit?.end()
+        visit = null
+        super.onCleared()
+    }
+
+    private fun getDoorbellStreamUrl(data: Preferences): String {
+        val url = data[stringPreferencesKey(PreferenceKey.DOORBELL_STREAM_URL.key)]?.trim()
+        return if (url.isNullOrEmpty()) DOORBELL_STREAM_DEFAULT_URL else url
+    }
 }

@@ -19,40 +19,36 @@ object MatrixHelper {
     }
 
     /**
-     * Matrix with 0 degrees x rotation defined
+     * X rotation seen from the shared default camera. Only use it for 0 and 180 degrees: those keep
+     * the plane flat, so the camera distance does not matter.
      */
-    val ROTATE_X_0 = Matrix()
-
-    init {
-        rotateX(
-            matrix = ROTATE_X_0,
-            alpha = 0
-        )
-    }
-
-    /**
-     * Matrix with 90 degrees x rotation defined
-     */
-    val ROTATE_X_90 = Matrix()
-
-    init {
-        rotateX(
-            matrix = ROTATE_X_90,
-            alpha = 90
-        )
-    }
-
     fun rotateX(
         matrix: Matrix,
         alpha: Int
     ) {
         synchronized(camera) {
-            camera.apply {
-                save()
-                rotateX(alpha.toFloat())
-                getMatrix(matrix)
-                restore()
-            }
+            rotateX(
+                camera = camera,
+                matrix = matrix,
+                alpha = alpha
+            )
+        }
+    }
+
+    /**
+     * X rotation seen from [camera]. Any other angle is drawn in perspective, so the camera
+     * distance has to fit the size of what is rotated.
+     */
+    fun rotateX(
+        camera: Camera,
+        matrix: Matrix,
+        alpha: Int
+    ) {
+        camera.apply {
+            save()
+            rotateX(alpha.toFloat())
+            getMatrix(matrix)
+            restore()
         }
     }
 

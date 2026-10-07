@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
+import coil3.compose.rememberAsyncImagePainter
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherViewModel

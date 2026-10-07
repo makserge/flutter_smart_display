@@ -4,9 +4,16 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.DashboardItem
@@ -26,13 +33,34 @@ fun DashboardScreen(
 ) {
     val pageCount = DashboardItem.entries.toTypedArray().size
     val pagerState = rememberPagerState(
-        initialPage = DashboardItem.CLOCK.ordinal,
+        // The page the ViewModel already asks for, e.g. Alarms for an alarm that was ringing
+        // when this dashboard was created.
+        initialPage = viewModel.currentPageState.value,
         pageCount = {
             pageCount
         }
     )
-    LaunchedEffect(pagerState.currentPage) {
-        viewModel.onPageChanged(pagerState.currentPage)
+    // Report only pages the pager has come to rest on. currentPage also changes while a voice
+    // command animates across several pages; feeding those intermediate pages back into the
+    // ViewModel restarted the scroll toward them and cut the jump short.
+    // The first report is the page the pager starts on. A pager restored after Settings or the
+    // doorbell screen starts on its saved page and ignores initialPage. Reporting that page
+    // replaced a page the ViewModel had asked for meanwhile (an alarm or a timer that went off),
+    // so the alert stayed hidden, and an alarm whose page had not been opened yet did not ring.
+    // Such a first report is skipped: the scroll below brings the pager to the requested page,
+    // and that page is reported when the pager comes to rest.
+    LaunchedEffect(pagerState) {
+        var isStartPage = true
+        snapshotFlow { pagerState.isScrollInProgress to pagerState.settledPage }
+            .filter { (isScrolling, _) -> !isScrolling }
+            .collect { (_, page) ->
+                val isFirstReport = isStartPage
+                isStartPage = false
+                if (isFirstReport && (page != viewModel.currentPageState.value)) {
+                    return@collect
+                }
+                viewModel.onPageChanged(page)
+            }
     }
     val currentPageState = viewModel.currentPageState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -43,14 +71,18 @@ fun DashboardScreen(
     }
     val voiceCommandState = viewModel.voiceCommandState.collectAsStateWithLifecycle()
 
-    val doorBellAlarmState = viewModel.doorBellAlarmState.collectAsStateWithLifecycle()
-
-    if (doorBellAlarmState.value) {
-        viewModel.resetDoorBellAlarmState()
-        LaunchedEffect(Unit) {
-            onDoorbell()
+    // A ring opens the doorbell screen from an effect. It used to be handled during composition
+    // with an early return that left the pager out for one frame: the radio stopped, started
+    // again and stopped once more within a second, and page state was lost.
+    val currentOnDoorbell by rememberUpdatedState(onDoorbell)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.doorBellAlarmState.filter { it }.collect {
+                viewModel.resetDoorBellAlarmState()
+                currentOnDoorbell()
+            }
         }
-        return
     }
 
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()

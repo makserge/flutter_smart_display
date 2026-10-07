@@ -6,8 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.smsoft.smartdisplay.data.Screen
-import com.smsoft.smartdisplay.data.VoiceCommand
-import com.smsoft.smartdisplay.data.VoiceCommandType
 import com.smsoft.smartdisplay.ui.screen.alarms.AlarmsScreen
 import com.smsoft.smartdisplay.ui.screen.clock.ClockScreen
 import com.smsoft.smartdisplay.ui.screen.dashboard.DashboardScreen
@@ -29,7 +27,10 @@ fun AppNavigation() {
                     navController.navigate(Screen.Settings.route)
                 },
                 onDoorbell = {
-                    navController.navigate(Screen.Doorbell.route)
+                    // A second ring while the doorbell screen fades in must not push a second one.
+                    navController.navigate(Screen.Doorbell.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -57,7 +58,9 @@ fun AppNavigation() {
 
         composable(Screen.Radio.route) {
             RadioScreen(
-                command = VoiceCommand(VoiceCommandType.CLOCK),
+                isSettled = true,
+                command = null,
+                onCommandHandled = { },
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
                 }
@@ -80,7 +83,7 @@ fun AppNavigation() {
 
         composable(Screen.Timers.route) {
             TimersScreen(
-                command = VoiceCommand(VoiceCommandType.CLOCK),
+                command = null,
                 onResetCommand = { }
             )
         }

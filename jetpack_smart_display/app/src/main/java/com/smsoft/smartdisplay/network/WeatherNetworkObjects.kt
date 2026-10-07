@@ -15,8 +15,20 @@ sealed class WeatherResult {
     ) : WeatherResult()
 
     data class Failure(
-        val error: String
+        val error: String,
+        val kind: WeatherFailureKind = WeatherFailureKind.UNKNOWN,
+        val httpCode: Int? = null
     ) : WeatherResult()
+}
+
+// Why an update failed; the UI picks its message from this
+enum class WeatherFailureKind {
+    NETWORK,
+    AUTH,
+    CLIENT,
+    SERVER,
+    PARSE,
+    UNKNOWN
 }
 
 @JsonClass(generateAdapter = true)

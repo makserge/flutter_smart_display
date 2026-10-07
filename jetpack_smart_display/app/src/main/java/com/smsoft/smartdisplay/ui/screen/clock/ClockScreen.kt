@@ -3,7 +3,6 @@ package com.smsoft.smartdisplay.ui.screen.clock
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -11,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.data.ClockType
 import com.smsoft.smartdisplay.ui.composable.clock.clockview.ClockView
@@ -38,6 +37,9 @@ fun ClockScreen(
     ) as ClockType
 
     val clockUiState: ClockUiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Collected from the StateFlow itself: a default here would draw a 12-hour panel in
+    // 24-hour format for the first frame
+    val is24Hour by viewModel.is24Hour.collectAsStateWithLifecycle()
 
     val defaultPrimaryColor = getColor(MaterialTheme.colors.primary)
     var primaryColor by remember { mutableStateOf(defaultPrimaryColor) }
@@ -57,9 +59,6 @@ fun ClockScreen(
         secondaryColor = Color(android.graphics.Color.parseColor(it as String))
     }
 
-    LaunchedEffect(key1 = viewModel) {
-        viewModel.onStart()
-    }
     Box(
         modifier = Modifier
     ) {
@@ -68,6 +67,7 @@ fun ClockScreen(
             clockType = clockType,
             scale = scale,
             uiState = clockUiState,
+            is24Hour = is24Hour,
             viewModel = viewModel,
             primaryColor = primaryColor,
             secondaryColor = secondaryColor
@@ -81,6 +81,7 @@ fun DrawClock(
     clockType: ClockType,
     scale: Float,
     uiState: ClockUiState,
+    is24Hour: Boolean,
     viewModel: ClockViewModel,
     primaryColor: Color,
     secondaryColor: Color
@@ -160,7 +161,8 @@ fun DrawClock(
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 hour = uiState.hour,
-                minute = uiState.minute
+                minute = uiState.minute,
+                is24Hour = is24Hour
             )
         }
         ClockType.DIGITAL_MATRIXCLOCK -> {
@@ -168,11 +170,10 @@ fun DrawClock(
                 modifier = modifier,
                 viewModel = viewModel,
                 scale = scale,
-                primaryColor = primaryColor,
-                secondaryColor = secondaryColor,
                 hour = uiState.hour,
                 minute = uiState.minute,
-                second = uiState.second
+                second = uiState.second,
+                is24Hour = is24Hour
             )
         }
         ClockType.DIGITAL_CLOCK -> {
@@ -188,7 +189,8 @@ fun DrawClock(
                 dayOfWeek = uiState.dayOfWeek,
                 hour = uiState.hour,
                 minute = uiState.minute,
-                second = uiState.second
+                second = uiState.second,
+                is24Hour = is24Hour
             )
         }
         ClockType.DIGITAL_CLOCK2 -> {
@@ -199,7 +201,8 @@ fun DrawClock(
                 primaryColor = primaryColor,
                 hour = uiState.hour,
                 minute = uiState.minute,
-                second = uiState.second
+                second = uiState.second,
+                is24Hour = is24Hour
             )
         }
     }

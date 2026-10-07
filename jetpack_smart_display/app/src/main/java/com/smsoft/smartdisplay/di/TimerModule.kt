@@ -1,5 +1,7 @@
 package com.smsoft.smartdisplay.di
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.smsoft.smartdisplay.service.timer.TimerHandler
 import dagger.Module
 import dagger.Provides
@@ -15,6 +17,7 @@ class TimerModule {
     @Provides
     @Singleton
     fun providesTimerHandler(
+        dataStore: DataStore<Preferences>,
         coroutineScope: CoroutineScope
-    ): TimerHandler = TimerHandler(coroutineScope)
+    ): TimerHandler = TimerHandler(dataStore, coroutineScope)
 }

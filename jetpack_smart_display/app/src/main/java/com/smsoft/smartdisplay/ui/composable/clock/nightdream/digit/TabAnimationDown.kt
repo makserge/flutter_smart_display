@@ -46,7 +46,8 @@ class TabAnimationDown(
         }
         if (time != -1L) {
             val delta = System.currentTimeMillis() - time
-            alpha = 180 - (180 * (1 - (1 * elapsedTime - delta) / (1 * elapsedTime))).toInt()
+            // Clamped, so a late last frame does not leave the tab tilted past its resting angle
+            alpha = (180 - (180 * (1 - (1 * elapsedTime - delta) / (1 * elapsedTime))).toInt()).coerceIn(0, 180)
             middleTab.rotate(alpha)
         }
     }

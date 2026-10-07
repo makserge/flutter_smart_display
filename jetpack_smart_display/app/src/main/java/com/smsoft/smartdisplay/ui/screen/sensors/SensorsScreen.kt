@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.MQTTData
@@ -40,12 +40,12 @@ fun SensorsScreen(
     val bluetoothSensorsList by viewModel.bluetoothSensorsList.collectAsStateWithLifecycle(
         initialValue = null
     )
-    var isShowBluetoothPermissions by remember { mutableStateOf(false) }
-    if (bluetoothSensorsList != null && bluetoothSensorsList!!.isNotEmpty()) {
-        isShowBluetoothPermissions = true
-        DisposableEffect(null) {
+    // While Bluetooth sensors are listed, the page keeps the BLE scan running.
+    val hasBluetoothSensors = bluetoothSensorsList?.isNotEmpty() == true
+    if (hasBluetoothSensors) {
+        DisposableEffect(Unit) {
             onDispose {
-                viewModel.stopBleScan()
+                viewModel.stopBleScan(BleScanClient.SENSOR_LIST)
             }
         }
     }
@@ -107,16 +107,17 @@ fun SensorsScreen(
                     }
                 )
             }
-            if (isShowBluetoothPermissions) {
-                isShowBluetoothPermissions = false
+            // Kept in the composition (it used to be shown for a single frame only, which also
+            // dismissed the permission dialog right away).
+            if (hasBluetoothSensors) {
                 BluetoothPermissions(
                     modifier = Modifier,
                     isEnabled = viewModel.isBluetoothEnabled(),
                     onAllowed = {
-                        viewModel.startBleScan()
+                        viewModel.startBleScan(BleScanClient.SENSOR_LIST)
                     },
                     onDenied = {
-                        viewModel.stopBleScan()
+                        viewModel.stopBleScan(BleScanClient.SENSOR_LIST)
                     }
                 )
             }

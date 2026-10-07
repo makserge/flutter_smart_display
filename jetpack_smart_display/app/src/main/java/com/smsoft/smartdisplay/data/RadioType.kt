@@ -22,11 +22,9 @@ enum class RadioType(val id: String, val titleId: Int) {
             return getDefault().id
         }
 
+        /** An unknown id falls back to the default instead of crashing when the radio is opened. */
         fun getById(id: String): RadioType {
-            val item = entries.filter {
-                it.id == id
-            }
-            return item[0]
+            return entries.firstOrNull { it.id == id } ?: getDefault()
         }
     }
 }

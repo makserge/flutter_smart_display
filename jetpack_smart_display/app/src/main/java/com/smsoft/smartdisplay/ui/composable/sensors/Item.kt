@@ -34,7 +34,7 @@ import com.smsoft.smartdisplay.data.database.entity.Sensor
 fun Item(
     modifier: Modifier,
     item: Sensor,
-    itemsData: HashMap<String, String>,
+    itemsData: Map<String, String>,
     editMode: Boolean,
     onDelete: (item: Sensor) -> Unit,
     onEnableModification: () -> Unit,

@@ -15,7 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun TimersScreen(
     modifier: Modifier = Modifier,
-    command: VoiceCommand,
+    command: VoiceCommand?,
     onResetCommand: () -> Unit,
     viewModel: TimersViewModel = hiltViewModel()
 ) {
@@ -53,7 +53,7 @@ fun TimersScreen(
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    if (command.type == VoiceCommandType.TIMER_SET) {
+    if ((command != null) && (command.type == VoiceCommandType.TIMER_SET)) {
         LaunchedEffect(command.timeStamp) {
             command.payload?.let { durationId ->
                 coroutineScope.launch {

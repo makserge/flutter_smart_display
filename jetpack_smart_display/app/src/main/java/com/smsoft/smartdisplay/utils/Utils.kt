@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.SystemClock
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
@@ -19,12 +20,10 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.AlarmSoundToneType
-import com.smsoft.smartdisplay.data.AsrWakeWord
 import com.smsoft.smartdisplay.data.AudioType
 import com.smsoft.smartdisplay.data.BluetoothDevice
 import com.smsoft.smartdisplay.data.BluetoothDeviceType
@@ -35,29 +34,24 @@ import com.smsoft.smartdisplay.data.SensorType
 import com.smsoft.smartdisplay.data.database.entity.Sensor
 import com.smsoft.smartdisplay.data.database.entity.emptySensor
 import com.smsoft.smartdisplay.data.emptyBluetoothDevice
-import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_ENABLED_DEFAULT
-import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_INTERVAL_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.MainActivity
 import com.smsoft.smartdisplay.ui.screen.dashboard.APP_CHANNEL
-import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_HOST
-import com.smsoft.smartdisplay.ui.screen.settings.MPD_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_HOST
 import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_PORT
-import com.smsoft.smartdisplay.utils.mpd.data.MPDCredentials
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.net.NetworkInterface
-import kotlin.math.max
-import kotlin.math.min
+import java.io.File
+import com.smsoft.smartdisplay.ui.screen.sensors.MQTT_CLIENT_ID
+import androidx.datastore.preferences.core.edit
+import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
 @Composable
 fun getStateFromFlow(
@@ -102,49 +96,26 @@ fun getIcon(
     return id
 }
 
-fun getRadioType(dataStore: DataStore<Preferences>): RadioType {
-    var radioType = RadioType.getDefault()
-    runBlocking {
-        val data = dataStore.data.first()
-        data[stringPreferencesKey(PreferenceKey.RADIO_TYPE.key)]?.let {
-            radioType = RadioType.getById(it)
-        }
+/**
+ * Key of the saved station index of [type]. The internal list and the MPD queue are different
+ * lists, so each radio type keeps its own index (the internal one under the original key).
+ */
+fun radioPresetKey(type: RadioType): Preferences.Key<Int> = intPreferencesKey(
+    when (type) {
+        RadioType.INTERNAL -> PreferenceKey.RADIO_PRESET.key
+        RadioType.MPD -> PreferenceKey.RADIO_PRESET_MPD.key
     }
-    return radioType
-}
+)
 
-fun getRadioPreset(dataStore: DataStore<Preferences>): Int {
+fun getRadioPreset(dataStore: DataStore<Preferences>, type: RadioType): Int {
     var preset = 0
     runBlocking {
         val data = dataStore.data.first()
-        data[intPreferencesKey(PreferenceKey.RADIO_PRESET.key)]?.let {
+        data[radioPresetKey(type)]?.let {
             preset = it
         }
     }
     return preset
-}
-
-fun getRadioSettings(dataStore: DataStore<Preferences>): MPDCredentials {
-    var host = MPD_SERVER_DEFAULT_HOST
-    var port = MPD_SERVER_DEFAULT_PORT
-    var password = ""
-    runBlocking {
-        val data = dataStore.data.first()
-        data[stringPreferencesKey(PreferenceKey.MPD_SERVER_HOST.key)]?.let {
-            host = it
-        }
-        data[stringPreferencesKey(PreferenceKey.MPD_SERVER_PORT.key)]?.let {
-            port = it
-        }
-        data[stringPreferencesKey(PreferenceKey.MPD_SERVER_PASSWORD.key)]?.let {
-            password = it
-        }
-    }
-    return MPDCredentials(
-        host = host,
-        port = port.toInt(),
-        password = password
-    )
 }
 
 fun getMQTTHostCredentials(
@@ -176,11 +147,8 @@ fun getForegroundNotification(
     val notificationChannel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     notificationManager.createNotificationChannel(notificationChannel)
-    val intent = Intent(context, MainActivity::class.java).apply {
-        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-    }
     val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-    val pendingIntent = PendingIntent.getActivity(context, 0, intent, pendingIntentFlags)
+    val pendingIntent = PendingIntent.getActivity(context, 0, getShowAppIntent(context), pendingIntentFlags)
 
     val notificationCompat = NotificationCompat.Builder(context, channelName)
         .setAutoCancel(true)
@@ -191,36 +159,66 @@ fun getForegroundNotification(
     return notificationCompat.build()
 }
 
-fun getMac(): String {
-    try {
-        val mac = NetworkInterface.getNetworkInterfaces()
-            .toList()
-            .find { networkInterface -> networkInterface.name.equals("wlan0", ignoreCase = true) }
-            ?.hardwareAddress
-            ?.joinToString(separator = "") { byte -> "%02X".format(byte) }
-        return mac ?: "AndroidClient"
-    } catch (ex: Exception) {
-        return "AndroidClient"
+/**
+ * Brings the running dashboard to the front the way a launcher icon does. With the singleTask
+ * MainActivity this reaches the running instance whether the app runs as the home screen or was
+ * started from another launcher. A HOME intent sent by the system on the app's behalf (the old
+ * alarm-clock intent) always started a second dashboard instead.
+ */
+fun getShowAppIntent(context: Context): Intent {
+    return Intent(Intent.ACTION_MAIN)
+        .addCategory(Intent.CATEGORY_LAUNCHER)
+        .setClass(context, MainActivity::class.java)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+}
+
+/**
+ * MQTT client id, unique per panel and stable across restarts.
+ *
+ * A broker drops the existing connection when another client connects with the same id. The old
+ * "SmartDisplay" + MAC id became "SmartDisplayAndroidClient" on every Android 10+ panel (the MAC
+ * is hidden from apps), so panels kept knocking each other off the broker. ANDROID_ID is per
+ * device and is not copied by backup or device transfer (a stored id would be). The id is kept
+ * at 23 characters, the length every MQTT 3.1.1 broker must accept.
+ */
+fun getMQTTClientId(
+    context: Context
+): String {
+    val androidId = android.provider.Settings.Secure.getString(
+        context.contentResolver,
+        android.provider.Settings.Secure.ANDROID_ID
+    )?.takeIf { it.isNotBlank() && (it != BROKEN_ANDROID_ID) }
+    val deviceId = androidId ?: getNoBackupRandomId(context)
+    return (MQTT_CLIENT_ID + "-" + deviceId).take(MQTT_CLIENT_ID_MAX_LENGTH)
+}
+
+/** Fallback id in the no-backup directory, so a restored panel does not inherit it. */
+private fun getNoBackupRandomId(context: Context): String {
+    val file = File(context.noBackupFilesDir, "mqtt_client_id")
+    file.takeIf { it.exists() }?.readText()?.trim()?.takeIf { it.isNotEmpty() }?.let {
+        return it
+    }
+    return UUID.randomUUID().toString().replace("-", "").take(12).also {
+        file.writeText(it)
     }
 }
 
+// Constant ANDROID_ID reported by some old devices.
+private const val BROKEN_ANDROID_ID = "9774d56d682e549c"
+private const val MQTT_CLIENT_ID_MAX_LENGTH = 23
+
+/** Errors are reported to the owner's own Player.Listener; this used to add one per call. */
 @UnstableApi
 fun playStream(
     player: Player,
     uri: String,
-    soundVolume: Float,
-    onError: () -> Unit
+    soundVolume: Float
 ) {
     player.apply{
         volume = soundVolume
         setMediaItem(MediaItem.fromUri(uri))
         prepare()
         playWhenReady = true
-        addListener(object: Player.Listener {
-            override fun onPlayerError(error: PlaybackException) {
-                onError()
-            }
-        })
     }
 }
 
@@ -232,6 +230,9 @@ fun playAssetSound(
     soundVolume: Float
 ) {
     player.apply{
+        // The same player also plays repeating message alerts (playAlarmSound with isRepeat);
+        // without this reset a later wake-word/error chime would loop forever.
+        repeatMode = Player.REPEAT_MODE_OFF
         volume = soundVolume
         setMediaItem(MediaItem.fromUri(Uri.parse(audioType.path)))
         prepare()
@@ -239,79 +240,78 @@ fun playAssetSound(
     }
 }
 
+/** Plays a tone; with a [fader] it starts silent and fades in to [soundVolume]. */
 @UnstableApi
 fun playAlarmSound(
     player: Player,
     soundToneType: AlarmSoundToneType,
     soundVolume: Float,
-    isFadeIn: Boolean = false,
+    fader: VolumeFader? = null,
     isRepeat: Boolean = false
 ) {
     player.apply{
         repeatMode = if (isRepeat) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
-        volume = if (isFadeIn) 0F else soundVolume
+        volume = if (fader != null) 0F else soundVolume
         setMediaItem(MediaItem.fromUri(Uri.parse(soundToneType.path)))
         prepare()
         playWhenReady = true
     }
-    if (isFadeIn) {
-        fadeInVolume( 0F, soundVolume) {
-            player.volume = it
-        }
+    fader?.fadeIn(0F, soundVolume) {
+        player.volume = it
     }
 }
 
-private var fadeJob: Job? = null
-fun fadeInVolume(
-    fromVolume: Float,
-    toVolume: Float,
-    step: Long = 100L,
-    durationMillis: Long = 15000L,
-    onChange: (value: Float) -> Unit = {}
+/**
+ * One volume fade at a time for one owner; it ends with [scope]. It replaces a single global fade
+ * job that no owner could stop, so it kept setting the volume of a player that had been stopped
+ * or released, and fades of different players cancelled each other. Main thread only.
+ *
+ * The volume follows the perceptual curve [fadeVolume] by the time on [clock] (elapsedRealtime,
+ * the clock of RingingAlarm). It used to add a fixed linear step per delay: that ramp seemed loud
+ * at once and then hardly changed, late delays stretched it, and a fade between equal volumes
+ * never ended. [dispatcher] and [clock] are replaceable for tests.
+ */
+class VolumeFader(
+    private val scope: CoroutineScope,
+    private val dispatcher: CoroutineContext = Dispatchers.Main,
+    private val clock: () -> Long = { SystemClock.elapsedRealtime() }
 ) {
-    val oldFadeJob = fadeJob
-    fadeJob = CoroutineScope(Dispatchers.Main).launch {
-        oldFadeJob?.cancelAndJoin()
-        val stepSize = (toVolume - fromVolume) / (max(1, durationMillis) / step)
+    private var job: Job? = null
 
-        onChange(fromVolume)
-        var volume = fromVolume
-        while (isActive) {
-            volume = max(0f, min(volume + stepSize, 1F))
-            onChange(volume)
-            if ((stepSize < 0 && volume <= toVolume) || (stepSize > 0 && volume >= toVolume)) {
-                onChange(toVolume)
-                break
+    /**
+     * Fades from [fromVolume] to [toVolume] in [durationMillis] (also down), setting the volume
+     * every [step] ms; the last value is exactly [toVolume]. With [elapsedMillis] the fade starts
+     * that far in, at the same point of the curve as a fade that had run all along (an alarm that
+     * a new dashboard rings on).
+     */
+    fun fadeIn(
+        fromVolume: Float,
+        toVolume: Float,
+        step: Long = 100L,
+        durationMillis: Long = 15000L,
+        elapsedMillis: Long = 0L,
+        onChange: (value: Float) -> Unit
+    ) {
+        // Cancelled on the main thread, which also runs the fade, so the old fade takes no
+        // further step.
+        job?.cancel()
+        val startedAt = clock() - elapsedMillis
+        job = scope.launch(dispatcher) {
+            while (true) {
+                val progress = fadeProgress(clock() - startedAt, durationMillis)
+                onChange(fadeVolume(fromVolume, toVolume, progress))
+                if ((progress >= 1F) || (fromVolume == toVolume)) {
+                    break
+                }
+                delay(step.coerceAtLeast(1L))
             }
-            delay(step)
         }
     }
-}
 
-fun getAsrWakeWord(dataStore: DataStore<Preferences>): AsrWakeWord {
-    var wakeWord = AsrWakeWord.getDefault()
-    runBlocking {
-        val data = dataStore.data.first()
-        data[stringPreferencesKey(PreferenceKey.ASR_WAKE_WORD.key)]?.let {
-            wakeWord = AsrWakeWord.getById(it)
-        }
+    fun cancel() {
+        job?.cancel()
+        job = null
     }
-    return wakeWord
-}
-
-fun getLightSensorSettings(dataStore: DataStore<Preferences>): Pair<Boolean, Int> {
-    var isEnabled = LIGHT_SENSOR_ENABLED_DEFAULT
-    var interval = LIGHT_SENSOR_INTERVAL_DEFAULT.toInt()
-    runBlocking {
-        val data = dataStore.data.first()
-        data[booleanPreferencesKey(PreferenceKey.LIGHT_SENSOR_ENABLED.key)]?.let {
-            isEnabled = it
-        }
-        data[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_INTERVAL.key)]?.let {
-            interval = it.toInt()
-        }
-    }
-    return Pair(isEnabled, interval)
 }
 
 fun getBluetoothDeviceByType(
@@ -386,16 +386,17 @@ fun getSensorDataByBluetoothType(
     device: BluetoothDevice,
     data: MQTTData
 ): MQTTData {
+    val values = mutableMapOf<String, String>()
     if (device.deviceName == BluetoothDeviceType.THERMOBEACON.title) {
         device.bytes?.let {
             val parsedBytes = parseThermoBeaconData(
                 bytes = device.bytes
             )
             if (parsedBytes.first > -100) { //
-                data.value[device.address + "/temperature"] = String.format("%.2f", parsedBytes.first)
+                values[device.address + "/temperature"] = String.format("%.2f", parsedBytes.first)
             }
             if (parsedBytes.second > 0) { //
-                data.value[device.address + "/humidity"] = String.format("%.2f", parsedBytes.second)
+                values[device.address + "/humidity"] = String.format("%.2f", parsedBytes.second)
             }
         }
     } else if (device.deviceName.startsWith(BluetoothDeviceType.ATC.title)) {
@@ -403,13 +404,11 @@ fun getSensorDataByBluetoothType(
             val parsedBytes = parseATCData(
                 bytes = device.bytes
             )
-            data.value[device.address + "/temperature"] = String.format("%.2f", parsedBytes.first)
-            data.value[device.address + "/humidity"] = String.format("%.2f", parsedBytes.second)
+            values[device.address + "/temperature"] = String.format("%.2f", parsedBytes.first)
+            values[device.address + "/humidity"] = String.format("%.2f", parsedBytes.second)
         }
     }
-    return MQTTData(
-        value = data.value
-    )
+    return data.withValues(values)
 }
 private fun parseThermoBeaconData(
     bytes: ByteArray

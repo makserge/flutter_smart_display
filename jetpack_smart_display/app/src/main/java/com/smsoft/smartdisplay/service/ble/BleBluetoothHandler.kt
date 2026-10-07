@@ -9,115 +9,159 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import com.smsoft.smartdisplay.data.BluetoothDevice
 import com.smsoft.smartdisplay.data.BluetoothDeviceType
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
+private const val TAG = "BleBluetoothHandler"
+
+/**
+ * BLE advertisement scanner for the supported sensor beacons.
+ *
+ * One scan callback lives as long as this singleton, and results go into a hot StateFlow, so they
+ * keep arriving no matter when or how often the flow is collected. Android turns a scan that runs
+ * longer than 30 minutes into an "opportunistic" one that no longer delivers results, so a running
+ * scan is restarted every [SCAN_RESTART_INTERVAL_MS]. Start/stop must be called on the main thread.
+ */
 class BleBluetoothHandler @Inject constructor(
-    @ApplicationContext private val context: Context): BluetoothHandler
-{
-    override var scanState: Flow<BluetoothScanState>
+    @ApplicationContext private val context: Context
+) : BluetoothHandler {
+    private val scanStateInt = MutableStateFlow<BluetoothScanState>(BluetoothScanState.Initial)
+    override val scanState: StateFlow<BluetoothScanState> = scanStateInt.asStateFlow()
 
-    private val deviceMap: MutableMap<String, BluetoothDevice> = mutableMapOf()
+    private val deviceMap = ConcurrentHashMap<String, BluetoothDevice>()
 
-    private val bluetoothAdapter: BluetoothAdapter by lazy {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothManager.adapter
+    private val bluetoothAdapter: BluetoothAdapter? by lazy {
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
     }
 
     private val scanSettings = ScanSettings.Builder()
         .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
         .build()
 
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val restartRunnable = Runnable { restartRunningScan() }
+    private var isScanning = false
 
-    private lateinit var scanCallback: ScanCallback
+    // Scan callbacks are delivered on the main thread.
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            result?.let { onDeviceFound(it) }
+        }
 
-    init {
-        scanState = callbackFlow {
-            scanCallback = object : ScanCallback() {
-                @SuppressLint("MissingPermission")
-                override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                    super.onScanResult(callbackType, result)
+        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+            results?.forEach { onDeviceFound(it) }
+        }
 
-                    result?.let {
-                        coroutineScope.launch {
-                            val deviceName = if (!it.device.name.isNullOrEmpty()) it.device.name else ""
-                            if (BluetoothDeviceType.toList().any {
-                                deviceName.startsWith(it)
-                            }) {
-                                val device = BluetoothDevice(
-                                    deviceName = deviceName,
-                                    address = it.device.address,
-                                    rssi = it.rssi,
-                                    bytes = result.scanRecord?.bytes
-                                )
-                                deviceMap[it.device.address] = device
-                                trySend(BluetoothScanState.Result(
-                                    devices = deviceMap.values.toList(),
-                                    time = System.currentTimeMillis())
-                                )
-                            }
-                        }
-                    }
+        override fun onScanFailed(errorCode: Int) {
+            Log.w(TAG, "BLE scan failed: $errorCode")
+            when (errorCode) {
+                SCAN_FAILED_ALREADY_STARTED -> {}
+                SCAN_FAILED_FEATURE_UNSUPPORTED -> {
+                    stopScan()
+                    scanStateInt.value = BluetoothScanState.Result(
+                        devices = emptyList(),
+                        time = System.currentTimeMillis()
+                    )
                 }
-
-                override fun onScanFailed(errorCode: Int) {
-                    super.onScanFailed(errorCode)
-                    when (errorCode) {
-                        SCAN_FAILED_ALREADY_STARTED -> {
-                            stopScan()
-                            startScan()
-                        }
-                        SCAN_FAILED_FEATURE_UNSUPPORTED -> {
-                            stopScan()
-                            trySend(BluetoothScanState.Result(
-                                devices = emptyList(),
-                                time = System.currentTimeMillis()
-                            ))
-                        }
-                        else -> {
-                            trySend(BluetoothScanState.Error(
-                                message = errorCode.toString()
-                            ))
-                        }
-                    }
+                else -> {
+                    isScanning = false
+                    scanStateInt.value = BluetoothScanState.Error(
+                        message = errorCode.toString()
+                    )
                 }
-            }
-            awaitClose {
             }
         }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.IO)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun onDeviceFound(result: ScanResult) {
+        val deviceName = try {
+            result.device.name
+        } catch (e: SecurityException) {
+            null
+        }.takeUnless { it.isNullOrEmpty() } ?: result.scanRecord?.deviceName ?: ""
+        if (BluetoothDeviceType.toList().none { deviceName.startsWith(it) }) {
+            return
+        }
+        deviceMap[result.device.address] = BluetoothDevice(
+            deviceName = deviceName,
+            address = result.device.address,
+            rssi = result.rssi,
+            bytes = result.scanRecord?.bytes
+        )
+        scanStateInt.value = BluetoothScanState.Result(
+            devices = deviceMap.values.toList(),
+            time = System.currentTimeMillis()
+        )
     }
 
     override fun isBluetoothEnabled(): Boolean {
-        return bluetoothAdapter.isEnabled
+        return bluetoothAdapter?.isEnabled == true
     }
 
-    @SuppressLint("MissingPermission")
     override fun startScan() {
+        if (isScanning) {
+            // Starting again would only fail with SCAN_FAILED_ALREADY_STARTED, and frequent
+            // restarts make Android throttle the app (at most 5 scan starts per 30 seconds).
+            return
+        }
         deviceMap.clear()
+        startPlatformScan()
+    }
 
-        bluetoothAdapter.bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
+    override fun rescan() {
+        stopPlatformScan()
+        deviceMap.clear()
+        startPlatformScan()
+    }
+
+    override fun stopScan() {
+        stopPlatformScan()
+    }
+
+    private fun restartRunningScan() {
+        if (!isScanning) {
+            return
+        }
+        stopPlatformScan()
+        startPlatformScan()
     }
 
     @SuppressLint("MissingPermission")
-    override fun stopScan() {
+    private fun startPlatformScan() {
+        val scanner = bluetoothAdapter?.takeIf { it.isEnabled }?.bluetoothLeScanner ?: return
         try {
-            if (bluetoothAdapter.isEnabled) {
-                bluetoothAdapter.bluetoothLeScanner?.stopScan(scanCallback)
-            }
+            scanner.startScan(null, scanSettings, scanCallback)
+            isScanning = true
+            mainHandler.removeCallbacks(restartRunnable)
+            mainHandler.postDelayed(restartRunnable, SCAN_RESTART_INTERVAL_MS)
+        } catch (e: SecurityException) {
+            Log.w(TAG, "BLE scan not permitted", e)
+            scanStateInt.value = BluetoothScanState.Error(message = e.message.toString())
+        } catch (e: IllegalStateException) {
+            // Bluetooth was switched off in the meantime.
+            Log.w(TAG, "BLE scan not started", e)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun stopPlatformScan() {
+        mainHandler.removeCallbacks(restartRunnable)
+        if (!isScanning) {
+            return
+        }
+        isScanning = false
+        try {
+            bluetoothAdapter?.takeIf { it.isEnabled }?.bluetoothLeScanner?.stopScan(scanCallback)
         } catch (ignored: Exception) {
         }
     }
@@ -128,6 +172,10 @@ sealed class BluetoothScanState {
     data class Result(val devices: List<BluetoothDevice>, val time: Long) : BluetoothScanState()
     data class Error(val message: String) : BluetoothScanState()
 }
+
+// Restart well before Android's 30-minute limit, and rarely enough to stay far below its
+// limit of 5 scan starts per 30 seconds.
+private const val SCAN_RESTART_INTERVAL_MS = 10L * 60 * 1000
 
 val blePermissionsList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
     listOf(

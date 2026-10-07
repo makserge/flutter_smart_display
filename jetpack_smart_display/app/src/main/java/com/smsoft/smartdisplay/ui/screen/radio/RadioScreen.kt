@@ -12,20 +12,30 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.VoiceCommand
+import com.smsoft.smartdisplay.service.radio.RadioVolume
 import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerUI
 import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
 
+/**
+ * @param isSettled true once the pager has come to rest on this page. The radio starts only
+ * then, so a programmatic jump that merely passes over the radio page does not start it.
+ * @param command the pending voice command, or null. Radio commands are handled once and then
+ * cleared with [onCommandHandled], so they are not replayed when the page is opened again.
+ */
 @UnstableApi
 @Composable
 fun RadioScreen(
     modifier: Modifier = Modifier,
     viewModel: RadioViewModel = hiltViewModel(),
-    command: VoiceCommand,
+    isSettled: Boolean,
+    command: VoiceCommand?,
+    onCommandHandled: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
@@ -38,13 +48,20 @@ fun RadioScreen(
         }
     }
     DisposableEffect(viewModel) {
-        viewModel.onStartService()
         onDispose {
-            viewModel.onStopService()
+            viewModel.onLeave()
         }
     }
-    LaunchedEffect(command.timeStamp) {
-        viewModel.processVoiceCommand(command.type)
+    LaunchedEffect(isSettled, command?.timeStamp) {
+        if (!isSettled) {
+            return@LaunchedEffect
+        }
+        val radioCommand = command?.type?.takeIf { it.page == DashboardItem.INTERNET_RADIO }
+        viewModel.onEnter(pendingCommand = radioCommand)
+        if (radioCommand != null) {
+            viewModel.processVoiceCommand(radioCommand)
+            onCommandHandled()
+        }
     }
 
     Box (
@@ -71,7 +88,7 @@ fun RadioScreen(
                 UIState.Initial -> CircularProgressIndicator()
                 UIState.Ready -> {
                     RadioMediaPlayerUI(
-                        isProgressEnabled = viewModel.isInternalPlayer(),
+                        isProgressEnabled = viewModel.isInternalRadio.value,
                         presetTitle = viewModel.presetTitle.value,
                         metaTitle = viewModel.metaTitle.value,
                         durationString = if (viewModel.duration.longValue > 0) viewModel.formatDuration(viewModel.duration.longValue) else "",
@@ -90,11 +107,12 @@ fun RadioScreen(
             }
         }
         if (isShowVolume.value) {
+            // The slider shows and sets the position, even in loudness (RadioVolume), in percent
             VolumeControl(
                 modifier = Modifier,
-                value = (viewModel.volume.floatValue * 100).toInt(),
+                value = RadioVolume.toPercent(viewModel.volume.floatValue),
                 onValueChange = {
-                    viewModel.setVolume(it.toFloat() / 100)
+                    viewModel.setVolume(RadioVolume.fromPercent(it))
                 }
             )
         }

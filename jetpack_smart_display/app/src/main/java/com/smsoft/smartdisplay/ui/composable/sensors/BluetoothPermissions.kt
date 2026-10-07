@@ -1,6 +1,7 @@
 package com.smsoft.smartdisplay.ui.composable.sensors
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -19,7 +20,10 @@ fun BluetoothPermissions(
     )
     if (multiplePermissionsState.allPermissionsGranted) {
         if (isEnabled) {
-            onAllowed()
+            // A side effect, not a call during composition (that ran on every recomposition).
+            LaunchedEffect(Unit) {
+                onAllowed()
+            }
         } else {
             ShowEnableBluetooth(
                 modifier = Modifier

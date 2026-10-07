@@ -14,9 +14,15 @@ sealed class TimerState {
     @Keep
     data class Running(val tick: Long, override val timer: Timer = emptyTimer) : TimerState()
 
+    /** [tick] is the whole seconds shown; [remainingMs] is what a resume counts down. */
     @Keep
-    data class Paused(val tick: Long, override val timer: Timer = emptyTimer) : TimerState()
+    data class Paused(
+        val tick: Long,
+        override val timer: Timer = emptyTimer,
+        val remainingMs: Long = tick * 1000L
+    ) : TimerState()
 
+    /** Only for the alert dialog: in TimerHandler a finished timer is Idle again at once. */
     @Keep
     data class Finished(override val timer: Timer = emptyTimer) : TimerState()
 }

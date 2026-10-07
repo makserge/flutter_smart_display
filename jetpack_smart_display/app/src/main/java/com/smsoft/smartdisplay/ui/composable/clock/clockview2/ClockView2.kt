@@ -1,20 +1,17 @@
 package com.smsoft.smartdisplay.ui.composable.clock.clockview2
 
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.Typeface
 import android.text.TextPaint
-import android.util.TypedValue
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.NativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +21,9 @@ import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.utils.getColor
 import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
+import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -39,8 +38,8 @@ fun ClockView2(
     primaryColor: androidx.compose.ui.graphics.Color,
     secondaryColor: androidx.compose.ui.graphics.Color
 ) {
-    val primaryColor = getColor(primaryColor)
-    val secondaryColor = getColor(secondaryColor)
+    val primaryArgb = remember(primaryColor) { getColor(primaryColor) }
+    val secondaryArgb = remember(secondaryColor) { getColor(secondaryColor) }
 
     val context = LocalContext.current
 
@@ -87,8 +86,7 @@ fun ClockView2(
     val minuteHandWidth = getStateFromFlow(
         flow = viewModel.minuteHandWidthCV2,
         defaultValue = DEFAULT_MINUTE_HAND_WIDTH_CV2
-    )
-    as Float
+    ) as Float
 
     val secondHandWidth = getStateFromFlow(
         flow = viewModel.secondHandWidthCV2,
@@ -100,343 +98,296 @@ fun ClockView2(
         defaultValue = DEFAULT_CENTER_CIRCLE_RADIUS_CV2
     ) as Float
 
-    init(
-        outerRimColor = primaryColor,
-        outerRimWidth = dipToPx(outerRimWidth),
-        innerRimColor = primaryColor,
-        innerRimWidth = dipToPx(innerRimWidth),
-        thickMarkerColor = primaryColor,
-        thickMarkerWidth = dipToPx(thickMarkerWidth),
-        thinMarkerColor = primaryColor,
-        thinMarkerWidth = dipToPx(thinMarkerWidth),
-        digitTextColor = secondaryColor,
-        digitTextSize = dipToPx(digitTextSize),
-        digitFont = ResourcesCompat.getFont(context, font)!!,
-        hourHandColor = primaryColor,
-        hourHandWidth = dipToPx(hourHandWidth),
-        minuteHandColor = primaryColor,
-        minuteHandWidth = dipToPx(minuteHandWidth),
-        secondHandColor = primaryColor,
-        secondHandWidth = dipToPx(secondHandWidth),
-        centerCircleColor = primaryColor
-    )
-
-    Column(
-        modifier = modifier
-            .padding(
-                all = 20.dp
-            )
-    ) {
-        OnDraw(
-            modifier = modifier,
-            showThickMarkers = true,
-            showThinMarkers = true,
-            showNumbers = true,
-            showSweepHand = true,
-            centerCircleRadius = dipToPx(centerCircleRadius),
-            digitStyle = digitStyle,
-            hour = hour,
-            minute = minute,
-            second = second,
-            milliSecond = milliSecond
-        )
+    // Loading the font is a resource lookup: do it when the setting changes, not 10 times a second.
+    val digitFont = remember(context, font) {
+        ResourcesCompat.getFont(context, font) ?: Typeface.DEFAULT
     }
+
+    // The time changes every 100 ms. It reaches the Canvas through a State that only the draw
+    // phase reads, so OnDraw skips recomposition and each tick just redraws the dial.
+    val dayMillis = rememberUpdatedState(((hour * 60 + minute) * 60 + second) * 1000 + milliSecond)
+
+    OnDraw(
+        modifier = modifier,
+        showThickMarkers = true,
+        showThinMarkers = true,
+        showNumbers = true,
+        showSweepHand = true,
+        primaryColor = primaryArgb,
+        secondaryColor = secondaryArgb,
+        digitFont = digitFont,
+        digitStyle = digitStyle,
+        digitTextSize = digitTextSize,
+        outerRimWidth = outerRimWidth,
+        innerRimWidth = innerRimWidth,
+        thickMarkerWidth = thickMarkerWidth,
+        thinMarkerWidth = thinMarkerWidth,
+        hourHandWidth = hourHandWidth,
+        minuteHandWidth = minuteHandWidth,
+        secondHandWidth = secondHandWidth,
+        centerCircleRadius = centerCircleRadius,
+        dayMillis = { dayMillis.value }
+    )
 }
 
 @Composable
-fun OnDraw(
+private fun OnDraw(
     modifier: Modifier,
     showThickMarkers: Boolean,
     showThinMarkers: Boolean,
     showNumbers: Boolean,
     showSweepHand: Boolean,
-    centerCircleRadius: Float,
+    primaryColor: Int,
+    secondaryColor: Int,
+    digitFont: Typeface,
     digitStyle: DigitStyle,
-    hour: Int,
-    minute: Int,
-    second: Int,
-    milliSecond: Int,
+    digitTextSize: Float,
+    outerRimWidth: Float,
+    innerRimWidth: Float,
+    thickMarkerWidth: Float,
+    thinMarkerWidth: Float,
+    hourHandWidth: Float,
+    minuteHandWidth: Float,
+    secondHandWidth: Float,
+    centerCircleRadius: Float,
+    dayMillis: () -> Int
 ) {
+    // Kept for the life of the clock (they were process-wide globals changed during composition).
+    val paints = remember { ClockView2Paints() }
     Canvas(
         modifier = modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .padding(all = 20.dp)
     ) {
-        val width = size.width.toInt()
-        val height = size.height.toInt()
-        val centerX = width / 2
-        val centerY = height / 2
-        val rectSize = min(width, height)
-        paintRect[(centerX - rectSize / 2), (centerY - rectSize / 2), (centerX + rectSize / 2)] = centerY + rectSize / 2
+        val radius = size.minDimension / 2F
+        // Pixels per setting unit. The sizes were tuned in dp for a 520 dp dial (1024x600 and
+        // 1280x800 panels). Scaling them with the dial keeps those proportions on every panel and
+        // density instead of tiny text and long ticks on big dials, crowded ones on small dials.
+        val unit = size.minDimension / REFERENCE_DIAL_SIZE
+        paints.setUp(
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
+            digitFont = digitFont,
+            // Not below MIN_DIGIT_TEXT_SIZE: on an 800x480 panel the numerals were 10 px tall
+            digitTextSize = max(digitTextSize * unit, MIN_DIGIT_TEXT_SIZE.toPx()),
+            outerRimWidth = lineWidth(outerRimWidth, unit),
+            innerRimWidth = lineWidth(innerRimWidth, unit),
+            thickMarkerWidth = lineWidth(thickMarkerWidth, unit),
+            thinMarkerWidth = lineWidth(thinMarkerWidth, unit),
+            hourHandWidth = lineWidth(hourHandWidth, unit),
+            minuteHandWidth = lineWidth(minuteHandWidth, unit),
+            secondHandWidth = lineWidth(secondHandWidth, unit)
+        )
+        val thinMarkerLength = THIN_MARKER_LENGTH * unit
+        val thickMarkerLength = THICK_MARKER_LENGTH * unit
+        val handInset = HAND_INSET * unit
+        val fm = paints.fontMetrics
+        paints.digit.getFontMetrics(fm)
+        val numberHeight = -fm.ascent + fm.descent
+        val innerRimRadius = radius - thickMarkerLength - numberHeight - fm.bottom
+        val minuteHandLength = radius - thinMarkerLength - handInset
+        // Clearly shorter than the minute hand: ending at the inner rim made it 0.85-0.9 of the
+        // minute hand, so the two were hard to tell apart.
+        val hourHandLength = min(innerRimRadius - handInset, HOUR_HAND_RATIO * minuteHandLength)
+
+        // Draw-phase read: a new time invalidates only this drawing.
+        val millis = dayMillis()
+        val hour = millis / 3_600_000
+        val minute = millis / 60_000 % 60
+        val second = millis / 1000 % 60
+        val milliSecond = millis % 1000
 
         drawIntoCanvas {
             val canvas = it.nativeCanvas
-
-            canvas.translate(paintRect.centerX().toFloat(), paintRect.centerY().toFloat())
-            drawClockFace(
-                canvas = canvas
-            )
-            drawOuterRim(
-                canvas = canvas
-            )
+            canvas.save()
+            canvas.translate(center.x, center.y)
+            canvas.drawCircle(0F, 0F, radius, paints.clockFace)
+            canvas.drawCircle(0F, 0F, radius - thinMarkerLength, paints.outerRim)
             if (showThickMarkers) {
-                drawThickMarkers(
-                    canvas = canvas
+                drawMarkers(
+                    canvas = canvas,
+                    radius = radius,
+                    length = thickMarkerLength,
+                    thick = true,
+                    paint = paints.thickMarker
                 )
             }
             if (showThinMarkers) {
-                drawThinMarkers(
-                    canvas = canvas
+                drawMarkers(
+                    canvas = canvas,
+                    radius = radius,
+                    length = thinMarkerLength,
+                    thick = false,
+                    paint = paints.thinMarker
                 )
             }
             if (showNumbers) {
                 drawNumbers(
                     canvas = canvas,
-                    digitStyle = digitStyle
+                    outerRadius = radius - thickMarkerLength,
+                    halfHeight = numberHeight / 2,
+                    baselineShift = -(fm.ascent + fm.descent) / 2,
+                    digitStyle = digitStyle,
+                    paint = paints.digit
                 )
             }
-            drawInnerRim(
-                canvas = canvas
-            )
-            drawHourHand(
+            canvas.drawCircle(0F, 0F, innerRimRadius, paints.innerRim)
+            drawHand(
                 canvas = canvas,
-                hour = hour,
-                minute = minute,
-                second = second
+                radian = (hour - 3) * Math.PI / 6 + minute * Math.PI / 360 + second * Math.PI / 21600,
+                length = hourHandLength,
+                paint = paints.hourHand
             )
-            drawMinuteHand(
+            drawHand(
                 canvas = canvas,
-                minute = minute,
-                second = second
+                radian = (minute - 15) * Math.PI / 30 + second * Math.PI / 1800,
+                length = minuteHandLength,
+                paint = paints.minuteHand
             )
             if (showSweepHand) {
-                drawSweepHand(
+                drawHand(
                     canvas = canvas,
-                    milliSecond = 1000 * second + milliSecond
+                    radian = (1000 * second + milliSecond - 15000) * Math.PI / 30000,
+                    length = radius,
+                    paint = paints.sweepHand
                 )
             }
-            canvas.drawCircle(0F, 0F, centerCircleRadius, centerCirclePaint)
+            canvas.drawCircle(0F, 0F, centerCircleRadius * unit, paints.centerCircle)
+            canvas.restore()
         }
     }
 }
 
-private fun init(
-    outerRimColor: Int,
-    outerRimWidth: Float,
-    innerRimColor: Int,
-    innerRimWidth: Float,
-    thickMarkerColor: Int,
-    thickMarkerWidth: Float,
-    thinMarkerColor: Int,
-    thinMarkerWidth: Float,
-    digitTextColor: Int,
-    digitTextSize: Float,
-    digitFont: Typeface,
-    hourHandColor: Int,
-    hourHandWidth: Float,
-    minuteHandColor: Int,
-    minuteHandWidth: Float,
-    secondHandColor: Int,
-    secondHandWidth: Float,
-    centerCircleColor: Int
-) {
-    clockFacePaint.apply {
-        isAntiAlias = true
+// Thin lines stay at least one pixel wide; below that they fade out on small dials.
+private fun lineWidth(
+    value: Float,
+    unit: Float
+) = max(1F, value * unit)
+
+private class ClockView2Paints {
+    val clockFace = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
+        color = android.graphics.Color.BLACK
     }
-    outerRimPaint.apply {
-        isAntiAlias = true
-        color = outerRimColor
-        style = Paint.Style.STROKE
-        strokeWidth = outerRimWidth
-    }
-    innerRimPaint.apply {
-        isAntiAlias = true
-        color = innerRimColor
-        style = Paint.Style.STROKE
-        strokeWidth = innerRimWidth
-    }
-    thickMarkerPaint.apply {
-        isAntiAlias = true
-        color = thickMarkerColor
-        style = Paint.Style.STROKE
-        strokeWidth = thickMarkerWidth
-    }
-    thinMarkerPaint.apply {
-        isAntiAlias = true
-        color = thinMarkerColor
-        style = Paint.Style.STROKE
-        strokeWidth = thinMarkerWidth
-    }
-    digitPaint.apply {
-        isAntiAlias = true
-        color = digitTextColor
-        textSize = digitTextSize
+    val outerRim = strokePaint()
+    val innerRim = strokePaint()
+    val thickMarker = strokePaint()
+    val thinMarker = strokePaint()
+    val digit = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        typeface = digitFont
     }
-    hourHandPaint.apply {
-        isAntiAlias = true
-        color = hourHandColor
-        style = Paint.Style.STROKE
-        strokeWidth = hourHandWidth
-    }
-    minuteHandPaint.apply {
-        isAntiAlias = true
-        color = minuteHandColor
-        style = Paint.Style.STROKE
-        strokeWidth = minuteHandWidth
-    }
-    sweepHandPaint.apply {
-        isAntiAlias = true
-        color = secondHandColor
-        style = Paint.Style.STROKE
-        strokeWidth = secondHandWidth
-    }
-    centerCirclePaint.apply {
-        isAntiAlias = true
-        color = centerCircleColor
+    val hourHand = strokePaint()
+    val minuteHand = strokePaint()
+    val sweepHand = strokePaint()
+    val centerCircle = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
-}
+    val fontMetrics = Paint.FontMetrics()
 
-private fun drawClockFace(
-    canvas: NativeCanvas
-) {
-    canvas.drawCircle(0F, 0F, paintRect.width() / 2F, clockFacePaint)
-}
+    // Widths and text size in px for the current dial.
+    fun setUp(
+        primaryColor: Int,
+        secondaryColor: Int,
+        digitFont: Typeface,
+        digitTextSize: Float,
+        outerRimWidth: Float,
+        innerRimWidth: Float,
+        thickMarkerWidth: Float,
+        thinMarkerWidth: Float,
+        hourHandWidth: Float,
+        minuteHandWidth: Float,
+        secondHandWidth: Float
+    ) {
+        outerRim.setStroke(primaryColor, outerRimWidth)
+        innerRim.setStroke(primaryColor, innerRimWidth)
+        thickMarker.setStroke(primaryColor, thickMarkerWidth)
+        thinMarker.setStroke(primaryColor, thinMarkerWidth)
+        hourHand.setStroke(primaryColor, hourHandWidth)
+        minuteHand.setStroke(primaryColor, minuteHandWidth)
+        sweepHand.setStroke(primaryColor, secondHandWidth)
+        centerCircle.color = primaryColor
+        digit.color = secondaryColor
+        digit.typeface = digitFont
+        digit.textSize = digitTextSize
+    }
 
-private fun drawOuterRim(
-    canvas: Canvas
-) {
-    val radius = paintRect.width() / 2
-    canvas.drawCircle(0F, 0F, radius - DEFAULT_THIN_MARKER_LENGTH, outerRimPaint)
-}
+    private fun strokePaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+    }
 
-private fun drawThickMarkers(
-    canvas: Canvas
-) {
-    val radius = paintRect.width() / 2
-    var degree = 0
-    while (degree < 360) {
-        val radian = degree * Math.PI / 180
-        canvas.drawLine(
-            radius * cos(radian).toFloat(),
-            radius * sin(radian).toFloat(),
-            (radius - DEFAULT_THICK_MARKER_LENGTH) * cos(radian).toFloat(),
-            (radius - DEFAULT_THICK_MARKER_LENGTH) * sin(radian).toFloat(),
-            thickMarkerPaint
-        )
-        degree += 30
+    private fun Paint.setStroke(
+        color: Int,
+        width: Float
+    ) {
+        this.color = color
+        strokeWidth = width
     }
 }
 
-private fun drawThinMarkers(
-    canvas: Canvas
+// Ticks from the dial edge inwards: every 30 degrees (thick) or the other 6 degree steps (thin).
+private fun drawMarkers(
+    canvas: Canvas,
+    radius: Float,
+    length: Float,
+    thick: Boolean,
+    paint: Paint
 ) {
-    val radius = paintRect.width() / 2
     var degree = 0
     while (degree < 360) {
-        if (degree % 30 == 0) {
-            degree += 6
-            continue
+        if ((degree % 30 == 0) == thick) {
+            val radian = degree * Math.PI / 180
+            val cosA = cos(radian).toFloat()
+            val sinA = sin(radian).toFloat()
+            canvas.drawLine(
+                radius * cosA,
+                radius * sinA,
+                (radius - length) * cosA,
+                (radius - length) * sinA,
+                paint
+            )
         }
-        val radian = degree * Math.PI / 180
-        canvas.drawLine(
-            radius * cos(radian).toFloat(),
-            radius * sin(radian).toFloat(),
-            (radius - DEFAULT_THIN_MARKER_LENGTH) * cos(radian).toFloat(),
-            (radius - DEFAULT_THIN_MARKER_LENGTH) * sin(radian).toFloat(),
-            thinMarkerPaint
-        )
         degree += 6
     }
 }
 
+/**
+ * Draws the hour numerals inside [outerRadius] (the inner end of the hour ticks). Each label is
+ * moved in by its own extent along its direction, so wide labels such as "10" or "XI" do not
+ * touch their tick; at 12 and 6 this is [halfHeight], as before.
+ */
 private fun drawNumbers(
     canvas: Canvas,
-    digitStyle: DigitStyle
+    outerRadius: Float,
+    halfHeight: Float,
+    baselineShift: Float,
+    digitStyle: DigitStyle,
+    paint: Paint
 ) {
-    val radius = paintRect.width() / 2
-    var number = 0
-    val fm = digitPaint.fontMetrics
-    val numberHeight = -fm.ascent + fm.descent
+    val numbers = if (digitStyle == DigitStyle.ROMAN) ROMAN_NUMBER_LIST else ARABIC_NUMBER_LIST
     var degree = -60
-    while (degree < 300) {
+    for (numberText in numbers) {
         val radian = degree * Math.PI / 180
-        val numberText = if (digitStyle == DigitStyle.ROMAN) {
-            ROMAN_NUMBER_LIST[number++]
-        } else {
-            number++
-            number.toString()
-        }
+        val cosA = cos(radian).toFloat()
+        val sinA = sin(radian).toFloat()
+        val halfWidth = paint.measureText(numberText) / 2
+        val numberRadius = outerRadius - (abs(cosA) * halfWidth + abs(sinA) * halfHeight)
         canvas.drawText(
             numberText,
-            (radius - DEFAULT_THICK_MARKER_LENGTH - numberHeight / 2) * cos(radian)
-                .toFloat(),
-            (radius - DEFAULT_THICK_MARKER_LENGTH - numberHeight / 2) * sin(radian)
-                .toFloat() - (fm.ascent + fm.descent) / 2,
-            digitPaint
+            numberRadius * cosA,
+            numberRadius * sinA + baselineShift,
+            paint
         )
         degree += 30
     }
 }
 
-private fun drawInnerRim(
-    canvas: Canvas
-) {
-    val radius = paintRect.width() / 2
-    val fm = digitPaint.fontMetrics
-    val numberHeight = -fm.ascent + fm.descent
-    canvas.drawCircle(
-        0F,
-        0F,
-        radius - DEFAULT_THICK_MARKER_LENGTH - numberHeight - fm.bottom,
-        innerRimPaint
-    )
-}
-
-private fun drawHourHand(
+private fun drawHand(
     canvas: Canvas,
-    hour: Int,
-    minute: Int,
-    second: Int
+    radian: Double,
+    length: Float,
+    paint: Paint
 ) {
-    val fm = digitPaint.fontMetrics
-    val numberHeight = -fm.ascent + fm.descent
-    val radius = (paintRect.width() / 2 - DEFAULT_THICK_MARKER_LENGTH - numberHeight - fm.bottom - dipToPx(5F)).toInt()
-    val radian = (hour - 3) * Math.PI / 6 + minute * Math.PI / 360 + second * Math.PI / 21600
-    val stopX = radius * cos(radian).toFloat()
-    val stopY = radius * sin(radian).toFloat()
-    canvas.drawLine(0F, 0F, stopX, stopY, hourHandPaint)
-}
-
-private fun drawMinuteHand(
-    canvas: Canvas,
-    minute: Int,
-    second: Int
-) {
-    val radius = (paintRect.width() / 2 - DEFAULT_THIN_MARKER_LENGTH - dipToPx(5F)).toInt()
-    val radian = (minute - 15) * Math.PI / 30 + second * Math.PI / 1800
-    val stopX = radius * cos(radian).toFloat()
-    val stopY = radius * sin(radian).toFloat()
-    canvas.drawLine(0F, 0F, stopX, stopY, minuteHandPaint)
-}
-
-private fun drawSweepHand(
-    canvas: Canvas,
-    milliSecond: Int
-) {
-    val radius = paintRect.width() / 2
-    val radian = (milliSecond - 15000) * Math.PI / 30000
-    val stopX = radius * cos(radian).toFloat()
-    val stopY = radius * sin(radian).toFloat()
-    canvas.drawLine(0F, 0F, stopX, stopY, sweepHandPaint)
-}
-
-private fun dipToPx(
-    value: Float
-): Float {
-    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, Resources.getSystem().displayMetrics)
+    canvas.drawLine(0F, 0F, length * cos(radian).toFloat(), length * sin(radian).toFloat(), paint)
 }
 
 enum class DigitStyle(val value: String, val titleId: Int) {
@@ -498,27 +449,23 @@ enum class Font(val id: String, val font: Int, val titleId: Int) {
     }
 }
 
-private val DEFAULT_THIN_MARKER_LENGTH = dipToPx(10F)
-private val DEFAULT_THICK_MARKER_LENGTH = dipToPx(20F)
+// The dial is this many setting units across: the dial size in dp on the 1024x600 and 1280x800
+// panels the defaults were tuned on. Text size, marker and hand widths and lengths use this unit.
+private const val REFERENCE_DIAL_SIZE = 520F
+private const val THIN_MARKER_LENGTH = 10F
+private const val THICK_MARKER_LENGTH = 20F
+private const val HAND_INSET = 5F
+private const val HOUR_HAND_RATIO = 0.7F
 private val ROMAN_NUMBER_LIST = arrayOf("Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ", "Ⅺ", "Ⅻ")
-
-private val clockFacePaint = Paint()
-private val outerRimPaint = Paint()
-private val innerRimPaint = Paint()
-private val thickMarkerPaint = Paint()
-private val thinMarkerPaint = Paint()
-private val digitPaint = TextPaint()
-private val hourHandPaint = Paint()
-private val minuteHandPaint = Paint()
-private val sweepHandPaint = Paint()
-private val centerCirclePaint = Paint()
-private val paintRect = Rect()
+private val ARABIC_NUMBER_LIST = Array(12) { (it + 1).toString() }
 
 const val DEFAULT_OUTER_RIM_WIDTH_CV2 = 1F
 const val DEFAULT_SECOND_HAND_WIDTH_CV2 = 1F
 const val DEFAULT_MINUTE_HAND_WIDTH_CV2 = 3F
 const val DEFAULT_HOUR_HAND_WIDTH_CV2 = 5F
 const val DEFAULT_DIGIT_TEXT_SIZE_CV2 = 18F
+// Smallest numeral text size, whatever the dial size
+private val MIN_DIGIT_TEXT_SIZE = 16.dp
 const val DEFAULT_THIN_MARKER_WIDTH_CV2 = 1F
 const val DEFAULT_THICK_MARKER_WIDTH_CV2 = 3F
 const val DEFAULT_INNER_RIM_WIDTH_CV2 = 1F

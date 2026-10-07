@@ -26,7 +26,6 @@ import com.smsoft.smartdisplay.data.AlarmSoundType
 import com.smsoft.smartdisplay.data.database.entity.Alarm
 import com.smsoft.smartdisplay.ui.common.ListChooser
 import com.smsoft.smartdisplay.ui.screen.alarms.AlarmsViewModel
-import com.smsoft.smartdisplay.utils.playAlarmSound
 
 @UnstableApi
 @Composable
@@ -105,11 +104,7 @@ fun UpdateItem(
                         value = soundTone,
                         onChange = {
                             soundTone = it
-                            playAlarmSound(
-                                player = viewModel.player,
-                                soundToneType = AlarmSoundToneType.getById(it),
-                                soundVolume = 1F
-                            )
+                            viewModel.previewTone(it)
                         },
                     )
                     ListChooser(
@@ -119,8 +114,7 @@ fun UpdateItem(
                         value = radioPreset.toString(),
                         onChange = {
                             radioPreset = Integer.parseInt(it)
-                            viewModel.playRadio(radioPreset,  false) {
-                            }
+                            viewModel.previewRadio(radioPreset)
                         },
                     )
                 }

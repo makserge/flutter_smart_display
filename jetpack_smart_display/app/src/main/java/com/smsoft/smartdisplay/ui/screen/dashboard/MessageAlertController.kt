@@ -15,18 +15,19 @@ import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_ENABLED_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_TIMEOUT_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.dashboard.mqtt.DashboardMqttMessage
+import com.smsoft.smartdisplay.utils.TransientAudioDucking
 import com.smsoft.smartdisplay.utils.playAlarmSound
+import com.smsoft.smartdisplay.utils.observe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @UnstableApi
 class MessageAlertController(
     private val dataStore: DataStore<Preferences>,
     private val player: ExoPlayer,
+    private val ducking: TransientAudioDucking,
     private val scope: CoroutineScope,
 ) {
     private val messageStateInt = MutableStateFlow<String?>(null)
@@ -39,30 +40,25 @@ class MessageAlertController(
 
     private var offTimer: CountDownTimer? = null
 
+    /** Follows the message settings: they used to apply only after a restart. */
     fun start() {
-        scope.launch(Dispatchers.IO) {
-            val data = dataStore.data.first()
-            data[booleanPreferencesKey(PreferenceKey.MESSAGE_ENABLED.key)]?.let {
-                enabled = it
-            }
-            data[floatPreferencesKey(PreferenceKey.MESSAGE_TIMEOUT.key)]?.let {
-                timeout = it
-            }
-            data[floatPreferencesKey(PreferenceKey.MESSAGE_SOUND_VOLUME.key)]?.let {
-                soundVolume = it
-            }
-            data[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)]?.let {
-                topic = it.trim()
-            }
+        dataStore.observe(scope, ::readMessageConfig) {
+            enabled = it.enabled
+            timeout = it.timeout
+            soundVolume = it.soundVolume
+            topic = it.topic
         }
     }
 
     fun onMqttMessage(message: DashboardMqttMessage) {
-        if (message.topic != topic || !enabled) {
+        // A retained message is replayed on every (re)subscribe; show only new messages.
+        if (message.topic != topic || !enabled || message.isRetained) {
             return
         }
         messageStateInt.value = message.payload.trim()
         scope.launch {
+            // Lower the radio while the alert sounds instead of pausing it for good.
+            ducking.duck()
             playMessageSound()
             restartOffTimer { cancel() }
         }
@@ -72,10 +68,12 @@ class MessageAlertController(
         player.stop()
         offTimer?.cancel()
         messageStateInt.value = null
+        ducking.release()
     }
 
     fun release() {
         offTimer?.cancel()
+        ducking.release()
     }
 
     private fun playMessageSound() {
@@ -83,7 +81,6 @@ class MessageAlertController(
             player = player,
             soundToneType = AlarmSoundToneType.BARIUM,
             soundVolume = soundVolume,
-            isFadeIn = false,
             isRepeat = true
         )
     }
@@ -103,3 +100,17 @@ class MessageAlertController(
         offTimer!!.start()
     }
 }
+
+private data class MessageConfig(
+    val enabled: Boolean,
+    val timeout: Float,
+    val soundVolume: Float,
+    val topic: String
+)
+
+private fun readMessageConfig(data: Preferences) = MessageConfig(
+    enabled = data[booleanPreferencesKey(PreferenceKey.MESSAGE_ENABLED.key)] ?: MESSAGE_ENABLED_DEFAULT,
+    timeout = data[floatPreferencesKey(PreferenceKey.MESSAGE_TIMEOUT.key)] ?: MESSAGE_TIMEOUT_DEFAULT,
+    soundVolume = data[floatPreferencesKey(PreferenceKey.MESSAGE_SOUND_VOLUME.key)] ?: MESSAGE_SOUND_VOLUME_DEFAULT,
+    topic = data[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)]?.trim() ?: MESSAGE_DEFAULT_TOPIC
+)

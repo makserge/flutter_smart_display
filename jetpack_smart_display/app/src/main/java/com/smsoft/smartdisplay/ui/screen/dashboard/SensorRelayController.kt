@@ -2,7 +2,7 @@ package com.smsoft.smartdisplay.ui.screen.dashboard.controller
 
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.ContextCompat
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.smsoft.smartdisplay.utils.observe
 
 class SensorRelayController(
     private val context: Context,
@@ -47,27 +48,23 @@ class SensorRelayController(
     private var proximityLongDetectionJob: Job? = null
 
     fun start() {
-        scope.launch(Dispatchers.IO) {
-            val data = dataStore.data.first()
-            data[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_TOPIC.key)]?.let {
-                lightSensorTopic = it.trim()
-            }
-            data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_TOPIC.key)]?.let {
-                proximitySensorTopic = it.trim()
-            }
-            data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_ON.key)]?.let {
-                proximitySensorPayloadOn = it.trim()
-            }
-            data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)]?.let {
-                proximitySensorPayloadOff = it.trim()
-            }
+        // Follows the topic settings: they used to apply only after a restart.
+        dataStore.observe(scope, ::readRelayConfig) {
+            lightSensorTopic = it.lightSensorTopic
+            proximitySensorTopic = it.proximitySensorTopic
+            proximitySensorPayloadOn = it.proximitySensorPayloadOn
+            proximitySensorPayloadOff = it.proximitySensorPayloadOff
         }
 
         scope.launch {
-            ContextCompat.startForegroundService(
-                context,
-                Intent(context, SensorService::class.java)
-            )
+            // A plain start while the dashboard is visible: the service promotes itself to the
+            // foreground and keeps working as a normal service if Android refuses that. With
+            // startForegroundService() a refused promotion was fatal ("did not call startForeground").
+            try {
+                context.startService(Intent(context, SensorService::class.java))
+            } catch (e: IllegalStateException) {
+                Log.w(TAG, "Sensor service not started", e)
+            }
         }
 
         scope.launch {
@@ -106,8 +103,10 @@ class SensorRelayController(
             started = WhileSubscribed(5000)
         )
         lightSensorState?.collect { state ->
+            // 0 = no current reading (sensor switched off): the alarm light must not act on the
+            // last reading from before.
+            alarmHandler.lightSensorState.emit(state)
             if (state > 0) {
-                alarmHandler.lightSensorState.emit(state)
                 mqttManager.publish(
                     scope = scope,
                     topic = lightSensorTopic,
@@ -140,3 +139,19 @@ class SensorRelayController(
         }
     }
 }
+
+private const val TAG = "SensorRelayController"
+
+private data class RelayConfig(
+    val lightSensorTopic: String,
+    val proximitySensorTopic: String,
+    val proximitySensorPayloadOn: String,
+    val proximitySensorPayloadOff: String
+)
+
+private fun readRelayConfig(data: Preferences) = RelayConfig(
+    lightSensorTopic = data[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_TOPIC.key)]?.trim() ?: LIGHT_SENSOR_TOPIC_DEFAULT,
+    proximitySensorTopic = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_TOPIC.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_TOPIC,
+    proximitySensorPayloadOn = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_ON.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON,
+    proximitySensorPayloadOff = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+)

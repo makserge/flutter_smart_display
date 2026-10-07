@@ -1,12 +1,19 @@
 package com.smsoft.smartdisplay.service.asr
 
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class SpeechRecognitionServiceHandler: SpeechRecognitionHandler {
-    override var isServiceStarted: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    override val isServiceStarted: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    override var speechRecognitionState: Flow<SpeechRecognitionState>? = null
+    private val events = MutableSharedFlow<SpeechRecognitionState>(extraBufferCapacity = 16)
+    override val speechRecognitionState: SharedFlow<SpeechRecognitionState> = events.asSharedFlow()
+
+    override fun onRecognitionState(state: SpeechRecognitionState) {
+        events.tryEmit(state)
+    }
 }
 
 sealed class SpeechRecognitionState {
