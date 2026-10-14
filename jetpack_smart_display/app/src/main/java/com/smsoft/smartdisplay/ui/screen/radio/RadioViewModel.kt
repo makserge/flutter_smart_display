@@ -16,6 +16,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.VoiceCommandType
@@ -46,7 +47,8 @@ class RadioViewModel @Inject constructor(
     var presetTitle = mutableStateOf("")
     var duration = mutableLongStateOf(0L)
     var progress = mutableFloatStateOf(0F)
-    var progressString = mutableStateOf("00:00")
+    // The same text as after a stop (calculateProgressValues(0)), not "00:00".
+    var progressString = mutableStateOf(formatDuration(0L))
     var isPlaying = mutableStateOf(false)
     var metaTitle = mutableStateOf("")
     /** The volume as a slider position 0..1, even in loudness (RadioVolume), or UNKNOWN. */
@@ -71,7 +73,11 @@ class RadioViewModel @Inject constructor(
             radioMediaServiceHandler.mediaState.collect { mediaState ->
                 when (mediaState) {
                     MediaState.Initial -> uiStateInt.value = UIState.Initial
-                    is MediaState.Buffering -> calculateProgressValues(mediaState.progress)
+                    // Also reported while the radio is off (MPD connecting to show its state):
+                    // the elapsed time only counts while the radio plays.
+                    is MediaState.Buffering -> if (radioMediaServiceHandler.isActive.value) {
+                        calculateProgressValues(mediaState.progress)
+                    }
                     is MediaState.Playing -> isPlaying.value = mediaState.isPlaying
                     is MediaState.Progress -> calculateProgressValues(mediaState.progress)
                     is MediaState.Ready -> {
@@ -86,8 +92,21 @@ class RadioViewModel @Inject constructor(
         }
         viewModelScope.launch {
             radioMediaServiceHandler.mediaMetadata.collect { mediaMetadata ->
-                mediaMetadata.title?.let {
-                    metaTitle.value = convertCharset(it.toString())
+                if (radioMediaServiceHandler.isActive.value) {
+                    showSongTitle(mediaMetadata)
+                }
+            }
+        }
+        viewModelScope.launch {
+            radioMediaServiceHandler.isActive.collect { isOn ->
+                if (isOn) {
+                    // MPD reports the song of a stream started by another client before it
+                    // reports that it plays.
+                    showSongTitle(radioMediaServiceHandler.mediaMetadata.value)
+                } else {
+                    // A radio that is off plays no song, and a new start begins the stream anew.
+                    metaTitle.value = ""
+                    calculateProgressValues(0L)
                 }
             }
         }
@@ -120,13 +139,20 @@ class RadioViewModel @Inject constructor(
                 volume.floatValue = radioMediaServiceHandler.volumePosition(newPlayer)
                 volumeHideTimer?.cancel()
                 isShowVolumeInt.value = false
-                presetTitle.value = ""
+                // The new type's saved station ("" for MPD until it answers); a radio that was on
+                // has already restarted on the new player and reports its own station.
+                presetTitle.value = radioMediaServiceHandler.stationTitle(savedPreset())
                 // The metadata collector skips missing titles, so the old song is cleared here.
                 metaTitle.value = ""
                 duration.longValue = 0L
                 calculateProgressValues(0L)
                 if (isEntered) {
-                    if (isInternalPlayer()) ensureServiceStarted() else stopRadioService()
+                    if (isInternalPlayer()) {
+                        ensureServiceStarted()
+                    } else {
+                        stopRadioService()
+                        radioMediaServiceHandler.connectMpd()
+                    }
                 }
             }
         }
@@ -166,11 +192,28 @@ class RadioViewModel @Inject constructor(
         if (uiEvent != UIEvent.Pause) {
             ensureServiceStarted()
         }
+        // A radio that is off starts from the saved station, as the voice commands do: the player
+        // itself would start from its first station.
+        val isOff = !radioMediaServiceHandler.isActive.value
         when (uiEvent) {
-            UIEvent.Backward -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Previous)
-            UIEvent.Forward -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Next)
-            UIEvent.PlayPause -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.PlayPause)
-            UIEvent.Play -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Play)
+            UIEvent.Backward -> if (isOff) {
+                radioMediaServiceHandler.previous(savedPreset())
+            } else {
+                radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Previous)
+            }
+            UIEvent.Forward -> if (isOff) {
+                radioMediaServiceHandler.next(savedPreset())
+            } else {
+                radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Next)
+            }
+            UIEvent.PlayPause,
+            UIEvent.Play -> if (isOff) {
+                radioMediaServiceHandler.ensurePlaying(savedPreset())
+            } else {
+                radioMediaServiceHandler.onPlayerEvent(
+                    if (uiEvent == UIEvent.Play) PlayerEvent.Play else PlayerEvent.PlayPause
+                )
+            }
             UIEvent.Pause -> radioMediaServiceHandler.onPlayerEvent(PlayerEvent.Pause)
             is UIEvent.UpdateProgress -> {
                 progress.floatValue = uiEvent.newProgress
@@ -207,6 +250,23 @@ class RadioViewModel @Inject constructor(
         progressString.value = formatDuration(currentProgress / 1000)
     }
 
+    /**
+     * Shows the song of [mediaMetadata]. A report without a title keeps the song shown, except
+     * the empty metadata of a station change (RadioMediaServiceHandler.onMediaItemTransition):
+     * the old station's song is not playing any more.
+     */
+    private fun showSongTitle(
+        mediaMetadata: MediaMetadata
+    ) {
+        if (mediaMetadata == MediaMetadata.EMPTY) {
+            metaTitle.value = ""
+            return
+        }
+        mediaMetadata.title?.let {
+            metaTitle.value = convertCharset(it.toString())
+        }
+    }
+
     private fun convertCharset(
         data: String
     ): String {
@@ -217,27 +277,28 @@ class RadioViewModel @Inject constructor(
     }
 
     /**
-     * The radio page became the settled pager page. Starts the media service and the saved
-     * station, unless [pendingCommand] (a voice command that brought the user here) switches
-     * the radio off or picks the station itself. Repeated calls are ignored until [onLeave].
+     * The radio page became the settled pager page. Opening the page does not change playback:
+     * a radio that plays keeps playing, and one that is off stays off until a voice command or
+     * the play button starts it. Repeated calls are ignored until [onLeave].
      */
-    fun onEnter(
-        pendingCommand: VoiceCommandType?
-    ) {
+    fun onEnter() {
         if (isEntered) {
             return
         }
         isEntered = true
-        ensureServiceStarted()
-        val isStartedByCommand = when (pendingCommand) {
-            VoiceCommandType.INTERNET_RADIO_OFF,
-            VoiceCommandType.INTERNET_RADIO_PREV_ITEM,
-            VoiceCommandType.INTERNET_RADIO_NEXT_ITEM -> true
-            else -> false
+        if (radioMediaServiceHandler.isActive.value) {
+            return
         }
-        if (!isStartedByCommand) {
-            radioMediaServiceHandler.ensurePlaying(savedPreset())
+        // A radio that is off has no stream, so the player never reports Ready and the page
+        // showed a spinner forever. It shows the saved station with a play button instead.
+        if (uiStateInt.value == UIState.Initial) {
+            presetTitle.value = radioMediaServiceHandler.stationTitle(savedPreset())
+            isPlaying.value = false
+            uiStateInt.value = UIState.Ready
         }
+        // MPD's queue is unknown until the app connects, and another client may have started
+        // MPD: the page shows MPD's station and play state once it answers.
+        radioMediaServiceHandler.connectMpd()
     }
 
     /**
@@ -257,15 +318,16 @@ class RadioViewModel @Inject constructor(
         }
     }
 
-    /** The radio page was left: the radio stops first, then its media service. */
+    /**
+     * The radio page was left. The radio keeps playing: leaving the page does not stop it. With
+     * the radio off, the connection that only showed MPD's state is closed.
+     */
     fun onLeave() {
         if (!isEntered) {
             return
         }
         isEntered = false
-        radioMediaServiceHandler.stop()
-        // Also for MPD: the radio type may have changed since the service was started.
-        stopRadioService()
+        radioMediaServiceHandler.disconnectMpdIfOff()
     }
 
     private fun stopRadioService() {

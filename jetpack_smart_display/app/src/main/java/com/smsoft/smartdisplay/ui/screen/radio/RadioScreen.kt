@@ -18,6 +18,7 @@ import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.DashboardItem
 import com.smsoft.smartdisplay.data.VoiceCommand
+import com.smsoft.smartdisplay.data.VoiceCommandType
 import com.smsoft.smartdisplay.service.radio.RadioVolume
 import com.smsoft.smartdisplay.ui.composable.radio.RadioMediaPlayerUI
 import com.smsoft.smartdisplay.ui.composable.radio.VolumeControl
@@ -57,9 +58,12 @@ fun RadioScreen(
             return@LaunchedEffect
         }
         val radioCommand = command?.type?.takeIf { it.page == DashboardItem.INTERNET_RADIO }
-        viewModel.onEnter(pendingCommand = radioCommand)
+        viewModel.onEnter()
         if (radioCommand != null) {
-            viewModel.processVoiceCommand(radioCommand)
+            // "радио" only opens the page: it must not start the radio
+            if (radioCommand != VoiceCommandType.INTERNET_RADIO) {
+                viewModel.processVoiceCommand(radioCommand)
+            }
             onCommandHandled()
         }
     }

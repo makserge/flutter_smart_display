@@ -3,7 +3,7 @@ package com.smsoft.smartdisplay.ui.composable.timers
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.AlertDialog
+import com.smsoft.smartdisplay.ui.common.EditScreen
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.AlarmSoundToneType
@@ -43,12 +42,7 @@ fun UpdateItem(
     var soundTone by remember { mutableStateOf(item.soundTone) }
     var title by remember { mutableStateOf(item.title) }
 
-    AlertDialog(
-        modifier = Modifier
-            .padding(15.dp),
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+    EditScreen(
         onDismissRequest = onCloseDialog,
         title = {
             Text(

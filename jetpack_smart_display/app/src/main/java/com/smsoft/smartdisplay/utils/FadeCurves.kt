@@ -23,8 +23,8 @@ fun fadeProgress(elapsedMs: Long, durationMs: Long): Float =
  * the level changes by the same number of dB per time step (the crescendo of AOSP DeskClock).
  * Silence has no level in dB: it counts as [VOLUME_FADE_RANGE_DB] below the louder end. A fade in
  * from silence is therefore silent at 0, jumps to -40 dB of the target at its first step, about
- * the noise floor of a quiet bedroom for an alarm-loud target, and rises by 40 dB / 15 s =
- * 0.27 dB per 100 ms step, well below the ~1 dB a listener can tell apart. The shape in dB does
+ * the noise floor of a quiet bedroom for an alarm-loud target, and rises by 40 dB / 60 s =
+ * 0.07 dB per 100 ms step, well below the ~1 dB a listener can tell apart. The shape in dB does
  * not depend on the target volume. A fade down (or a fade to silence) is the same curve backwards.
  * The ends are exact: [fromVolume] at 0, [toVolume] at 1.
  */
@@ -82,3 +82,42 @@ private const val VOLUME_FADE_RANGE_DB = 40F
 // (= kappa * epsilon, epsilon = 216/24389) is where it meets the cube-root part.
 private const val CIE_KAPPA = 24389F / 27F
 private const val CIE_LIGHTNESS_KNEE = 8F
+
+/** The alarm sound rises from silence to its volume in 60 s, with the light (it was 15 s). */
+const val ALARM_SOUND_FADE_IN_MS = 60_000L
+/** The wake-up light rises from 0 to 100 % in 60 s (it was 30 s). */
+const val ALARM_LIGHT_FADE_IN_MS = 60_000L
+/**
+ * When the alarm timeout is over, sound and light fade out in 10 s and only then the ring ends.
+ * Both used to stop at once.
+ */
+const val ALARM_FADE_OUT_MS = 10_000L
+
+/**
+ * The alarm volume [ringElapsedMs] into a ring with [timeoutMs]: the fade-in to [volume] along
+ * [fadeVolume], begun [fadeInStartMs] into the ring (a sound started later, e.g. the tone that
+ * replaces a radio station that failed, fades in from its own start), then from [timeoutMs] a
+ * fade-out to silence in [ALARM_FADE_OUT_MS] from wherever the fade-in got to.
+ */
+fun alarmVolumeAt(volume: Float, ringElapsedMs: Long, timeoutMs: Long, fadeInStartMs: Long = 0L): Float {
+    fun fadeIn(elapsedMs: Long) =
+        fadeVolume(0F, volume, fadeProgress(elapsedMs - fadeInStartMs, ALARM_SOUND_FADE_IN_MS))
+    if (ringElapsedMs < timeoutMs) {
+        return fadeIn(ringElapsedMs)
+    }
+    return fadeVolume(fadeIn(timeoutMs), 0F, fadeProgress(ringElapsedMs - timeoutMs, ALARM_FADE_OUT_MS))
+}
+
+/**
+ * The wake-up light level in percent [ringElapsedMs] into a ring with [timeoutMs], for a light
+ * switched on [fadeInStartMs] into the ring (once the room is dark): up along [lightFadePercent],
+ * then from [timeoutMs] down in [ALARM_FADE_OUT_MS], evenly in perceived brightness too.
+ */
+fun alarmLightPercentAt(ringElapsedMs: Long, timeoutMs: Long, fadeInStartMs: Long = 0L): Int {
+    fun fadeIn(elapsedMs: Long) = fadeProgress(elapsedMs - fadeInStartMs, ALARM_LIGHT_FADE_IN_MS)
+    if (ringElapsedMs < timeoutMs) {
+        return lightFadePercent(fadeIn(ringElapsedMs))
+    }
+    val fadeOut = fadeProgress(ringElapsedMs - timeoutMs, ALARM_FADE_OUT_MS)
+    return lightFadePercent(fadeIn(timeoutMs) * (1F - fadeOut))
+}

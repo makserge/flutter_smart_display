@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui.composable.sensors
 
-import android.content.Context
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -13,7 +12,6 @@ import com.smsoft.smartdisplay.R
 @Composable
 internal fun UpdateMQTTTopics(
     modifier: Modifier,
-    context: Context,
     topic1: String,
     topic1Unit: String,
     topic1Icon: String,
@@ -46,14 +44,12 @@ internal fun UpdateMQTTTopics(
 
     TextFieldWithIcon(
         modifier = Modifier,
-        context = context,
-        title = stringResource(R.string.add_sensor_topic1),
+        title =stringResource(R.string.add_sensor_topic1),
         topic = topic1,
         unitTitle = stringResource(R.string.add_sensor_unit),
         unit = topic1Unit,
         icon = topic1Icon,
         focusRequester = topic1FocusRequester,
-        initialFocus = false,
         onTopicChange = onTopic1Change,
         onUnitChange = onUnit1Change,
         onIconChange = onIcon1Change
@@ -63,14 +59,12 @@ internal fun UpdateMQTTTopics(
     )
     TextFieldWithIcon(
         modifier = Modifier,
-        context = context,
-        title = stringResource(R.string.add_sensor_topic2),
+        title =stringResource(R.string.add_sensor_topic2),
         topic = topic2,
         unitTitle = stringResource(R.string.add_sensor_unit),
         unit = topic2Unit,
         icon = topic2Icon,
         focusRequester = topic2FocusRequester,
-        initialFocus = false,
         onTopicChange = onTopic2Change,
         onUnitChange = onUnit2Change,
         onIconChange = onIcon2Change
@@ -80,14 +74,12 @@ internal fun UpdateMQTTTopics(
     )
     TextFieldWithIcon(
         modifier = Modifier,
-        context = context,
-        title = stringResource(R.string.add_sensor_topic3),
+        title =stringResource(R.string.add_sensor_topic3),
         topic = topic3,
         unitTitle = stringResource(R.string.add_sensor_unit),
         unit = topic3Unit,
         icon = topic3Icon,
         focusRequester = topic3FocusRequester,
-        initialFocus = false,
         onTopicChange = onTopic3Change,
         onUnitChange = onUnit3Change,
         onIconChange = onIcon3Change
@@ -97,14 +89,12 @@ internal fun UpdateMQTTTopics(
     )
     TextFieldWithIcon(
         modifier = Modifier,
-        context = context,
-        title = stringResource(R.string.add_sensor_topic4),
+        title =stringResource(R.string.add_sensor_topic4),
         topic = topic4,
         unitTitle = stringResource(R.string.add_sensor_unit),
         unit = topic4Unit,
         icon = topic4Icon,
         focusRequester = topic4FocusRequester,
-        initialFocus = false,
         onTopicChange = onTopic4Change,
         onUnitChange = onUnit4Change,
         onIconChange = onIcon4Change

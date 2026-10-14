@@ -9,6 +9,7 @@ import com.smsoft.smartdisplay.ui.common.prefs.PrefsScope
 import com.smsoft.smartdisplay.ui.common.prefs.EditTextPref
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_TOPIC
@@ -47,6 +48,13 @@ fun proximitySensorSettings(
                 title = stringResource(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.title),
                 summary = payloadOff,
                 defaultValue = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+            )
+            EditTextPref(
+                modifier = modifier,
+                key = PreferenceKey.PROXIMITY_SENSOR_STATUS_TOPIC.key,
+                title = stringResource(PreferenceKey.PROXIMITY_SENSOR_STATUS_TOPIC.title),
+                summary = stringResource(R.string.proximity_sensor_status_topic_summary),
+                defaultValue = PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
             )
         }
     }

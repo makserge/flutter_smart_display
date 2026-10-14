@@ -308,6 +308,36 @@ class VolumeFader(
         }
     }
 
+    /**
+     * Sets the volume along [volumeAt] (of the time since [startedAt] on [clock]) every [step] ms,
+     * when it changes, until [endMillis]; the last value is volumeAt(endMillis). For a fade that
+     * is more than one ramp, like an alarm ring that fades in, holds and fades out.
+     */
+    fun follow(
+        startedAt: Long,
+        endMillis: Long,
+        step: Long = 100L,
+        volumeAt: (elapsedMillis: Long) -> Float,
+        onChange: (value: Float) -> Unit
+    ) {
+        job?.cancel()
+        job = scope.launch(dispatcher) {
+            var last: Float? = null
+            while (true) {
+                val elapsed = (clock() - startedAt).coerceAtMost(endMillis)
+                val value = volumeAt(elapsed)
+                if (value != last) {
+                    last = value
+                    onChange(value)
+                }
+                if (elapsed >= endMillis) {
+                    break
+                }
+                delay(step.coerceAtLeast(1L))
+            }
+        }
+    }
+
     fun cancel() {
         job?.cancel()
         job = null

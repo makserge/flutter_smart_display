@@ -17,14 +17,19 @@ import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.database.entity.WeatherForecast
 import com.smsoft.smartdisplay.ui.screen.weather.WeatherViewModel
 
+/** One day of the forecast: its name, icon and four lines, in [sizes]. */
 @Composable
 fun Forecast(
     modifier: Modifier,
     viewModel: WeatherViewModel,
     item: WeatherForecast,
+    sizes: WeatherSizes
 ) {
+    val iconSize = sizes.forecastIcon
+    val dayStyle = sizes.day
+    val lineStyle = sizes.line
     Column(
-        modifier = Modifier,
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -35,11 +40,11 @@ fun Forecast(
                     vertical = 0.dp
                 ),
             text = viewModel.getDayOfWeek(item.date, item.timezone),
-            style = MaterialTheme.typography.h6,
+            style = dayStyle,
             color = MaterialTheme.colors.secondary
         )
         Image(
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(iconSize),
             painter = rememberAsyncImagePainter(
                 stringResource(
                     R.string.weather_icon_url,
@@ -59,7 +64,7 @@ fun Forecast(
                     item.temperatureMorning,
                     item.humidity
                 ),
-                style = MaterialTheme.typography.subtitle1
+                style = lineStyle
             )
             TextWithValue(
                 modifier = Modifier,
@@ -69,7 +74,7 @@ fun Forecast(
                     item.temperatureDay,
                     item.humidity
                 ),
-                style = MaterialTheme.typography.subtitle1
+                style = lineStyle
             )
             TextWithValue(
                 modifier = Modifier,
@@ -79,7 +84,7 @@ fun Forecast(
                     item.temperatureNight,
                     item.humidity
                 ),
-                style = MaterialTheme.typography.subtitle1
+                style = lineStyle
             )
             TextWithValue(
                 modifier = Modifier,
@@ -87,7 +92,7 @@ fun Forecast(
                 value = stringResource(R.string.weather_wind_value, item.windSpeed,
                     viewModel.windDegreeToDirection(item.windDirection)
                 ),
-                style = MaterialTheme.typography.subtitle1
+                style = lineStyle
             )
         }
     }

@@ -22,8 +22,15 @@ enum class VoiceCommandType(
         listOf(R.string.internet_radio_off_command, R.string.internet_radio_off2_command),
         DashboardItem.INTERNET_RADIO
     ),
-    INTERNET_RADIO_PREV_ITEM(listOf(R.string.internet_radio_prev_item_command), DashboardItem.INTERNET_RADIO),
-    INTERNET_RADIO_NEXT_ITEM(listOf(R.string.internet_radio_prev_next_command), DashboardItem.INTERNET_RADIO),
+    // "назад" and "вперёд" alone too: on the panel they were said that way more often than with "радио"
+    INTERNET_RADIO_PREV_ITEM(
+        listOf(R.string.internet_radio_prev_item_command, R.string.internet_radio_prev_item2_command),
+        DashboardItem.INTERNET_RADIO
+    ),
+    INTERNET_RADIO_NEXT_ITEM(
+        listOf(R.string.internet_radio_prev_next_command, R.string.internet_radio_prev_next2_command),
+        DashboardItem.INTERNET_RADIO
+    ),
     INTERNET_RADIO_VOL_DOWN(listOf(R.string.internet_radio_vol_down_command), DashboardItem.INTERNET_RADIO),
     INTERNET_RADIO_VOL_UP(listOf(R.string.internet_radio_vol_up_command), DashboardItem.INTERNET_RADIO),
 

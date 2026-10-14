@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smsoft.smartdisplay.utils.mqttTopicMatches
 
 @UnstableApi
 class MessageAlertController(
@@ -52,7 +53,7 @@ class MessageAlertController(
 
     fun onMqttMessage(message: DashboardMqttMessage) {
         // A retained message is replayed on every (re)subscribe; show only new messages.
-        if (message.topic != topic || !enabled || message.isRetained) {
+        if (!mqttTopicMatches(topic, message.topic) || !enabled || message.isRetained) {
             return
         }
         messageStateInt.value = message.payload.trim()

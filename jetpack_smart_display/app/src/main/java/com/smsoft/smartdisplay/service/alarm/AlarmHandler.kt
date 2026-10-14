@@ -13,6 +13,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.utils.ALARM_FADE_OUT_MS
 import com.smsoft.smartdisplay.data.AlarmSoundType
 import com.smsoft.smartdisplay.data.PreferenceKey
 import com.smsoft.smartdisplay.data.database.entity.Alarm
@@ -43,11 +44,17 @@ import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.pow
 
-/** One ring of [alarm]. A new instance per ring, so an alarm that goes off again always emits. */
+/**
+ * One ring of [alarm]. A new instance per ring, so an alarm that goes off again always emits.
+ * Sound and light fade out from [timeoutMs] on; the ring ends [ALARM_FADE_OUT_MS] later.
+ */
 class RingingAlarm(val alarm: Alarm, val startedAt: Long, val timeoutMs: Long) {
+    val endMs: Long
+        get() = timeoutMs + ALARM_FADE_OUT_MS
+
     fun elapsedMs(now: Long = SystemClock.elapsedRealtime()) = (now - startedAt).coerceAtLeast(0L)
 
-    fun remainingMs(now: Long = SystemClock.elapsedRealtime()) = timeoutMs - elapsedMs(now)
+    fun remainingMs(now: Long = SystemClock.elapsedRealtime()) = endMs - elapsedMs(now)
 
     override fun toString() = "RingingAlarm(alarm=${alarm.id}, startedAt=$startedAt, timeoutMs=$timeoutMs)"
 }
@@ -221,7 +228,7 @@ class AlarmHandler @Inject constructor(
     private fun startRing(ring: RingingAlarm) {
         Log.i(TAG, "Alarm ${ring.alarm.id} rings for ${ring.remainingMs()} ms")
         ringingAlarmInt.value = ring
-        wakeLight.start()
+        wakeLight.start(ring)
         ringTimeout?.cancel()
         // The ring ends here, also when no dashboard shows it.
         ringTimeout = ringScope.launch(Dispatchers.Main) {

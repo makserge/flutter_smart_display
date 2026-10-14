@@ -26,6 +26,7 @@ import com.smsoft.smartdisplay.ui.screen.settings.MQTT_SERVER_DEFAULT_PORT
 import com.smsoft.smartdisplay.data.SensorType
 import com.smsoft.smartdisplay.data.database.repository.SensorRepository
 import com.smsoft.smartdisplay.ui.composable.settings.MESSAGE_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_STATUS_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.settings.DOORBELL_ALARM_DEFAULT_TOPIC
 import info.mqtt.android.service.QoS
@@ -148,6 +149,10 @@ class DashboardMqttManager(
     }
 
     fun publish(scope: CoroutineScope, topic: String, messagePayload: String) {
+        // A setting left blank (e.g. the push button before its topic is entered) sends nothing.
+        if (topic.isBlank()) {
+            return
+        }
         if (!isClientConnected()) {
             return
         }
@@ -179,6 +184,12 @@ class DashboardMqttManager(
      * isConnected of MqttAndroidClient throws ("Invalid ClientHandle") while a disconnect is
      * completing: the service drops the connection before the client hears about it.
      */
+    /**
+     * Whether [topic] can be published to now. A caller changes its own state only when this is
+     * true: a command that is not sent must not leave the app showing a state the device never got.
+     */
+    fun canPublish(topic: String): Boolean = topic.isNotBlank() && isClientConnected()
+
     private fun isClientConnected(): Boolean = try {
         mqttClient.isConnected
     } catch (e: Exception) {
@@ -382,7 +393,8 @@ private fun readDashboardTopics(data: Preferences): Set<String> = normalizeTopic
     listOf(
         data[stringPreferencesKey(PreferenceKey.DOORBELL_ALARM_TOPIC.key)] ?: DOORBELL_ALARM_DEFAULT_TOPIC,
         data[stringPreferencesKey(PreferenceKey.PUSH_BUTTON_STATUS_TOPIC.key)] ?: PUSH_BUTTON_STATUS_DEFAULT_TOPIC,
-        data[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)] ?: MESSAGE_DEFAULT_TOPIC
+        data[stringPreferencesKey(PreferenceKey.MESSAGE_TOPIC.key)] ?: MESSAGE_DEFAULT_TOPIC,
+        data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_STATUS_TOPIC.key)] ?: PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
     )
 )
 

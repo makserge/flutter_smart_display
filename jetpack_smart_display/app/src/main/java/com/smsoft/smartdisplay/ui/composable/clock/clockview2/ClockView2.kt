@@ -201,7 +201,7 @@ private fun OnDraw(
             val canvas = it.nativeCanvas
             canvas.save()
             canvas.translate(center.x, center.y)
-            canvas.drawCircle(0F, 0F, radius, paints.clockFace)
+            // No face of its own: a black one hid the day background under dark hands.
             canvas.drawCircle(0F, 0F, radius - thinMarkerLength, paints.outerRim)
             if (showThickMarkers) {
                 drawMarkers(
@@ -265,10 +265,6 @@ private fun lineWidth(
 ) = max(1F, value * unit)
 
 private class ClockView2Paints {
-    val clockFace = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = android.graphics.Color.BLACK
-    }
     val outerRim = strokePaint()
     val innerRim = strokePaint()
     val thickMarker = strokePaint()

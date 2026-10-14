@@ -28,6 +28,9 @@ import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYL
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_COMMAND_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_OFF
+import com.smsoft.smartdisplay.ui.screen.dashboard.CINEMA_MODE_COMMAND_DEFAULT_TOPIC
+import com.smsoft.smartdisplay.ui.screen.dashboard.CINEMA_MODE_DEFAULT_PAYLOAD_OFF
+import com.smsoft.smartdisplay.ui.screen.dashboard.CINEMA_MODE_DEFAULT_PAYLOAD_ON
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_DEFAULT_PAYLOAD_ON
 import com.smsoft.smartdisplay.ui.screen.dashboard.PUSH_BUTTON_STATUS_DEFAULT_TOPIC
 import com.smsoft.smartdisplay.utils.getParamFlow
@@ -144,6 +147,21 @@ class SettingsViewModel @Inject constructor(
         dataStore = dataStore,
         defaultValue = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
     ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)] ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF }
+
+    val cinemaModeCommandTopic = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = CINEMA_MODE_COMMAND_DEFAULT_TOPIC
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CINEMA_MODE_COMMAND_TOPIC.key)] ?: CINEMA_MODE_COMMAND_DEFAULT_TOPIC }
+
+    val cinemaModePayloadOn = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = CINEMA_MODE_DEFAULT_PAYLOAD_ON
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CINEMA_MODE_PAYLOAD_ON.key)] ?: CINEMA_MODE_DEFAULT_PAYLOAD_ON }
+
+    val cinemaModePayloadOff = getParamFlow(
+        dataStore = dataStore,
+        defaultValue = CINEMA_MODE_DEFAULT_PAYLOAD_OFF
+    ) { preferences -> preferences[stringPreferencesKey(PreferenceKey.CINEMA_MODE_PAYLOAD_OFF.key)] ?: CINEMA_MODE_DEFAULT_PAYLOAD_OFF }
 
     val lightSensorTopic = getParamFlow(
         dataStore = dataStore,

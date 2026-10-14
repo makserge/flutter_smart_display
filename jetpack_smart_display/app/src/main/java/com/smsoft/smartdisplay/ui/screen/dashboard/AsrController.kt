@@ -3,6 +3,7 @@ package com.smsoft.smartdisplay.ui.screen.dashboard.controller
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.smsoft.smartdisplay.BuildConfig
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -139,7 +140,9 @@ class AsrController(
     }
 
     private fun onRecognitionState(state: SpeechRecognitionState) {
-        Log.d(TAG, "ASR event: $state")
+        // A result holds what was said in the room: only debug builds log it (as
+        // SpeechRecognitionService does), release builds the kind of event alone
+        Log.d(TAG, "ASR event: ${if (BuildConfig.DEBUG) state.toString() else state.javaClass.simpleName}")
         when (state) {
             is SpeechRecognitionState.Initial,
                 SpeechRecognitionState.Ready -> {
@@ -152,9 +155,11 @@ class AsrController(
                 recognitionStateInt.value = state.word
                 processCommand(
                     context = context,
-                    command = state.word,
-                    onCommand = { type, params ->
-                        onCommand(state.word, type, params)
+                    candidates = state.candidates,
+                    onCommand = { command, type, params ->
+                        // The reading that ran, which may be an alternative to the best one shown
+                        recognitionStateInt.value = command
+                        onCommand(command, type, params)
                         scope.launch {
                             delay(SHOW_ASR_RESULT_TIMEOUT)
                             recognitionStateInt.value = null

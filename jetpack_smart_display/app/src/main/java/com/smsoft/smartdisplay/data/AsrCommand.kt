@@ -6,6 +6,7 @@ enum class AsrCommand {
     DIMMER_LIGHT,
     DIMMER_LIGHT_SET,
     DIMMER_LIGHT_STEP,
+    CINEMA_MODE,
     TIMER,
     PAGE;
 }

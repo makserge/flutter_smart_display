@@ -23,7 +23,7 @@ import com.smsoft.smartdisplay.data.TimerState
 import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.data.VoiceCommandType
 import com.smsoft.smartdisplay.data.database.entity.emptyTimer
-import com.smsoft.smartdisplay.ui.common.AddItemButton
+import com.smsoft.smartdisplay.ui.common.AddItemBar
 import com.smsoft.smartdisplay.ui.common.NoItems
 import com.smsoft.smartdisplay.ui.composable.timers.ItemsList
 import com.smsoft.smartdisplay.ui.composable.timers.TimerAlert
@@ -74,14 +74,16 @@ fun TimersScreen(
     }
 
     Scaffold(
+        // The margin belongs to the page's own empty tap: a tap that just missed the add button at
+        // the page's bottom edge reached the dashboard and toggled the push button
         modifier = Modifier
-            .padding(10.dp)
             .combinedClickable(
                 onClick = { },
                 onLongClick = {
                     isModifyItems = !isModifyItems
                 }
-            ),
+            )
+            .padding(10.dp),
         content = { padding ->
             if (items != null) {
                 if (items!!.isNotEmpty()) {
@@ -144,10 +146,9 @@ fun TimersScreen(
                 )
             }
         },
-        floatingActionButton = {
+        bottomBar = {
             if (isModifyItems) {
-                AddItemButton(
-                    modifier = Modifier,
+                AddItemBar(
                     contentDescription = stringResource(R.string.add_timer),
                     onClick = {
                         isOpenEditItemDialog = true

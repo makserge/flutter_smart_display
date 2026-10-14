@@ -1,5 +1,7 @@
 package com.smsoft.smartdisplay.ui.composable.radio
 
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.material.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +44,8 @@ fun RadioMediaPlayerControls(
         Image(
             painter = painterResource(id = playResourceProvider()),
             contentDescription = stringResource(R.string.play_pause_button),
+            // The icon is white: it vanished on the day background.
+            colorFilter = ColorFilter.tint(MaterialTheme.colors.onBackground),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable(onClick = {

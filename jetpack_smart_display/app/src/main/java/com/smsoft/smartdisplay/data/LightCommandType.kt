@@ -32,6 +32,17 @@ enum class LightCommandType(
         stepUpCommandIds = listOf(R.string.dimmer_light_brighter_command),
         stepDownCommandIds = listOf(R.string.dimmer_light_darker_command),
         stepAsrCommand = AsrCommand.DIMMER_LIGHT_STEP
+    ),
+    // Not a light, but switched on and off the same way: one MQTT topic with two payloads
+    CINEMA_MODE(
+        onCommandIds = listOf(R.string.cinema_mode_on_command, R.string.cinema_mode_on2_command),
+        offCommandIds = listOf(
+            R.string.cinema_mode_off_command,
+            R.string.cinema_mode_off2_command,
+            R.string.cinema_mode_off3_command,
+            R.string.cinema_mode_off4_command
+        ),
+        asrCommand = AsrCommand.CINEMA_MODE
     );
 
     companion object {
@@ -65,9 +76,15 @@ enum class LightCommandType(
                     .flatMap { type -> type.setPrefixCommandIds.map { context.getString(it) to type.setAsrCommand!! } }
                     .toMap()
             }
+            // Only with a level the dimmer knows ("подсветка на пятьдесят процентов"). "подсветка"
+            // alone did nothing, yet counted as a command, so another reading of the utterance
+            // ("включи подсветку") was never tried and no error chime said it was not understood.
             for ((prefix, asrCommand) in setPrefixCache) {
-                if (command.startsWith(prefix)) {
-                    return asrCommand to command.removePrefix(prefix).trim()
+                if (command.startsWith("$prefix ")) {
+                    val remainder = command.removePrefix(prefix).trim()
+                    if (LightBrightnessType.getByCommand(context, remainder) != null) {
+                        return asrCommand to remainder
+                    }
                 }
             }
             return null

@@ -27,8 +27,7 @@ import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.ui.composable.settings.ALARM_SOUND_VOLUME_DEFAULT
 import com.smsoft.smartdisplay.ui.screen.radio.PLAYLIST
 import com.smsoft.smartdisplay.utils.VolumeFader
-import com.smsoft.smartdisplay.utils.fadeProgress
-import com.smsoft.smartdisplay.utils.fadeVolume
+import com.smsoft.smartdisplay.utils.alarmVolumeAt
 import com.smsoft.smartdisplay.utils.m3uparser.M3uParser
 import com.smsoft.smartdisplay.utils.observe
 import com.smsoft.smartdisplay.utils.playAlarmSound
@@ -176,15 +175,15 @@ class AlarmsViewModel @Inject constructor(
 
     private fun startRinging(ring: RingingAlarm) {
         val elapsedMs = ring.elapsedMs()
-        if (elapsedMs >= ring.timeoutMs) {
+        if (ring.remainingMs() <= 0L) {
             // Over already: AlarmHandler is about to end it.
             stopRinging()
             return
         }
-        Log.i(TAG, "Ringing alarm ${ring.alarm.id}: $elapsedMs ms in, ${ring.timeoutMs - elapsedMs} ms left")
+        Log.i(TAG, "Ringing alarm ${ring.alarm.id}: $elapsedMs ms in, ${ring.remainingMs()} ms left")
         soundingRing = ring
         alarmStateInt.value = ring.alarm
-        showAlarm(ring.alarm, elapsedMs)
+        showAlarm(ring)
     }
 
     private fun stopRinging() {
@@ -196,23 +195,24 @@ class AlarmsViewModel @Inject constructor(
         stopPlayer()
     }
 
-    private fun showAlarm(alarm: Alarm, elapsedMs: Long) {
+    private fun showAlarm(ring: RingingAlarm) {
+        val alarm = ring.alarm
         if (alarm.soundType == AlarmSoundType.TONE.id) {
             playTone(
                 soundToneType = AlarmSoundToneType.getById(alarm.soundTone),
                 soundVolume = alarmSoundVolume,
-                isFadeIn = true,
                 isRepeat = true,
-                fadeElapsedMs = elapsedMs
+                fadeRing = ring
             )
         } else {
-            playRadio(alarm.radioPreset, isFadeEnabled = true, fadeElapsedMs = elapsedMs) {
-                // A new sound with a fade of its own; the ring keeps its deadline.
+            playRadio(alarm.radioPreset, fadeRing = ring) {
+                // A new sound with a fade-in of its own; the ring keeps its deadline and fade-out.
                 playTone(
                     soundToneType = AlarmSoundToneType.getById(alarm.soundTone),
                     soundVolume = alarmSoundVolume,
-                    isFadeIn = true,
-                    isRepeat = true
+                    isRepeat = true,
+                    fadeRing = ring,
+                    fadeInStartMs = ring.elapsedMs()
                 )
             }
         }
@@ -221,25 +221,22 @@ class AlarmsViewModel @Inject constructor(
     private fun playTone(
         soundToneType: AlarmSoundToneType,
         soundVolume: Float,
-        isFadeIn: Boolean,
         isRepeat: Boolean,
-        fadeElapsedMs: Long = 0L
+        fadeRing: RingingAlarm? = null,
+        fadeInStartMs: Long = 0L
     ) {
         if (isPlayerReleased) {
             return
         }
         onStreamError = null
         volumeFader.cancel()
-        val startVolume = if (isFadeIn) fadeFrom(soundVolume, fadeElapsedMs) else null
         playAlarmSound(
             player = player,
             soundToneType = soundToneType,
-            soundVolume = startVolume ?: soundVolume,
+            soundVolume = fadeRing?.let { ringVolume(it, soundVolume, fadeInStartMs) } ?: soundVolume,
             isRepeat = isRepeat
         )
-        if (startVolume != null) {
-            fadeIn(soundVolume, fadeElapsedMs)
-        }
+        fadeRing?.let { followRing(it, soundVolume, fadeInStartMs) }
     }
 
     /** Sound preview in the alarm editor. */
@@ -247,20 +244,18 @@ class AlarmsViewModel @Inject constructor(
         playTone(
             soundToneType = AlarmSoundToneType.getById(soundToneId),
             soundVolume = 1F,
-            isFadeIn = false,
             isRepeat = false
         )
     }
 
     /** Station preview in the alarm editor. */
     fun previewRadio(preset: Int) {
-        playRadio(preset, isFadeEnabled = false, onError = null)
+        playRadio(preset, fadeRing = null, onError = null)
     }
 
     private fun playRadio(
         preset: Int,
-        isFadeEnabled: Boolean,
-        fadeElapsedMs: Long = 0L,
+        fadeRing: RingingAlarm?,
         onError: (() -> Unit)?
     ) {
         viewModelScope.launch {
@@ -273,30 +268,33 @@ class AlarmsViewModel @Inject constructor(
             volumeFader.cancel()
             // Only the stream that plays now may run its error fallback.
             onStreamError = onError
-            val startVolume = if (isFadeEnabled) fadeFrom(alarmSoundVolume, fadeElapsedMs) else null
             playStream(
                 player = player,
                 uri = entry.location.url.toString(),
-                soundVolume = startVolume ?: alarmSoundVolume
+                soundVolume = fadeRing?.let { ringVolume(it, alarmSoundVolume) } ?: alarmSoundVolume
             )
-            if (startVolume != null) {
-                fadeIn(alarmSoundVolume, fadeElapsedMs)
-            }
+            fadeRing?.let { followRing(it, alarmSoundVolume) }
         }
     }
 
-    /** The alarm fade-in from silence to [volume], [elapsedMs] into the ring. */
-    private fun fadeIn(volume: Float, elapsedMs: Long) {
-        volumeFader.fadeIn(
-            fromVolume = 0F,
-            toVolume = volume,
+    /**
+     * The volume of [ring] follows its curve to the end: fade-in to [volume], hold, fade-out from
+     * the timeout. By the time of the ring, so a dashboard that takes a ring over goes on at the
+     * same point of the curve instead of starting from silence again.
+     */
+    private fun followRing(ring: RingingAlarm, volume: Float, fadeInStartMs: Long = 0L) {
+        volumeFader.follow(
+            startedAt = ring.startedAt,
+            endMillis = ring.endMs,
             step = FADE_STEP_MS,
-            durationMillis = ALARM_FADE_IN_MS,
-            elapsedMillis = elapsedMs
+            volumeAt = { alarmVolumeAt(volume, it, ring.timeoutMs, fadeInStartMs) }
         ) {
             player.volume = it
         }
     }
+
+    private fun ringVolume(ring: RingingAlarm, volume: Float, fadeInStartMs: Long = 0L) =
+        alarmVolumeAt(volume, ring.elapsedMs(), ring.timeoutMs, fadeInStartMs)
 
     fun stopPlayer() {
         if (isPlayerReleased) {
@@ -328,21 +326,6 @@ class AlarmsViewModel @Inject constructor(
     }
 }
 
-/**
- * The volume of the alarm fade-in to [volume], [elapsedMs] into the ring, or null when the fade is
- * over. A ring that a new dashboard takes over goes on where the fade would be now instead of
- * starting from silence again; fadeIn() continues from the same point of the curve. (The fade was
- * linear, so a linear start volume followed by a fade of its own was enough; on a curve it is not.)
- */
-private fun fadeFrom(volume: Float, elapsedMs: Long): Float? =
-    if (ALARM_FADE_IN_MS - elapsedMs <= FADE_STEP_MS) {
-        null
-    } else {
-        fadeVolume(0F, volume, fadeProgress(elapsedMs, ALARM_FADE_IN_MS))
-    }
-
-// The fade-in length VolumeFader uses by default, given explicitly so that a fade can go on.
-private const val ALARM_FADE_IN_MS = 15_000L
 private const val FADE_STEP_MS = 100L
 
 private const val TAG = "AlarmsViewModel"

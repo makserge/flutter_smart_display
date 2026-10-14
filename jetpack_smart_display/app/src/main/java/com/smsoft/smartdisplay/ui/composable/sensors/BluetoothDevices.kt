@@ -1,7 +1,7 @@
 package com.smsoft.smartdisplay.ui.composable.sensors
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -17,9 +17,10 @@ internal fun BluetoothDevices(
     onClick: (item: BluetoothDevice) -> Unit,
     onRescan: () -> Unit
 ) {
+    // As wide as the editor and as tall as its rows: the editor scrolls, so there is no height to fill
     Column(
         modifier = Modifier
-            .fillMaxSize(fraction = 0.6f),
+            .fillMaxWidth(),
     ) {
         when (state.value) {
             BluetoothScanState.Initial -> CircularProgressIndicator()

@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.service.asr
 
+import com.smsoft.smartdisplay.BuildConfig
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -10,9 +11,11 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.media3.common.util.UnstableApi
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.smsoft.smartdisplay.data.AsrWakeWord
 import com.smsoft.smartdisplay.data.PreferenceKey
+import com.smsoft.smartdisplay.ui.composable.settings.ASR_SOUND_ENABLED_DEFAULT
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -64,6 +67,10 @@ class SpeechRecognitionService : Service() {
     @Volatile
     private var wakeWord = ""
 
+    // Follows Settings: the wake-word chime is played only when this is on.
+    @Volatile
+    private var soundEnabled = ASR_SOUND_ENABLED_DEFAULT
+
     // Start/restart bookkeeping (main and IO threads): one start attempt at a time, a growing
     // delay between failed attempts, and one error chime per failure series.
     private var startJob: Job? = null
@@ -80,7 +87,15 @@ class SpeechRecognitionService : Service() {
         }
 
         override fun onResult(hypothesis: String?) {
-            val word = getRecognizedWord(hypothesis)
+            val hypotheses = getHypotheses(hypothesis)
+            val word = hypotheses.firstOrNull()
+            // What the recognizer heard, for testing recognition quality (debug builds only: speech)
+            if (BuildConfig.DEBUG && (word != null)) {
+                Log.d(TAG, "Recognized: $word")
+                if (hypotheses.size > 1) {
+                    Log.d(TAG, "Alternatives: ${hypotheses.drop(1).joinToString(" | ")}")
+                }
+            }
             if (word == null) {
                 if (isInRecognizingMode) {
                     isInRecognizingMode = false
@@ -91,17 +106,31 @@ class SpeechRecognitionService : Service() {
             // Recognition works: the next failure gets a chime again and retries start fast.
             retryDelayMs = INIT_RETRY_INITIAL_MS
             hasReportedFailure = false
-            if (isInRecognizingMode) {
-                isInRecognizingMode = false
+            // The wake word alone, a command (in one breath with the wake word, or in two steps
+            // after it) or nothing for the panel: the text rules are in CommandText.kt. The
+            // other readings go along with a command, so one that the best reading spoils with
+            // an [unk] can still be found in them.
+            val utterance = interpretUtterance(hypotheses, wakeWord, isInRecognizingMode) {
+                isCommand(this@SpeechRecognitionService, it)
+            }
+            when (utterance) {
+                is Utterance.Command -> {
+                    isInRecognizingMode = false
+                    val candidates = utterance.candidates
+                    emit(SpeechRecognitionState.Result(word = candidates.first(), alternatives = candidates.drop(1)))
+                }
+                Utterance.WakeWord -> {
+                    isInRecognizingMode = true
 
-                emit(SpeechRecognitionState.Result(word = word))
-            } else if (wakeWord.equals(
-                    word,
-                    ignoreCase = true
-                )) {
-                isInRecognizingMode = true
-
-                emit(SpeechRecognitionState.WakeWordDetected)
+                    emit(SpeechRecognitionState.WakeWordDetected)
+                    // The app now plays its chime, which the microphone would hear as speech
+                    if (soundEnabled) {
+                        synchronized(lock) {
+                            speechService?.mutedUntilMs = SystemClock.elapsedRealtime() + CHIME_MUTE_MS
+                        }
+                    }
+                }
+                Utterance.Ignored -> {}
             }
         }
 
@@ -151,6 +180,12 @@ class SpeechRecognitionService : Service() {
                     wakeWord = wakeWordText(it)
                     Log.i(TAG, "Wake word: $wakeWord")
                 }
+        }
+        serviceScope.launch {
+            dataStore.data
+                .map { it[booleanPreferencesKey(PreferenceKey.ASR_SOUND_ENABLED.key)] ?: ASR_SOUND_ENABLED_DEFAULT }
+                .distinctUntilChanged()
+                .collect { soundEnabled = it }
         }
         scheduleStart(0L)
     }
@@ -278,6 +313,8 @@ class SpeechRecognitionService : Service() {
         var newRecognizer: Recognizer? = null
         try {
             newRecognizer = Recognizer(newModel, SAMPLE_RATE)
+            // The best few readings of each utterance, not just the best one: see getHypotheses
+            newRecognizer.setMaxAlternatives(MAX_ALTERNATIVES)
             val service = GuardedSpeechService(newRecognizer, SAMPLE_RATE)
             synchronized(lock) {
                 if (isDestroyed) {
@@ -310,19 +347,32 @@ class SpeechRecognitionService : Service() {
         return null
     }
 
-    private fun getRecognizedWord(hypothesis: String?): String? {
+    /**
+     * What the recognizer heard, its best reading first, or empty when it heard nothing. With
+     * alternatives switched on Vosk answers {"alternatives": [{"confidence": .., "text": ".."}, ..]},
+     * best first; without, {"text": ".."}. Empty readings (an alternative can be silence) and
+     * repeats are dropped.
+     */
+    private fun getHypotheses(hypothesis: String?): List<String> {
         if (hypothesis == null) {
-            return null
+            return emptyList()
         }
         try {
             val jObject = JSONObject(hypothesis)
+            val alternatives = jObject.optJSONArray("alternatives")
+            if (alternatives != null) {
+                return (0 until alternatives.length())
+                    .mapNotNull { alternatives.optJSONObject(it)?.optString("text")?.trim { c -> c <= ' ' } }
+                    .filter { it.isNotEmpty() }
+                    .distinct()
+            }
             val text = jObject.getString("text")
             if (text.isNotEmpty()) {
-                return text.trim { it <= ' ' }
+                return listOf(text.trim { it <= ' ' })
             }
         } catch (ignored: JSONException) {
         }
-        return null
+        return emptyList()
     }
 
     companion object {
@@ -333,5 +383,12 @@ class SpeechRecognitionService : Service() {
         private const val INIT_RETRY_INITIAL_MS = 5_000L
         private const val INIT_RETRY_MAX_MS = 5 * 60_000L
         private const val STABLE_RUN_MS = 60_000L
+        // The wake-word chime (sounds/ding.wav) lasts 0.49 s and takes a few hundred ms to start
+        // playing: no audio is recognised for this long after the wake word, so the chime is not
+        // taken for speech. A command started earlier than this loses its first words.
+        private const val CHIME_MUTE_MS = 900L
+        // Readings of each utterance the recognizer reports: the best, and this many minus one
+        // others. More would make a command out of speech the best reading does not support.
+        private const val MAX_ALTERNATIVES = 3
     }
 }

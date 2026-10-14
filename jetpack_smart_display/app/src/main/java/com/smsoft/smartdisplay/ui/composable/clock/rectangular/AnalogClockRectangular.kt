@@ -13,25 +13,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.core.content.res.ResourcesCompat
-import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.Font
 import com.smsoft.smartdisplay.utils.getStateFromFlow
 import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.sin
 
 @Composable
@@ -63,6 +61,12 @@ fun AnalogClockRectangular(
     )
 }
 
+/**
+ * A rectangular clock face that fills the page whatever its shape: eight marks on a rectangle
+ * inset from the page edges, the numerals 12, 3, 6 and 9 between them, and two hands. The marks
+ * and the hands are spread towards the long sides, as on a rectangular face. The face used to be
+ * a 16:9 picture, which left a square page more than half empty and its hands tiny.
+ */
 @Composable
 private fun OnDraw(
     modifier: Modifier,
@@ -114,50 +118,36 @@ private fun OnDraw(
     val numeralBounds = remember {
         Rect()
     }
-    val background = painterResource(R.drawable.ic_background_rectangular)
-    val backgroundTint = remember(secondaryColor) {
-        ColorFilter.tint(
-            color = secondaryColor
-        )
-    }
 
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        // Frame and numerals: redrawn only when the page size or a setting changes.
+        // Marks and numerals: redrawn only when the page size or a setting changes.
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
             val frame = Frame(size)
-            withTransform({
-                translate(left = frame.center.x, top = frame.center.y)
-                if (frame.portrait) {
-                    rotate(degrees = 90F, pivot = Offset.Zero)
-                }
-                scale(scaleX = frame.scale, scaleY = frame.scale, pivot = Offset.Zero)
-                translate(left = -PIVOT_X, top = -PIVOT_Y)
-            }) {
-                with(background) {
-                    draw(
-                        size = Size(ART_WIDTH, ART_HEIGHT),
-                        colorFilter = backgroundTint
-                    )
-                }
+            for (hour in MARK_HOURS) {
+                val direction = frame.direction(hour / 12.0 * 2 * PI)
+                val outer = frame.edge(direction)
+                drawLine(
+                    start = outer,
+                    end = outer - direction * (MARK_LENGTH * frame.scale),
+                    color = secondaryColor,
+                    strokeWidth = MARK_WIDTH * frame.scale,
+                    cap = StrokeCap.Square
+                )
             }
 
             numeralPaint.typeface = typeface
             numeralPaint.color = primaryColor.toArgb()
             numeralPaint.textSize = NUMERAL_SIZE * frame.scale * fontSize / DEFAULT_DIGIT_FONT_SIZE_AR
-            // 12 and 6 sit on the hour-mark band along the short side of the artwork, 3 and 9
-            // along the long side; in portrait the artwork is turned, so the two swap.
-            val vertical = if (frame.portrait) NUMERAL_ALONG_LONG else NUMERAL_ALONG_SHORT
-            val horizontal = if (frame.portrait) NUMERAL_ALONG_SHORT else NUMERAL_ALONG_LONG
             drawIntoCanvas { canvas ->
                 val nativeCanvas = canvas.nativeCanvas
-                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "12", 0F, -vertical)
-                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "3", horizontal, 0F)
-                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "6", 0F, vertical)
-                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "9", -horizontal, 0F)
+                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "12", 0F, -frame.halfHeight)
+                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "3", frame.halfWidth, 0F)
+                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "6", 0F, frame.halfHeight)
+                drawNumeral(nativeCanvas, numeralPaint, numeralBounds, frame, "9", -frame.halfWidth, 0F)
             }
         }
         // Hands: the only part that reads the time.
@@ -194,30 +184,41 @@ private fun OnDraw(
 }
 
 /**
- * Where the 16:9 artwork lands on the page, in screen px. Everything else (numerals, hands,
- * stroke widths) is placed in artwork px times [scale], so the face keeps its proportions at
- * every resolution and density. On an upright page the artwork is turned by 90 degrees, so it
- * fills the page instead of being a thin band across the middle.
+ * The face on the page, in screen px: the rectangle of the marks, inset from the page edges by
+ * [MARK_INSET], and the [scale] of everything drawn, per px of the short side of the former
+ * artwork, so the face keeps its proportions at every resolution and density.
  */
 private class Frame(size: Size) {
-    val portrait = size.height > size.width
     val center = Offset(size.width / 2F, size.height / 2F)
+    val halfWidth = size.width / 2F * MARK_INSET
+    val halfHeight = size.height / 2F * MARK_INSET
+    val left = center.x - halfWidth
+    val right = center.x + halfWidth
+    val top = center.y - halfHeight
+    val bottom = center.y + halfHeight
+    val scale = min(size.width, size.height) / ART_SHORT_SIDE
 
-    // The hour marks are centred 5 px above the middle of the artwork; that point is the pivot,
-    // so the fit uses the larger of the two half-heights.
-    val scale = min(
-        (if (portrait) size.height else size.width) / 2F / PIVOT_X,
-        (if (portrait) size.width else size.height) / 2F / (ART_HEIGHT - PIVOT_Y)
-    )
+    // The marks do not sit at true angles: they are spread towards the long sides of the
+    // rectangle, tan(mark angle) = stretch * tan(true angle). The stretch follows the shape of
+    // the rectangle, damped: 1 on a square, 1.5 to 1.65 on a 16:9 to 2:1 page, which puts the
+    // 1 o'clock mark at 42 to 44 degrees as on the former artwork (43 degrees).
+    private val stretch = (halfWidth / halfHeight).toDouble().pow(STRETCH_POWER)
 
-    // The artwork's box on screen (turning maps artwork (x, y) to screen (-y, x)).
-    val left = center.x - scale * (if (portrait) ART_HEIGHT - PIVOT_Y else PIVOT_X)
-    val right = center.x + scale * (if (portrait) PIVOT_Y else ART_WIDTH - PIVOT_X)
-    val top = center.y - scale * (if (portrait) PIVOT_X else PIVOT_Y)
-    val bottom = center.y + scale * (if (portrait) ART_WIDTH - PIVOT_X else ART_HEIGHT - PIVOT_Y)
+    /** The unit direction on screen of [clockAngle] (clockwise from 12 o'clock, in radians). */
+    fun direction(clockAngle: Double): Offset {
+        val angle = atan2(stretch * sin(clockAngle), cos(clockAngle))
+        return Offset(sin(angle).toFloat(), -cos(angle).toFloat())
+    }
+
+    /** Where the ray from the centre in [direction] meets the rectangle of the marks. */
+    fun edge(direction: Offset): Offset {
+        val toSide = if (direction.x == 0F) Float.MAX_VALUE else halfWidth / abs(direction.x)
+        val toEnd = if (direction.y == 0F) Float.MAX_VALUE else halfHeight / abs(direction.y)
+        return center + direction * min(toSide, toEnd)
+    }
 }
 
-// Centres the numeral's ink on the anchor (artwork px from the pivot) and keeps it in the frame.
+// Centres the numeral's ink on the anchor (px from the centre) and keeps it in the frame.
 private fun drawNumeral(
     canvas: android.graphics.Canvas,
     paint: Paint,
@@ -230,15 +231,15 @@ private fun drawNumeral(
     paint.getTextBounds(text, 0, text.length, bounds)
     val halfWidth = bounds.width() / 2F
     val halfHeight = bounds.height() / 2F
-    val x = clamp(frame.center.x + dx * frame.scale, frame.left + halfWidth, frame.right - halfWidth)
-    val y = clamp(frame.center.y + dy * frame.scale, frame.top + halfHeight, frame.bottom - halfHeight)
+    val x = clamp(frame.center.x + dx, frame.left + halfWidth, frame.right - halfWidth)
+    val y = clamp(frame.center.y + dy, frame.top + halfHeight, frame.bottom - halfHeight)
     canvas.drawText(text, x - bounds.exactCenterX(), y - bounds.exactCenterY(), paint)
 }
 
 private fun clamp(value: Float, low: Float, high: Float) =
     if (low > high) (low + high) / 2F else value.coerceIn(low, high)
 
-// clockAngle is clockwise from 12 o'clock in radians.
+// clockAngle is clockwise from 12 o'clock in radians; the hand points at the mark of its time.
 private fun DrawScope.drawHand(
     frame: Frame,
     clockAngle: Double,
@@ -246,46 +247,34 @@ private fun DrawScope.drawHand(
     width: Float,
     color: Color
 ) {
-    // The artwork does not put its hour marks at true angles: they are spread along the long
-    // side of the frame (1 o'clock at about 43 degrees). Stretch the hand angle the same way,
-    // so the hands point at the marks.
-    val sinA = sin(clockAngle)
-    val cosA = cos(clockAngle)
-    val angle = if (frame.portrait) {
-        atan2(sinA, MARKER_STRETCH * cosA)
-    } else {
-        atan2(MARKER_STRETCH * sinA, cosA)
-    }
     drawLine(
         start = frame.center,
-        end = Offset(
-            x = frame.center.x + (sin(angle) * length).toFloat(),
-            y = frame.center.y - (cos(angle) * length).toFloat()
-        ),
+        end = frame.center + frame.direction(clockAngle) * length,
         color = color,
         strokeWidth = width,
         cap = StrokeCap.Square
     )
 }
 
-// Geometry of res/drawable/ic_background_rectangular.png, in its own px (measured from the file).
-private const val ART_WIDTH = 1280F
-private const val ART_HEIGHT = 720F
-private const val PIVOT_X = 640F
-private const val PIVOT_Y = 355F
-// tan(mark angle) = MARKER_STRETCH * tan(true angle); fits all eight marks within about 1 degree.
-private const val MARKER_STRETCH = 1.62
-// Distance of the numeral centres from the pivot: on the mark band, short and long axis.
-private const val NUMERAL_ALONG_SHORT = 286F
-private const val NUMERAL_ALONG_LONG = 575F
+// Short side of the former 16:9 face artwork (1280 by 720 px): the sizes below are in its px.
+private const val ART_SHORT_SIDE = 720F
+// The rectangle of the marks, as a share of the half extents of the page.
+private const val MARK_INSET = 0.88F
+// Damping of the mark spread, see Frame.stretch.
+private const val STRETCH_POWER = 0.75
+// The hours with a mark; 12, 3, 6 and 9 have numerals instead.
+private val MARK_HOURS = listOf(1, 2, 4, 5, 7, 8, 10, 11)
+private const val MARK_LENGTH = 46F
+private const val MARK_WIDTH = 12F
 // Text size of the numerals at the default font size setting (glyphs about as tall as the marks).
 private const val NUMERAL_SIZE = 100F
-// Hand length 1.0 stays inside the frame (half its short side is 355 px); the default minute
-// hand stays clear of the 12.
+// Hand length 1.0 stays inside the page (half its short side is 360 px) and reaches a little past
+// the mark rectangle (317 px). The defaults below are as long as the other analog clocks' hands
+// (NightDream: 0.9 and 0.7 of the radius); shorter ones looked stubby beside them.
 private const val HAND_BASE = 320F
 
 const val DEFAULT_DIGIT_FONT_SIZE_AR = 80F
-const val DEFAULT_HAND_LEN_MINUTES_AR = 0.7F
-const val DEFAULT_HAND_LEN_HOURS_AR = 0.4F
+const val DEFAULT_HAND_LEN_MINUTES_AR = 0.9F
+const val DEFAULT_HAND_LEN_HOURS_AR = 0.65F
 const val DEFAULT_HAND_WIDTH_MINUTES_AR = 16F
 const val DEFAULT_HAND_WIDTH_HOURS_AR = 8F

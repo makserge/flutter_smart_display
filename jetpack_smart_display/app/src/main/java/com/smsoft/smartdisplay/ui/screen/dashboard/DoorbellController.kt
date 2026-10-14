@@ -10,6 +10,7 @@ import com.smsoft.smartdisplay.utils.observe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.smsoft.smartdisplay.utils.mqttTopicMatches
 
 class DoorbellController(
     private val dataStore: DataStore<Preferences>,
@@ -32,7 +33,7 @@ class DoorbellController(
 
     fun onMqttMessage(message: DashboardMqttMessage) {
         // A retained doorbell message is replayed on every (re)subscribe; it is not a new ring.
-        if ((message.topic == topic) && !message.isRetained) {
+        if (mqttTopicMatches(topic, message.topic) && !message.isRetained) {
             doorBellAlarmStateInt.value = true
         }
     }

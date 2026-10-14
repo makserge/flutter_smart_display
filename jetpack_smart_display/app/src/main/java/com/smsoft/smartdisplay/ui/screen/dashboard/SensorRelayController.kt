@@ -11,6 +11,8 @@ import com.smsoft.smartdisplay.service.alarm.AlarmHandler
 import com.smsoft.smartdisplay.service.sensor.SensorHandler
 import com.smsoft.smartdisplay.service.sensor.SensorService
 import com.smsoft.smartdisplay.ui.composable.settings.LIGHT_SENSOR_TOPIC_DEFAULT
+import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
+import com.smsoft.smartdisplay.ui.screen.dashboard.mqtt.DashboardMqttMessage
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_DEFAULT_STATE
@@ -19,15 +21,14 @@ import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_MIN_DETECTIO
 import com.smsoft.smartdisplay.ui.screen.dashboard.PROXIMITY_SENSOR_THRESHOLD
 import com.smsoft.smartdisplay.ui.screen.dashboard.mqtt.DashboardMqttManager
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.smsoft.smartdisplay.utils.observe
+import com.smsoft.smartdisplay.utils.mqttTopicMatches
 
 class SensorRelayController(
     private val context: Context,
@@ -42,7 +43,11 @@ class SensorRelayController(
     private var proximitySensorTopic = PROXIMITY_SENSOR_DEFAULT_TOPIC
     private var proximitySensorPayloadOn = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON
     private var proximitySensorPayloadOff = PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+    private var proximitySensorStatusTopic = PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
 
+    // What the light is believed to be; a wave sends the opposite. It used to change only on a
+    // wave, so after a voice "off" (or a wall switch or an automation, with no status topic) the
+    // next wave sent "off" to a light that was off, and only the second wave lit it.
     private var proximityButtonState = PROXIMITY_SENSOR_DEFAULT_STATE
     private var proximityButtonThresholdCrossed = false
     private var proximityLongDetectionJob: Job? = null
@@ -54,6 +59,7 @@ class SensorRelayController(
             proximitySensorTopic = it.proximitySensorTopic
             proximitySensorPayloadOn = it.proximitySensorPayloadOn
             proximitySensorPayloadOff = it.proximitySensorPayloadOff
+            proximitySensorStatusTopic = it.proximitySensorStatusTopic
         }
 
         scope.launch {
@@ -84,12 +90,25 @@ class SensorRelayController(
         }
     }
 
-        fun sendProximityButtonEvent(isOn: Boolean) {
+    fun sendProximityButtonEvent(isOn: Boolean) {
+        if (!mqttManager.canPublish(proximitySensorTopic)) {
+            return
+        }
+        proximityButtonState = isOn
         mqttManager.publish(
             scope = scope,
             topic = proximitySensorTopic,
             messagePayload = if (isOn) proximitySensorPayloadOn else proximitySensorPayloadOff
         )
+    }
+
+    /** The light's own report, if a status topic is set: the next wave toggles from there. */
+    fun onMqttMessage(message: DashboardMqttMessage) {
+        if (proximitySensorStatusTopic.isNotEmpty() && mqttTopicMatches(proximitySensorStatusTopic, message.topic)) {
+            parseLightState(message.payload, proximitySensorPayloadOn, proximitySensorPayloadOff)?.let {
+                proximityButtonState = it
+            }
+        }
     }
 
     fun release() {
@@ -128,8 +147,7 @@ class SensorRelayController(
                 proximityLongDetectionJob?.cancel()
                 proximityLongDetectionJob = scope.launch {
                     delay(PROXIMITY_SENSOR_MIN_DETECTION_DURATION)
-                    proximityButtonState = !proximityButtonState
-                    sendProximityButtonEvent(proximityButtonState)
+                    sendProximityButtonEvent(!proximityButtonState)
                 }
             } else if (state < PROXIMITY_SENSOR_THRESHOLD) {
                 proximityButtonThresholdCrossed = false
@@ -146,12 +164,32 @@ private data class RelayConfig(
     val lightSensorTopic: String,
     val proximitySensorTopic: String,
     val proximitySensorPayloadOn: String,
-    val proximitySensorPayloadOff: String
+    val proximitySensorPayloadOff: String,
+    val proximitySensorStatusTopic: String
 )
 
 private fun readRelayConfig(data: Preferences) = RelayConfig(
     lightSensorTopic = data[stringPreferencesKey(PreferenceKey.LIGHT_SENSOR_TOPIC.key)]?.trim() ?: LIGHT_SENSOR_TOPIC_DEFAULT,
     proximitySensorTopic = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_TOPIC.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_TOPIC,
     proximitySensorPayloadOn = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_ON.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_ON,
-    proximitySensorPayloadOff = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF
+    proximitySensorPayloadOff = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_PAYLOAD_OFF.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_PAYLOAD_OFF,
+    proximitySensorStatusTopic = data[stringPreferencesKey(PreferenceKey.PROXIMITY_SENSOR_STATUS_TOPIC.key)]?.trim() ?: PROXIMITY_SENSOR_DEFAULT_STATUS_TOPIC
 )
+
+/**
+ * On/off from a light's status message: the command payloads, or the usual words (Tasmota and
+ * ESPHome report "ON"/"OFF" even when commanded with "1"/"0"). Anything else is ignored (null).
+ */
+internal fun parseLightState(payload: String, payloadOn: String, payloadOff: String): Boolean? {
+    val value = payload.trim()
+    return when {
+        value.equals(payloadOn, ignoreCase = true) -> true
+        value.equals(payloadOff, ignoreCase = true) -> false
+        value.lowercase() in LIGHT_ON_WORDS -> true
+        value.lowercase() in LIGHT_OFF_WORDS -> false
+        else -> null
+    }
+}
+
+private val LIGHT_ON_WORDS = setOf("on", "1", "true")
+private val LIGHT_OFF_WORDS = setOf("off", "0", "false")

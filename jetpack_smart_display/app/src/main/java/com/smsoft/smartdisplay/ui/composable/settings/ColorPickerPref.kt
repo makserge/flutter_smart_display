@@ -1,19 +1,16 @@
-@file:OptIn(ExperimentalMaterialApi::class)
-
 package com.smsoft.smartdisplay.ui.composable.settings
 
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
-import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,13 +24,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import com.godaddy.android.colorpicker.toColorInt
+import com.smsoft.smartdisplay.ui.common.BarScreen
+import com.smsoft.smartdisplay.ui.common.BarTitle
 import com.smsoft.smartdisplay.ui.common.prefs.LocalPrefsDataStore
 import com.smsoft.smartdisplay.ui.common.prefs.TextPref
 import com.smsoft.smartdisplay.R
@@ -76,13 +74,18 @@ fun ColorPickerPref(
         }
     }
 
+    // The colour being picked: saved with Save, not on the first move of the picker, which closed
+    // the pop-up this screen replaces
+    var picked by remember { mutableStateOf(HsvColor.from(selected)) }
+
     TextPref(
         modifier = modifier,
         title = title,
         textColor = MaterialTheme.colors.onBackground,
         enabled = true,
         onClick = {
-            showDialog = !showDialog
+            picked = HsvColor.from(selected)
+            showDialog = true
         }
     ) {
         Box(
@@ -97,37 +100,38 @@ fun ColorPickerPref(
     }
 
     if (showDialog) {
-        AlertDialog(
+        BarScreen(
             onDismissRequest = { showDialog = false },
-            text = {
-                ClassicColorPicker(
-                    modifier = Modifier
-                        .padding(10.dp),
-                    color = HsvColor.from(selected),
-                    onColorChanged = { color: HsvColor ->
-                        edit(color)
-                    }
-                )
+            title = {
+                BarTitle(text = title)
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text(text = stringResource(R.string.cancel))
+                }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDialog = false
-                    },
-                ) {
-                    Text(
-                        text = stringResource(R.string.cancel),
-                        style = MaterialTheme.typography.body1,
-                        color = MaterialTheme.colors.primary
-                    )
+                TextButton(onClick = { edit(picked) }) {
+                    Text(text = stringResource(R.string.save_button))
                 }
-
             },
-            backgroundColor = MaterialTheme.colors.surface,
-            contentColor = contentColorFor(MaterialTheme.colors.surface),
-            properties = DialogProperties(
-                usePlatformDefaultWidth = true
-            ),
-        )
+            scrollable = false
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .background(picked.toColor())
+            )
+            ClassicColorPicker(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 12.dp),
+                color = picked,
+                onColorChanged = { color: HsvColor ->
+                    picked = color
+                }
+            )
+        }
     }
 }

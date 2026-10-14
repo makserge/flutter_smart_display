@@ -6,6 +6,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import org.vosk.Recognizer
 import org.vosk.android.RecognitionListener
@@ -38,6 +39,13 @@ class GuardedSpeechService @Throws(IOException::class) constructor(
     private var thread: Thread? = null
     @Volatile
     private var isStopped = false
+
+    /**
+     * Audio read before this time (elapsedRealtime) is dropped, so the recognizer does not hear the
+     * app's own wake-word chime. Set by the owner when the chime starts.
+     */
+    @Volatile
+    var mutedUntilMs = 0L
 
     init {
         val audioRecord = AudioRecord(
@@ -129,6 +137,10 @@ class GuardedSpeechService @Throws(IOException::class) constructor(
                 continue
             }
             emptyReads = 0
+            if (SystemClock.elapsedRealtime() < mutedUntilMs) {
+                // The chime is playing: this audio is the app's own sound, not the user's speech
+                continue
+            }
             if (recognizer.acceptWaveForm(buffer, count)) {
                 val result = recognizer.result
                 post { listener.onResult(result) }

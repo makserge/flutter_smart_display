@@ -1,8 +1,10 @@
 package com.smsoft.smartdisplay.ui.composable.clock.digitalmatrixclock
 
+import androidx.compose.material.MaterialTheme
+import com.smsoft.smartdisplay.utils.ensureContrast
 import android.content.Context
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -47,10 +49,13 @@ fun DigitalMatrixClock(
         flow = viewModel.dotColorMC,
         defaultValue = null
     ) as String?
-    val dotColor = remember(dotColorValue) {
-        dotColorValue?.let {
+    val background = MaterialTheme.colors.background
+    val dotColor = remember(dotColorValue, background) {
+        val color = dotColorValue?.let {
             runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull()
         } ?: DEFAULT_DOT_COLOR_MC
+        // The turquoise default stands out at night but hardly on the day background.
+        ensureContrast(color, background)
     }
 
     val isBlinkSeparator = getStateFromFlow(
@@ -108,20 +113,20 @@ fun DigitalMatrixClock(
         DotStyle.ROUND -> if (isShowSeconds) dotSpacingRoundSec else dotSpacingRound
     }
 
-    // One grid per format, kept between seconds. It used to be a global rebuilt on every
-    // recomposition and positioned from the screen size, not from the page.
-    val grid = remember(isShowSeconds) {
-        Grid().apply {
-            setPaddingDots(
-                top = paddingRowsTop,
-                left = paddingColumnsLeft,
-                bottom = paddingRowsBottom,
-                right = paddingColumnsRight
-            )
-            setFormat(matrixFormat(isShowSeconds))
-        }
+    // One grid per format and layout, kept between seconds: the time in one row, or one grid per
+    // pair of digits for the stacked layout of a square or portrait page. They used to be a global
+    // rebuilt on every recomposition and positioned from the screen size, not from the page.
+    val rowGrid = remember(isShowSeconds) {
+        newGrid(matrixFormat(isShowSeconds))
     }
-    grid.setDigits(*matrixDigits(hour, minute, second, isShowSeconds, is24Hour))
+    val pairGrids = remember(isShowSeconds) {
+        List(if (isShowSeconds) 3 else 2) { newGrid(FORMAT_PAIR) }
+    }
+    val digits = matrixDigits(hour, minute, second, isShowSeconds, is24Hour)
+    rowGrid.setDigits(*digits)
+    pairGrids.forEachIndexed { index, grid ->
+        grid.setDigits(digits[2 * index], digits[2 * index + 1])
+    }
 
     // The separator is lit in the first half of every second and dark in the second half.
     // Read only while drawing, so the blink redraws the Canvas without recomposing anything.
@@ -131,12 +136,17 @@ fun DigitalMatrixClock(
     }
     val isBlinkSeparatorState by rememberUpdatedState(isBlinkSeparator)
 
-    Box(
-        modifier = Modifier
+    BoxWithConstraints(
+        modifier = modifier
             .fillMaxSize()
     ) {
+        // Hours and minutes in a row on a wide page, one above the other (without the ":") on a
+        // square or portrait page, as the flip clock. On a square the dots come out about the
+        // same size either way, so the choice is by shape: the stack fills the square, the row
+        // is a band across its middle.
+        val stacked = constraints.maxWidth <= constraints.maxHeight * RECTANGULAR_ASPECT
         OnDraw(
-            grid = grid,
+            grids = if (stacked) pairGrids else listOf(rowGrid),
             color = dotColor,
             dotSize = dotSize,
             dotSpacing = dotSpacing,
@@ -145,6 +155,22 @@ fun DigitalMatrixClock(
             isSeparatorVisible = { !isBlinkSeparatorState || isFirstHalfOfSecond.value }
         )
     }
+}
+
+private fun newGrid(format: String) = Grid().apply {
+    setPaddingDots(
+        top = paddingRowsTop,
+        left = paddingColumnsLeft,
+        bottom = paddingRowsBottom,
+        right = paddingColumnsRight
+    )
+    setFormat(format)
+}
+
+/** Grids one above the other, [STACK_GAP_ROWS] dots apart: the size of the whole in dots. */
+private class MatrixStack(grids: List<Grid>) {
+    val columns = grids.maxOf { it.columns }
+    val rows = grids.sumOf { it.rows } + (grids.size - 1) * STACK_GAP_ROWS
 }
 
 // The grid format and the digits shown in it. Outside the composable so a JVM unit test can drive
@@ -175,16 +201,17 @@ internal fun matrixDigits(
 }
 
 /**
- * Draws [grid] as large as [dotSize] and [dotSpacing] (dp) ask for, but never larger than the
- * page allows: it shrinks to fit narrow, small or portrait screens. The dot size comes from the
- * whole grid; horizontally the time is centred on its lit dots, vertically on the grid. The
- * sizes used to be raw pixels placed from the screen size, so the clock was clipped on small and
- * portrait panels and covered less than half of a large high-density one.
+ * Draws [grids] one above the other, as large as [dotSize] and [dotSpacing] (dp) ask for, but
+ * never larger than the page allows: they shrink to fit narrow, small or portrait screens. The
+ * dot size comes from the whole stack; horizontally each grid is centred on its lit dots,
+ * vertically the stack on the page. The sizes used to be raw pixels placed from the screen size,
+ * so the clock was clipped on small and portrait panels and covered less than half of a large
+ * high-density one.
  */
 @Suppress("UNUSED_EXPRESSION")
 @Composable
 private fun OnDraw(
-    grid: Grid,
+    grids: List<Grid>,
     color: Color,
     dotSize: Float,
     dotSpacing: Float,
@@ -195,50 +222,60 @@ private fun OnDraw(
     Canvas(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Redraw when the time changes; the grid itself is not snapshot state.
+        // Redraw when the time changes; the grids themselves are not snapshot state.
         second
-        val columns = grid.columns
-        val rows = grid.rows
-        if ((columns == 0) || (rows == 0)) {
+        val stack = MatrixStack(grids)
+        if ((stack.columns == 0) || (stack.rows == 0)) {
             return@Canvas
         }
-        // The result's fields are read by name: all four are Float, so a positional
-        // destructuring that mixed them up would still compile
-        val layout = matrixLayout(
-            width = size.width,
-            height = size.height,
-            density = density,
-            columns = columns,
-            rows = rows,
-            litColumns = grid.litColumns(),
-            dotSize = dotSize,
-            dotSpacing = dotSpacing,
-            dotStyle = dotStyle
-        )
         val showSeparator = isSeparatorVisible()
-        for (row in 0 until rows) {
-            for (column in 0 until columns) {
-                // Unlit dots are not drawn, so they take the color of whatever is behind the clock.
-                val isLit = grid.isLit(column, row) &&
-                    (showSeparator || !grid.isSeparatorColumn(column))
-                if (!isLit) {
-                    continue
-                }
-                val x = layout.left + column * layout.pitch
-                val y = layout.top + row * layout.pitch
-                when (dotStyle) {
-                    DotStyle.SQUARE -> drawRect(
-                        color = color,
-                        topLeft = Offset(x, y),
-                        size = Size(layout.dot, layout.dot)
-                    )
-                    DotStyle.ROUND -> drawCircle(
-                        color = color,
-                        radius = layout.dot / 2f,
-                        center = Offset(x + layout.dot / 2f, y + layout.dot / 2f)
-                    )
+        // Where the next grid starts, in dots from the top of the stack
+        var rowOffset = 0
+        grids.forEachIndexed { index, grid ->
+            // The pitch and the top come from the whole stack. The first grid (the row, or the
+            // hours of the stack) is centred on its lit dots, so the time without a leading digit
+            // sits in the middle; the minutes and seconds of the stack are centred on their whole
+            // grid, or their tens digit ("1" lights one column, "3" none at the edge) would move
+            // them sideways several times an hour.
+            // The result's fields are read by name: all four are Float, so a positional
+            // destructuring that mixed them up would still compile
+            val layout = matrixLayout(
+                width = size.width,
+                height = size.height,
+                density = density,
+                columns = stack.columns,
+                rows = stack.rows,
+                litColumns = if (index == 0) grid.litColumns() else null,
+                dotSize = dotSize,
+                dotSpacing = dotSpacing,
+                dotStyle = dotStyle
+            )
+            val top = layout.top + rowOffset * layout.pitch
+            for (row in 0 until grid.rows) {
+                for (column in 0 until grid.columns) {
+                    // Unlit dots are not drawn, so they take the color of whatever is behind the clock.
+                    val isLit = grid.isLit(column, row) &&
+                        (showSeparator || !grid.isSeparatorColumn(column))
+                    if (!isLit) {
+                        continue
+                    }
+                    val x = layout.left + column * layout.pitch
+                    val y = top + row * layout.pitch
+                    when (dotStyle) {
+                        DotStyle.SQUARE -> drawRect(
+                            color = color,
+                            topLeft = Offset(x, y),
+                            size = Size(layout.dot, layout.dot)
+                        )
+                        DotStyle.ROUND -> drawCircle(
+                            color = color,
+                            radius = layout.dot / 2f,
+                            center = Offset(x + layout.dot / 2f, y + layout.dot / 2f)
+                        )
+                    }
                 }
             }
+            rowOffset += grid.rows + STACK_GAP_ROWS
         }
     }
 }
@@ -323,6 +360,12 @@ enum class DotStyle(val value: String, val titleId: Int) {
 
 private const val FORMAT = "0 0 : 0 0"
 private const val FORMAT_SECONDS = "0 0 : 0 0 : 0 0"
+// One pair of digits of the stacked layout
+private const val FORMAT_PAIR = "0 0"
+// Dark rows between the pairs of the stacked layout
+private const val STACK_GAP_ROWS = 2
+// A page wider than this many times its height is rectangular: the time goes in a row
+private const val RECTANGULAR_ASPECT = 1.2F
 private const val HALF_SECOND_MS = 500
 // Margins around the matrix on the clock page.
 private const val MAX_WIDTH_FRACTION = 0.92f

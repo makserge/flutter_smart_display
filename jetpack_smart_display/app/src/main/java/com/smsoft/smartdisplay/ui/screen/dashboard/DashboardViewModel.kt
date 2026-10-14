@@ -25,6 +25,7 @@ import com.smsoft.smartdisplay.service.sensor.SensorHandler
 import com.smsoft.smartdisplay.service.timer.TimerHandler
 import com.smsoft.smartdisplay.ui.screen.dashboard.controller.AsrController
 import com.smsoft.smartdisplay.ui.screen.dashboard.controller.ClockAutoReturnController
+import com.smsoft.smartdisplay.ui.screen.dashboard.controller.CinemaModeController
 import com.smsoft.smartdisplay.ui.screen.dashboard.controller.DimmerLightController
 import com.smsoft.smartdisplay.ui.screen.dashboard.controller.DoorbellController
 import com.smsoft.smartdisplay.ui.screen.dashboard.controller.MessageAlertController
@@ -102,6 +103,12 @@ class DashboardViewModel @Inject constructor(
         scope = viewModelScope
     )
 
+    private val cinemaModeController = CinemaModeController(
+        dataStore = dataStore,
+        mqttManager = mqttManager,
+        scope = viewModelScope
+    )
+
     private val doorbellController = DoorbellController(
         dataStore = dataStore,
         scope = viewModelScope
@@ -140,6 +147,7 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             mqttManager.incomingMessages.collect { message ->
                 pushButtonController.onMqttMessage(message)
+                sensorRelayController.onMqttMessage(message)
                 doorbellController.onMqttMessage(message)
                 messageAlertController.onMqttMessage(message)
             }
@@ -147,6 +155,7 @@ class DashboardViewModel @Inject constructor(
         pushButtonController.start()
         sensorRelayController.start()
         dimmerLightController.start()
+        cinemaModeController.start()
         doorbellController.start()
         messageAlertController.start()
         asrController.start()
@@ -257,6 +266,7 @@ class DashboardViewModel @Inject constructor(
             AsrCommand.DIMMER_LIGHT -> dimmerLightController.sendPowerEvent(params as Boolean)
             AsrCommand.DIMMER_LIGHT_SET -> dimmerLightController.processSetCommand(params as String)
             AsrCommand.DIMMER_LIGHT_STEP -> dimmerLightController.processStepCommand(params as Int)
+            AsrCommand.CINEMA_MODE -> cinemaModeController.sendCommand(params as Boolean)
             AsrCommand.TIMER -> processAsrTimerCommand(params)
             AsrCommand.PAGE -> processAsrPageCommand(command, params)
         }

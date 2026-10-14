@@ -106,7 +106,9 @@ class MPDPlayer(
             .setPlaybackState(playbackState)
             .setPlayerError(if (playbackState == Player.STATE_IDLE) error else null)
             .setVolume((volume ?: 100) / 100F)
-            .setContentPositionMs(status?.elapsedMs ?: 0L)
+            // A station picked to start begins at 0, not at the paused song's elapsed time (the
+            // radio page counts its elapsed time on from here).
+            .setContentPositionMs(if (pendingIndex != C.INDEX_UNSET) 0L else (status?.elapsedMs ?: 0L))
             .build()
     }
 
@@ -191,6 +193,25 @@ class MPDPlayer(
             }
             null
         }
+    }
+
+    /**
+     * Closes the connection without a command, unlike stop(): the radio page was left with the
+     * radio off, and MPD stays as it is, also when another client paused it. The queue is kept,
+     * so the page can name the saved station before the next prepare.
+     */
+    fun disconnect() {
+        if (!isPrepared) {
+            return
+        }
+        isPrepared = false
+        isConnected = false
+        generation.incrementAndGet()
+        stopMonitor()
+        scope.launch {
+            session.disconnect()
+        }
+        invalidateState()
     }
 
     override fun handleSetVolume(volume: Float, volumeOperationType: Int): ListenableFuture<*> {

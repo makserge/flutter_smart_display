@@ -2,6 +2,7 @@ package com.smsoft.smartdisplay.ui.composable.timers
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -10,6 +11,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import com.smsoft.smartdisplay.data.TimerState
 import com.smsoft.smartdisplay.data.database.entity.Timer
+import com.smsoft.smartdisplay.ui.common.KeepListEndInEditMode
+import com.smsoft.smartdisplay.ui.common.verticalScrollbar
 
 @Composable
 fun ItemsList(
@@ -26,11 +29,14 @@ fun ItemsList(
     onEnableItemModification: () -> Unit,
     onEditItem: (item: Timer) -> Unit,
 ) {
+    KeepListEndInEditMode(listState, editMode)
+    // The padding holds the add strip's height in edit mode: the list ends above it (see AddItemBar)
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize(),
+            .padding(padding)
+            .fillMaxSize()
+            .verticalScrollbar(listState),
         state = listState,
-        contentPadding = padding,
         content = {
             items(items.size) { index ->
                 Item(

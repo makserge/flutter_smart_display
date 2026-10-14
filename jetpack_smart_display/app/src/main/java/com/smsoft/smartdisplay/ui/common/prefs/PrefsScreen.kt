@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.smsoft.smartdisplay.ui.common.verticalScrollbar
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -52,7 +54,13 @@ fun PrefsScreen(
     CompositionLocalProvider(LocalPrefsDataStore provides dataStore) {
         Column {
             Spacer(Modifier.height(12.dp))
-            LazyColumn(modifier = modifier.fillMaxSize()) {
+            val listState = rememberLazyListState()
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .verticalScrollbar(listState),
+                state = listState
+            ) {
                 items(prefsScope.prefsItems.size) { index ->
                     prefsScope.prefsItems[index].invoke(prefsScope)
                     val showDivider = dividerThickness != 0.dp &&

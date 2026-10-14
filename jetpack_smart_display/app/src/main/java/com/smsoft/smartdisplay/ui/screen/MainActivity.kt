@@ -17,6 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.ui.AppNavigation
+import android.content.Context
+import com.smsoft.smartdisplay.ui.common.FullScreenHost
+import com.smsoft.smartdisplay.ui.common.describeDisplay
+import com.smsoft.smartdisplay.ui.common.scaledContext
 import com.smsoft.smartdisplay.ui.theme.SmartDisplayTheme
 import dagger.hilt.android.AndroidEntryPoint
 import java.lang.ref.WeakReference
@@ -25,6 +29,13 @@ import java.lang.ref.WeakReference
 @AndroidEntryPoint
 @UnstableApi
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        // What this panel reports, so an emulator can be set up like it
+        Log.i(TAG, "Display: ${describeDisplay(newBase)}; Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.MANUFACTURER} ${Build.MODEL}")
+        // A small screen gets a larger density, so the whole UI, dialogs included, is larger
+        super.attachBaseContext(scaledContext(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         replaceOlderInstance()
@@ -33,12 +44,24 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier
                     .fillMaxSize()
                     .background(color = MaterialTheme.colors.background)) {
-                    AppNavigation()
+                    // Editors, choosers and alerts are full screens over the app, not pop-up windows
+                    FullScreenHost(onKeyboardHidden = ::hideSystemUI) {
+                        AppNavigation()
+                    }
                 }
             }
         }
         hideSystemUI()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Full screen again after anything that showed the bars: the keyboard (Android 8 shows the
+        // navigation bar with it), a system dialog (a permission), or a return from another app
+        if (hasFocus) {
+            hideSystemUI()
+        }
     }
 
     override fun onDestroy() {
@@ -71,14 +94,20 @@ class MainActivity : ComponentActivity() {
         currentInstance = WeakReference(this)
     }
 
+    /**
+     * Full screen on every Android version: the app draws on the whole display, the bars hidden
+     * until a swipe from the edge. The keyboard reaches the content as insets (imePadding on the
+     * full screens), so the window must not fit the system windows itself.
+     */
     private fun hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowCompat.setDecorFitsSystemWindows(window, false)
             val controller = window.insetsController
-            controller?.hide(WindowInsets.Type.ime())
             controller?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             controller?.hide(WindowInsets.Type.systemBars())
         } else {
+            // The view flags, not FLAG_FULLSCREEN: a window with that flag is not resized for the
+            // keyboard, so the full screens could not stay above it (an Android bug)
             //noinspection
             @Suppress("DEPRECATION")
             // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.

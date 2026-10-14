@@ -1,14 +1,17 @@
 package com.smsoft.smartdisplay.ui.screen.weather
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.smsoft.smartdisplay.ui.common.verticalScrollbar
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -30,6 +33,7 @@ import com.smsoft.smartdisplay.network.WeatherFailureKind
 import com.smsoft.smartdisplay.network.WeatherResult
 import com.smsoft.smartdisplay.ui.composable.weather.CurrentWeather
 import com.smsoft.smartdisplay.ui.composable.weather.Forecast
+import com.smsoft.smartdisplay.ui.composable.weather.weatherSizes
 
 @Composable
 fun WeatherScreen(
@@ -38,7 +42,6 @@ fun WeatherScreen(
     onSettingsClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         viewModel.onStart()
@@ -74,7 +77,6 @@ fun WeatherScreen(
                 Weather(
                     modifier = Modifier.weight(1F),
                     viewModel = viewModel,
-                    currentListState = currentListState,
                     currentForecast = uiState.current,
                     weatherForecast = uiState.forecast
                 )
@@ -170,42 +172,101 @@ private fun failureText(failure: WeatherResult.Failure?): String {
     }
 }
 
+/**
+ * The current weather above the forecast, filling the page. Two sizes of the same layout: compact
+ * on a small panel (360 dp wide after the small-screen scaling), spread out on a large screen.
+ * Both fit their page without scrolling; the scroll is only a safety net for a page shorter than
+ * the compact layout. It used to be a list at one size, which left a large screen mostly empty
+ * and was cut off on the panel.
+ */
 @Composable
 fun Weather(
     modifier: Modifier,
     viewModel: WeatherViewModel,
-    currentListState: LazyListState,
     currentForecast: WeatherCurrent?,
     weatherForecast: List<WeatherForecast>
 ) {
-    LazyColumn(
+    BoxWithConstraints(
         modifier = modifier
-            .fillMaxSize(),
-        state = currentListState
+            .fillMaxSize()
     ) {
-        currentForecast?.run {
-            item {
+        val sizes = weatherSizes(
+            compact = maxWidth < COMPACT_MAX_WIDTH,
+            pageWidth = maxWidth,
+            pageHeight = maxHeight
+        )
+        val scrollState = rememberScrollState()
+        val page = Modifier
+            .fillMaxWidth()
+            .verticalScrollbar(scrollState)
+            .verticalScroll(scrollState)
+            .heightIn(min = maxHeight)
+            .padding(sizes.pagePadding)
+        val current = @Composable {
+            if (currentForecast != null) {
                 CurrentWeather(
                     modifier = Modifier,
                     viewModel = viewModel,
                     currentWeather = currentForecast,
-                    nightTemperature = weatherForecast.firstOrNull()?.temperatureNight
+                    nightTemperature = weatherForecast.firstOrNull()?.temperatureNight,
+                    sizes = sizes
                 )
             }
         }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+        val forecast = @Composable {
+            weatherForecast.forEach {
+                Forecast(
+                    modifier = Modifier,
+                    viewModel = viewModel,
+                    item = it,
+                    sizes = sizes
+                )
+            }
+        }
+        if (sizes.compact) {
+            // The current weather above the forecast days
+            Column(
+                modifier = page,
+                verticalArrangement = Arrangement.SpaceEvenly,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                current()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    forecast()
+                }
+            }
+        } else {
+            // A wide page: three equal columns, the current weather and the two forecast days
+            Row(
+                modifier = page,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.weight(1F),
+                    contentAlignment = Alignment.Center
+                ) {
+                    current()
+                }
                 weatherForecast.forEach {
-                    Forecast(
-                        modifier = Modifier,
-                        viewModel = viewModel,
-                        item = it
-                    )
+                    Box(
+                        modifier = Modifier.weight(1F),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Forecast(
+                            modifier = Modifier,
+                            viewModel = viewModel,
+                            item = it,
+                            sizes = sizes
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+// Pages narrower than this get the compact layout
+private val COMPACT_MAX_WIDTH = 600.dp

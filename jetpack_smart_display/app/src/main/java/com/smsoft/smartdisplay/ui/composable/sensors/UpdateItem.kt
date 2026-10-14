@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.AlertDialog
+import com.smsoft.smartdisplay.ui.common.EditScreen
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
@@ -15,10 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.BluetoothDevice
@@ -38,8 +36,6 @@ fun UpdateItem(
     onCloseDialog: () -> Unit,
     onUpdateItem: (item: Sensor) -> Unit
 ) {
-    val context = LocalContext.current
-
     var title by remember { mutableStateOf(item.title) }
     var titleIcon by remember { mutableStateOf(item.titleIcon) }
     var topic1 by remember { mutableStateOf(item.topic1) }
@@ -73,12 +69,7 @@ fun UpdateItem(
         )
     }
 
-    AlertDialog(
-        modifier = Modifier
-            .padding(20.dp),
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+    EditScreen(
         onDismissRequest = {
             onClose(
                 type = type,
@@ -101,30 +92,36 @@ fun UpdateItem(
                         .height(1.dp),
                     text = ""
                 )
+                // The type of a new sensor, on its own line; an existing sensor keeps its type
+                if (item.id == 0L) {
+                    ItemTypeSelector(
+                        modifier = Modifier
+                            .padding(start = 8.dp),
+                        value = SensorType.getById(type),
+                        onValueChange = {
+                            type = it
+                            isShowBlePermissions = SensorType.isBluetooth(type)
+                        }
+                    )
+                }
+                // No field takes the focus on opening: the keyboard would cover half the dialog
+                // before anything is typed
                 Row(
                     modifier = Modifier,
                 ) {
                     TextFieldWithIcon(
                         modifier = Modifier,
-                        context = context,
                         title = stringResource(R.string.add_sensor_title),
                         topic = title,
                         icon = titleIcon,
-                        type = type,
                         focusRequester = titleFocusRequester,
-                        initialFocus = true,
                         showUnit = false,
-                        showType = (item.id == 0L),
                         onTopicChange = {
                             title = it
                         },
                         onIconChange = {
                             titleIcon = it
-                        },
-                        onTypeChange = {
-                            type = it
-                            isShowBlePermissions = SensorType.isBluetooth(type)
-                        },
+                        }
                     )
                 }
                 Spacer(
@@ -146,7 +143,6 @@ fun UpdateItem(
                 } else {
                     UpdateMQTTTopics(
                         modifier = Modifier,
-                        context = context,
                         topic1 = topic1,
                         topic1Unit = topic1Unit,
                         topic1Icon = topic1Icon,

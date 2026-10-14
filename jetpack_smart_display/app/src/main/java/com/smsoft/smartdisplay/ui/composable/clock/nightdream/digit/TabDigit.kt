@@ -48,7 +48,16 @@ class TabDigit : View, Runnable {
             field = value
             invalidate()
         }
-    var padding = 16F
+    // Size of the card in px, set by the owner so that the card fills its layout. 0 keeps the card
+    // at the size of the numeral.
+    var cardWidth = 0F
+        set (value) {
+            if (field == value) return
+            field = value
+            requestLayout()
+            invalidate()
+        }
+    var cardHeight = 0F
         set (value) {
             if (field == value) return
             field = value
@@ -68,6 +77,16 @@ class TabDigit : View, Runnable {
         set(value) {
             numberPaint.color = value
             field = value
+            invalidate()
+        }
+
+    // Horizontal scale of the numerals: below 1 they are condensed, see FLAP_TEXT_SCALE_X
+    var textScaleX = FLAP_TEXT_SCALE_X
+        set(value) {
+            if (field == value) return
+            numberPaint.textScaleX = value
+            field = value
+            requestLayout()
             invalidate()
         }
 
@@ -108,6 +127,7 @@ class TabDigit : View, Runnable {
             isAntiAlias = true
             style = Paint.Style.FILL_AND_STROKE
             color = Color.WHITE
+            textScaleX = FLAP_TEXT_SCALE_X
         }
         dividerPaint.apply {
             isAntiAlias = true
@@ -191,8 +211,8 @@ class TabDigit : View, Runnable {
         heightMeasureSpec: Int
     ) {
         calculateTextSize(textMeasured)
-        val tabWidth = textMeasured.width() + padding.toInt()
-        val tabHeight = max(1, textMeasured.height() + padding.toInt())
+        val tabWidth = cardWidthPx()
+        val tabHeight = cardHeightPx()
         // The camera distance grows with the card, so the flip keeps the same perspective at any
         // size. With the fixed default distance big cards bulge out and from ~1150 px degenerate.
         camera.setLocation(
@@ -260,7 +280,7 @@ class TabDigit : View, Runnable {
 
     private fun drawDivider(canvas: Canvas) {
         // Across the card only: the view is wider than the card to leave room for the flip
-        val halfWidth = (textMeasured.width() + padding.toInt()) / 2F
+        val halfWidth = cardWidthPx() / 2F
         canvas.apply{
             save()
             concat(projectionMatrix)
@@ -274,6 +294,12 @@ class TabDigit : View, Runnable {
             restore()
         }
     }
+
+    private fun cardWidthPx(): Int =
+        if (cardWidth > 0F) cardWidth.toInt() else textMeasured.width()
+
+    private fun cardHeightPx(): Int =
+        if (cardHeight > 0F) cardHeight.toInt() else max(1, textMeasured.height())
 
     private fun calculateTextSize(rect: Rect) {
         measureDigits(
@@ -447,8 +473,17 @@ class TabDigit : View, Runnable {
         const val SLOT_HEIGHT_RATIO = 1.05F
 
         /**
+         * Natural horizontal scale of the flap numerals: narrower, as the numerals of the old flip
+         * alarm clocks. A condensed system face is not on every device (on the emulator "sans-serif-
+         * condensed" is the regular face), so the regular face is squeezed instead. The owner may
+         * condense further through [textScaleX] to fit a narrow card.
+         */
+        const val FLAP_TEXT_SCALE_X = 0.8F
+
+        /**
          * Size of the box around all digits per 1 px of text size, in the typeface the digits are
-         * drawn with. A card is this box plus the padding.
+         * drawn with, at a horizontal scale of 1: at another [textScaleX] the width is this width
+         * times the scale. Without a card size set by the owner, a card is this box.
          */
         fun digitSizeRatio(): PointF {
             val bounds = Rect()

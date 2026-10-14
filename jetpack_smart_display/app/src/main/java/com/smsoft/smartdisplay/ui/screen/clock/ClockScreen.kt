@@ -1,5 +1,6 @@
 package com.smsoft.smartdisplay.ui.screen.clock
 
+import com.smsoft.smartdisplay.utils.ensureContrast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -41,23 +42,14 @@ fun ClockScreen(
     // 24-hour format for the first frame
     val is24Hour by viewModel.is24Hour.collectAsStateWithLifecycle()
 
-    val defaultPrimaryColor = getColor(MaterialTheme.colors.primary)
-    var primaryColor by remember { mutableStateOf(defaultPrimaryColor) }
-    getStateFromFlow(
-        flow = viewModel.primaryColor,
-        defaultValue = null
-    )?.let {
-        primaryColor = Color(android.graphics.Color.parseColor(it as String))
-    }
-
-    val defaultSecondaryColor = getColor(MaterialTheme.colors.secondary)
-    var secondaryColor by remember { mutableStateOf(defaultSecondaryColor) }
-    getStateFromFlow(
-        flow = viewModel.secondaryColor,
-        defaultValue = null
-    )?.let {
-        secondaryColor = Color(android.graphics.Color.parseColor(it as String))
-    }
+    // The theme's colors unless one is picked in Settings; either way kept clear of the
+    // background, which changes with the day/night theme (a white picked at night would vanish
+    // on the day background). The defaults used to be remembered once and missed a theme change.
+    val background = MaterialTheme.colors.background
+    val customPrimary = getStateFromFlow(flow = viewModel.primaryColor, defaultValue = null) as String?
+    val primaryColor = clockColor(customPrimary, MaterialTheme.colors.primary, background)
+    val customSecondary = getStateFromFlow(flow = viewModel.secondaryColor, defaultValue = null) as String?
+    val secondaryColor = clockColor(customSecondary, MaterialTheme.colors.secondary, background)
 
     Box(
         modifier = Modifier
@@ -158,8 +150,6 @@ fun DrawClock(
                 modifier = modifier,
                 viewModel = viewModel,
                 scale = scale,
-                primaryColor = primaryColor,
-                secondaryColor = secondaryColor,
                 hour = uiState.hour,
                 minute = uiState.minute,
                 is24Hour = is24Hour
@@ -209,3 +199,9 @@ fun DrawClock(
 }
 
 private fun getColor(color: Color) = Color(android.graphics.Color.parseColor("#${Integer.toHexString(color.toArgb())}"))
+
+/** [custom] (a "#RRGGBB" setting) or [default], with enough contrast to [background]. */
+private fun clockColor(custom: String?, default: Color, background: Color): Color {
+    val color = custom?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() } ?: default
+    return ensureContrast(color, background)
+}

@@ -36,6 +36,7 @@ import com.smsoft.smartdisplay.ui.screen.clock.ClockViewModel
 import com.smsoft.smartdisplay.ui.screen.clock.displayHour
 import java.text.DateFormatSymbols
 import java.util.*
+import kotlin.math.min
 
 @Composable
 fun DigitalClock(
@@ -153,10 +154,10 @@ fun DigitalClock(
 }
 
 /**
- * Time and date, each on one line. The font sizes (sp) and the space (dp) from the settings are
- * maximum sizes: when the text does not fit the page, the time and the date each shrink just
- * enough to fit the width, and then all three together shrink to fit the height. [amPm] holds
- * AM and PM in 12-hour format and is null in 24-hour format.
+ * Time and date, each on one line, filling the page. The font sizes (sp) and the space (dp) from
+ * the settings give the proportions: the time and the date are each scaled to the width of the
+ * page, and then all three together to its height, growing on a large page and shrinking on a
+ * small one. [amPm] holds AM and PM in 12-hour format and is null in 24-hour format.
  */
 @Composable
 fun OnDraw(
@@ -297,7 +298,7 @@ private fun fitText(
     val timeSizes = timeTemplates.map {
         measurer.measureLine(it, timeStyle)
     }
-    val timeScale = shrinkToFit(maxWidth, timeSizes.maxOf { it.width }.toFloat())
+    val timeScale = fitScale(maxWidth, timeSizes.maxOf { it.width }.toFloat())
     // The space belongs to the time, so it shrinks with it
     val spaceScale = timeScale
     var height = timeSizes.maxOf { it.height } * timeScale
@@ -308,10 +309,12 @@ private fun fitText(
         val dateSizes = weekdays.map {
             measurer.measureLine(AnnotatedString(formatDate(it, "$d$d", "$d$d", "$d$d$d$d")), dateStyle)
         }
-        dateScale = shrinkToFit(maxWidth, dateSizes.maxOf { it.width }.toFloat())
+        dateScale = fitScale(maxWidth, dateSizes.maxOf { it.width }.toFloat())
         height += spaceHeightPx * spaceScale + dateSizes.maxOf { it.height } * dateScale
     }
-    val heightScale = shrinkToFit(maxHeight, height)
+    // The lines fill the width; the height only ever shrinks them, or the time would grow past
+    // the width it was just fitted to
+    val heightScale = min(1F, fitScale(maxHeight, height))
 
     val fittedTimeStyle = timeStyle.copy(fontSize = timeStyle.fontSize * (timeScale * heightScale))
     // Measured again at the final size, which is rounded and not exactly linear; 1 px spare, so
@@ -327,10 +330,10 @@ private fun fitText(
     )
 }
 
-// Text size is rounded to whole pixels and does not scale exactly linearly, so leave 2 % spare
-// whenever the text has to shrink.
-private fun shrinkToFit(available: Float, needed: Float) =
-    if (needed <= available) 1F else available / needed * 0.98F
+// The scale that makes [needed] fill [available], larger or smaller than 1. Text size is rounded
+// to whole pixels and does not scale exactly linearly, so 2 % is left spare.
+private fun fitScale(available: Float, needed: Float) =
+    if (needed <= 0F || available == Float.MAX_VALUE) 1F else available / needed * 0.98F
 
 private fun TextMeasurer.measureLine(text: AnnotatedString, style: TextStyle): IntSize =
     measure(

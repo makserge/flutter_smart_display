@@ -6,6 +6,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 
@@ -16,6 +17,10 @@ fun TextWithValue(
     value: String,
     style: TextStyle = MaterialTheme.typography.subtitle2
 ) {
+    // The gap grows with the text, so the large sizes of a wide screen keep it visible
+    val gap = with(LocalDensity.current) {
+        if (style.fontSize.isSp) (style.fontSize * GAP_PER_FONT_SIZE).toDp() else 3.dp
+    }
     Row(
         modifier = Modifier
     ) {
@@ -28,7 +33,7 @@ fun TextWithValue(
         Text(
             modifier = Modifier
                 .padding(
-                    start = 3.dp
+                    start = gap
                 ),
             text = value,
             style = style,
@@ -36,3 +41,5 @@ fun TextWithValue(
         )
     }
 }
+
+private const val GAP_PER_FONT_SIZE = 0.25F

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -12,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.smsoft.smartdisplay.utils.getIcon
 
@@ -23,7 +26,9 @@ fun TextWithUnitIcon(
     text: String,
     unit: String,
     icon: String? = null,
-    imageVector: ImageVector? = null
+    imageVector: ImageVector? = null,
+    style: TextStyle = MaterialTheme.typography.h6,
+    iconSize: Dp = 24.dp
 ) {
     Row(
         modifier = Modifier
@@ -37,7 +42,8 @@ fun TextWithUnitIcon(
                 modifier = Modifier
                     .padding(
                         end = 3.dp
-                    ),
+                    )
+                    .size(iconSize),
                 painter = painterResource(
                     id = getIcon(
                         context = context,
@@ -49,6 +55,8 @@ fun TextWithUnitIcon(
         }
         if (imageVector != null) {
             Icon(
+                modifier = Modifier
+                    .size(iconSize),
                 imageVector = imageVector,
                 contentDescription = null
             )
@@ -56,7 +64,7 @@ fun TextWithUnitIcon(
         Text(
             modifier = Modifier,
             text = text,
-            style = MaterialTheme.typography.h6,
+            style = style,
             color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )
@@ -66,7 +74,7 @@ fun TextWithUnitIcon(
                     end = 10.dp
                 ),
             text = unit,
-            style = MaterialTheme.typography.h6,
+            style = style,
             color = MaterialTheme.colors.primary,
             textAlign = TextAlign.Center
         )

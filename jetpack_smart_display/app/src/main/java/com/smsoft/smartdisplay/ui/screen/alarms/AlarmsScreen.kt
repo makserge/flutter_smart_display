@@ -17,7 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.database.entity.emptyAlarm
-import com.smsoft.smartdisplay.ui.common.AddItemButton
+import com.smsoft.smartdisplay.ui.common.AddItemBar
 import com.smsoft.smartdisplay.ui.common.NoItems
 import com.smsoft.smartdisplay.ui.composable.alarms.AlarmAlert
 import com.smsoft.smartdisplay.ui.composable.alarms.ItemsList
@@ -39,14 +39,16 @@ fun AlarmsScreen(
     val alarmState = viewModel.alarmState.collectAsStateWithLifecycle()
 
     Scaffold(
+        // The margin belongs to the page's own empty tap: a tap that just missed the add button at
+        // the page's bottom edge reached the dashboard and toggled the push button
         modifier = Modifier
-            .padding(10.dp)
             .combinedClickable(
                 onClick = { },
                 onLongClick = {
                     isModifyItems = !isModifyItems
                 }
-            ),
+            )
+            .padding(10.dp),
         content = { padding ->
             if (items != null) {
                 if (items!!.isNotEmpty()) {
@@ -108,10 +110,9 @@ fun AlarmsScreen(
                 )
             }
         },
-        floatingActionButton = {
+        bottomBar = {
             if (isModifyItems) {
-                AddItemButton(
-                    modifier = Modifier,
+                AddItemBar(
                     contentDescription = stringResource(R.string.add_alarm),
                     onClick = {
                         isOpenEditItemDialog = true

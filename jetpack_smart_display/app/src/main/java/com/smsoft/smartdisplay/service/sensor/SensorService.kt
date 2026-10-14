@@ -118,7 +118,9 @@ class SensorService : Service() {
                 .flowOn(Dispatchers.IO)
         }
         sensorHandler.proximitySensorState = callbackFlow {
-            proximitySensorListener = object: SensorEventListener {
+            // A local listener: awaitClose removes this one. The listener used to be left
+            // registered, so each new subscription added another that kept sending readings.
+            val listener = object: SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent?) {
                     if ((event != null) && (event.sensor.type == Sensor.TYPE_PROXIMITY)) {
                         trySend(event.values[0].toInt())
@@ -128,10 +130,12 @@ class SensorService : Service() {
                 override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
                 }
             }
-            sensorManager!!.registerListener(proximitySensorListener, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL)
+            proximitySensorListener = listener
+            sensorManager!!.registerListener(listener, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL)
 
             trySend(0)
             awaitClose {
+                sensorManager?.unregisterListener(listener)
             }
         }
             .distinctUntilChanged()

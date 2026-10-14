@@ -10,8 +10,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.smsoft.smartdisplay.utils.getIcon
 
@@ -21,6 +24,9 @@ fun TextWithIcon(
     context: Context,
     text: String,
     icon: String,
+    style: TextStyle = MaterialTheme.typography.h5,
+    color: Color = MaterialTheme.colors.secondary,
+    iconSize: Dp = 48.dp
 ) {
     Row(
         modifier = Modifier,
@@ -32,7 +38,7 @@ fun TextWithIcon(
                     .padding(
                         end = 3.dp
                     )
-                    .size(48.dp),
+                    .size(iconSize),
                 painter = painterResource(
                     id = getIcon(
                         context = context,
@@ -45,8 +51,8 @@ fun TextWithIcon(
         Text(
             modifier = Modifier,
             text = text,
-            style = MaterialTheme.typography.h5,
-            color = MaterialTheme.colors.secondary,
+            style = style,
+            color = color,
             textAlign = TextAlign.Center
         )
     }

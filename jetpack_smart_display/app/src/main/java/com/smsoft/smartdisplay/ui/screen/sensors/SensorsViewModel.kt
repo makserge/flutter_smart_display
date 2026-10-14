@@ -1,6 +1,5 @@
 package com.smsoft.smartdisplay.ui.screen.sensors
 
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
@@ -19,9 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.MqttCallback
-import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
 @HiltViewModel
@@ -86,29 +82,14 @@ class SensorsViewModel @Inject constructor(
         return bluetoothHandler.isBluetoothEnabled()
     }
 
-    private val mqttClientCallback = object : MqttCallback {
-        override fun connectionLost(
-            cause: Throwable?
-        ) {
-            Log.d("MQTT", "The Connection was lost.")
-        }
-
-        override fun messageArrived(
-            topic: String,
-            message: MqttMessage
-        ) {
-            Log.d("MQTT", "messageArrived: $topic: $message")
-            // Called on an MQTT thread: update() replaces the immutable value atomically.
-            mqttTopicDataInt.update {
-                it.withValues(mapOf(topic to message.toString()))
+    init {
+        // From the values kept since the app started, so the retained values the broker sent on
+        // connect show even if this page was first opened later.
+        viewModelScope.launch {
+            mqttCallbackDispatcher.latest.collect { latest ->
+                mqttTopicDataInt.update { it.withValues(latest.value) }
             }
         }
-
-        override fun deliveryComplete(token: IMqttDeliveryToken) {}
-    }
-
-    init {
-        mqttCallbackDispatcher.addListener(mqttClientCallback)
         viewModelScope.launch {
             bluetoothHandler.scanState.collect { state ->
                 bleScanStateInt.value = state
@@ -128,7 +109,6 @@ class SensorsViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        mqttCallbackDispatcher.removeListener(mqttClientCallback)
         if (bleScanClients.isNotEmpty()) {
             bleScanClients.clear()
             bluetoothHandler.stopScan()

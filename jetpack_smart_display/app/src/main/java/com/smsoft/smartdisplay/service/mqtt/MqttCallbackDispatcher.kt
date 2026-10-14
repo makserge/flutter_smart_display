@@ -1,5 +1,10 @@
 package com.smsoft.smartdisplay.service.mqtt
 
+import com.smsoft.smartdisplay.data.MQTTData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
@@ -11,6 +16,15 @@ import javax.inject.Singleton
 @Singleton
 class MqttCallbackDispatcher @Inject constructor() : MqttCallbackExtended {
     private val listeners = CopyOnWriteArrayList<MqttCallback>()
+
+    /**
+     * The latest payload per topic since the app started. The broker replays retained sensor
+     * values once, right after the dashboard subscribes on connect; the sensor page is created
+     * only when it is first shown, so it missed them and showed "n/a" until each sensor
+     * published again.
+     */
+    private val latestInt = MutableStateFlow(MQTTData())
+    val latest: StateFlow<MQTTData> = latestInt.asStateFlow()
 
     fun addListener(listener: MqttCallback) {
         listeners.add(listener)
@@ -33,6 +47,7 @@ class MqttCallbackDispatcher @Inject constructor() : MqttCallbackExtended {
     }
 
     override fun messageArrived(topic: String, message: MqttMessage) {
+        latestInt.update { it.withValues(mapOf(topic to message.toString())) }
         listeners.forEach { it.messageArrived(topic, message) }
     }
 

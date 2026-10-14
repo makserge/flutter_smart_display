@@ -153,6 +153,15 @@ class RadioMediaServiceHandler @Inject constructor(
         return player.mediaItemCount
     }
 
+    /** The name of station [preset], or "" when the list does not have it (e.g. the MPD queue is not known yet). */
+    fun stationTitle(preset: Int): String {
+        if (preset !in 0 until player.mediaItemCount) {
+            return ""
+        }
+        val metadata = player.getMediaItemAt(preset).mediaMetadata
+        return (metadata.displayTitle ?: metadata.title)?.toString() ?: ""
+    }
+
     /**
      * Starts [preset] from the live edge. Out-of-range presets fall back to the first station.
      * Before the MPD queue is known, MPD resumes its own current song.
@@ -173,6 +182,30 @@ class RadioMediaServiceHandler @Inject constructor(
             !isActiveInt.value -> playItem(preset)
             player.playbackState.isIdleOrEnded() -> resume()
             else -> {}
+        }
+    }
+
+    /**
+     * MPD with the radio off: connects without a command to read MPD's queue and play state, so
+     * the radio page shows MPD's station and whether it plays (another client may have started
+     * it). A server that cannot be reached leaves the page as it is: the error is not reported,
+     * as after stop().
+     */
+    fun connectMpd() {
+        if (isInternalPlayer || isActiveInt.value || (player.playbackState != Player.STATE_IDLE)) {
+            return
+        }
+        isStopped = true
+        // stop() keeps playWhenReady, and prepare() would start MPD with it.
+        player.playWhenReady = false
+        player.prepare()
+    }
+
+    /** Undoes [connectMpd] when the radio page is left with the radio off; MPD is left as it is. */
+    fun disconnectMpdIfOff() {
+        val mpdPlayer = player as? MPDPlayer ?: return
+        if (!isActiveInt.value) {
+            mpdPlayer.disconnect()
         }
     }
 

@@ -1,6 +1,7 @@
 package com.smsoft.smartdisplay.ui.screen.settings
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -17,7 +18,10 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import com.smsoft.smartdisplay.ui.common.ChoiceScreen
 import com.smsoft.smartdisplay.ui.common.prefs.PrefsScreen
 import com.smsoft.smartdisplay.R
 import com.smsoft.smartdisplay.data.ClockType
@@ -43,10 +48,15 @@ import com.smsoft.smartdisplay.ui.composable.settings.clockSettings
 import com.smsoft.smartdisplay.ui.composable.settings.doorbellSettings
 import com.smsoft.smartdisplay.ui.composable.settings.lightSensorSettings
 import com.smsoft.smartdisplay.ui.composable.settings.messageSettings
+import com.smsoft.smartdisplay.ui.composable.settings.cinemaModeSettings
 import com.smsoft.smartdisplay.ui.composable.settings.proximitySensorSettings
 import com.smsoft.smartdisplay.ui.composable.settings.pushButtonSettings
 import com.smsoft.smartdisplay.ui.composable.settings.radioSettings
 import com.smsoft.smartdisplay.ui.composable.settings.sensorsSettings
+import com.smsoft.smartdisplay.ui.composable.settings.systemSettings
+import com.smsoft.smartdisplay.utils.openAndroidSettings
+import com.smsoft.smartdisplay.utils.openHomeApp
+import com.smsoft.smartdisplay.utils.otherHomeApps
 import com.smsoft.smartdisplay.ui.composable.settings.timerSettings
 import com.smsoft.smartdisplay.ui.composable.settings.weatherSettings
 import kotlinx.coroutines.launch
@@ -136,6 +146,18 @@ fun SettingsScreen(
         initialValue = ""
     )
 
+    val cinemaModeCommandTopic by viewModel.cinemaModeCommandTopic.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val cinemaModePayloadOn by viewModel.cinemaModePayloadOn.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
+    val cinemaModePayloadOff by viewModel.cinemaModePayloadOff.collectAsStateWithLifecycle(
+        initialValue = ""
+    )
+
     val lightSensorTopic by viewModel.lightSensorTopic.collectAsStateWithLifecycle(
         initialValue = LIGHT_SENSOR_TOPIC_DEFAULT
     )
@@ -169,6 +191,28 @@ fun SettingsScreen(
     )
 
     val asrPermissionsState = viewModel.asrPermissionsState.collectAsStateWithLifecycle()
+
+    // The way out, always picked on a list: Android's settings first, then the other home apps. A
+    // single other home app used to open at once; on the 4 inch panel that was Sonoff's app, not
+    // Android.
+    val androidSettingsLabel = stringResource(R.string.open_home_android_settings)
+    var homeChoices by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
+    homeChoices?.let { choices ->
+        ChoiceScreen(
+            title = stringResource(R.string.open_home),
+            entries = choices,
+            selected = null,
+            onSelect = { key ->
+                homeChoices = null
+                if (key == ANDROID_SETTINGS_KEY) {
+                    openAndroidSettings(context)
+                } else {
+                    ComponentName.unflattenFromString(key)?.let { openHomeApp(context, it) }
+                }
+            },
+            onDismissRequest = { homeChoices = null }
+        )
+    }
 
     Scaffold(
         modifier = Modifier
@@ -225,6 +269,16 @@ fun SettingsScreen(
                         modifier = Modifier,
                         dataStore = dataStore
                     ) {
+                        systemSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            onOpenHome = {
+                                homeChoices = listOf(ANDROID_SETTINGS_KEY to androidSettingsLabel) +
+                                    otherHomeApps(context).map { (component, label) ->
+                                        component.flattenToString() to label
+                                    }
+                            }
+                        )
                         clockSettings(
                             modifier = Modifier,
                             scope = this,
@@ -283,6 +337,13 @@ fun SettingsScreen(
                             topic = proximitySensorTopic.toString(),
                             payloadOn = proximitySensorPayloadOn.toString(),
                             payloadOff = proximitySensorPayloadOff.toString(),
+                        )
+                        cinemaModeSettings(
+                            modifier = Modifier,
+                            scope = this,
+                            commandTopic = cinemaModeCommandTopic.toString(),
+                            payloadOn = cinemaModePayloadOn.toString(),
+                            payloadOff = cinemaModePayloadOff.toString(),
                         )
                         lightSensorSettings(
                             modifier = Modifier,
@@ -355,3 +416,7 @@ fun SettingsTopBar(
         }
     )
 }
+
+// The "Android settings" entry of the "Open home screen" list; the home apps are keyed by their
+// component names, which always have a "/"
+private const val ANDROID_SETTINGS_KEY = "android-settings"

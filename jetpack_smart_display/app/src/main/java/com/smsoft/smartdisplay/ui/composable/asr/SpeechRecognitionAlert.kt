@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.smsoft.smartdisplay.R
+import com.smsoft.smartdisplay.ui.common.AlertScreen
 
 @Composable
 fun SpeechRecognitionAlert(
@@ -24,8 +24,12 @@ fun SpeechRecognitionAlert(
     text: String,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss
+    // The card over the dimmed page, in the app's own window: a pop-up window brought back the
+    // system bars on Android 8 at every wake word. A tap beside the card closes it, as before.
+    AlertScreen(
+        onDismissRequest = onDismiss,
+        onTap = onDismiss,
+        opaque = false
     ) {
         Card(
             shape = RectangleShape,
@@ -33,9 +37,10 @@ fun SpeechRecognitionAlert(
         ) {
             Column(
                 modifier = Modifier.padding(
-                    horizontal = 100.dp,
-                    vertical = 50.dp
-                )
+                    horizontal = 48.dp,
+                    vertical = 32.dp
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (text.isNotEmpty()) {
                     Text(
@@ -55,7 +60,7 @@ fun SpeechRecognitionAlert(
                         .size(48.dp),
                     painter = painterResource(R.drawable.ic_mic_48),
                     colorFilter = ColorFilter.tint(
-                        color = Color.White
+                        color = MaterialTheme.colors.onSurface
                     ),
                     contentDescription = null
                 )

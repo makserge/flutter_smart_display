@@ -129,3 +129,14 @@ dependencies {
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.androidx.compose.ui.test.manifest
 }
+
+// Moshi's codegen ships a Java annotation processor that prints a deprecation warning on every Java
+// compile; Kotlin already uses KSP for it. Only that processor is left out: Hilt's still run.
+tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach { task ->
+    task.doFirst {
+        def path = task.options.annotationProcessorPath
+        if (path != null) {
+            task.options.annotationProcessorPath = path.filter { !it.name.startsWith('moshi-kotlin-codegen') }
+        }
+    }
+}

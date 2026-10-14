@@ -1,6 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.SmartDisplay" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Dark, as the whole app: the start-up window and the platform dialogs (the alarm's time
+         picker) use this theme, and the light one showed a white window and a white picker. -->
+    <style name="Theme.SmartDisplay" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" >@color/black</item>
         <!-- Customize your theme here. -->

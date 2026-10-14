@@ -50,7 +50,12 @@ class DimmerLightController(
         }
     }
 
+    // A command is sent only while the broker is connected (DashboardMqttManager.canPublish). When
+    // it is not, nothing changes: the brightness kept here is the one the lamp actually has.
     fun sendPowerEvent(isOn: Boolean) {
+        if (!mqttManager.canPublish(onOffTopic)) {
+            return
+        }
         mqttManager.publish(scope, onOffTopic, if (isOn) payloadOn else payloadOff)
         if (isOn) {
             mqttManager.publish(scope, levelTopic, brightness.toString())
@@ -58,6 +63,9 @@ class DimmerLightController(
     }
 
     fun sendLevelEvent(percent: Int) {
+        if (!mqttManager.canPublish(levelTopic)) {
+            return
+        }
         val clamped = percent.coerceIn(0, 100)
         brightness = clamped
         persistBrightness(clamped)

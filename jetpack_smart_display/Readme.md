@@ -83,8 +83,9 @@ The radio plays only while the radio page is the page the dashboard pager has co
 - While the voice assistant listens after the wake word, the radio is ducked (lowered) through a transient audio-focus request and restored afterwards. Wake-word/error chimes and MQTT message sounds play without taking audio focus, so they never pause the radio.
 - A dead or unreachable station (for example HTTP 404) stops the radio and shows the stopped state; pick another station.
 - With the MPD radio type, `MPDPlayer` is a Media3 `SimpleBasePlayer`: the playlist is MPD's queue, the current item is MPD's current song and play/pause is MPD's play state. Commands run one at a time on one MPD thread; a status monitor on its own connection reports changes made by MPD itself or by other clients. Next/previous wrap around the queue; used before the queue is known (first use after app start or after a change of the radio settings), they start MPD and step once the queue arrives.
-- Every step of the MPD client has a timeout: 5 s to connect and for the `OK MPD` greeting, 10 s for a command. A server that cannot be reached, sends no greeting (a frozen MPD or another service on the port) or rejects the password makes the radio page open Settings. A command that gets no answer stops the radio.
-- The radio player is created from the radio type (internal player or MPD) and the MPD server settings on the first visit to the radio page. A later change of them applies at once: `RadioMediaServiceHandler` builds a new player (`RadioPlayerFactory`), stops the old one (an MPD server too) and releases it, and the media session moves to the new player. The radio carries on with the new player if it was playing; a change made in Settings finds it off, so the new player starts when the radio page is shown again.
+- Every step of the MPD client has a timeout: 5 s to connect and for the `OK MPD` greeting, 10 s for a command. A server that cannot be reached, sends no greeting (a frozen MPD or another service on the port) or rejects the password makes the radio page open Settings when the radio is started. A command that gets no answer stops the radio.
+- Opening the radio page does not start the radio. With MPD and the radio off, the page connects without a command (`RadioMediaServiceHandler.connectMpd`) and shows MPD's current station and whether it plays, also when another client started it. Leaving the page with the radio off closes that connection without a command (`MPDPlayer.disconnect`), so MPD stays as it is, also when another client paused it. A failure of this connection is not reported: the page keeps its play button, and only starting the radio opens Settings.
+- The radio player is created from the radio type (internal player or MPD) and the MPD server settings on the first visit to the radio page. A later change of them applies at once: `RadioMediaServiceHandler` builds a new player (`RadioPlayerFactory`), stops the old one (an MPD server too) and releases it, and the media session moves to the new player. The radio carries on with the new player if it was playing; a change made in Settings finds it off, so the radio page uses the new player from its next visit.
 - The internal station list and the MPD queue each keep their own saved station, so switching the radio type and back resumes each at its own station. The media session and its notification exist only for the internal player.
 - The volume slider of the radio page (tap the page to show it) and the voice volume commands are even in loudness (`service/radio/RadioVolume.kt`). On the internal player 0 is mute and 1 to 100 % go from -40 dB to 0 dB, 0.4 dB per percent, so a voice step of 5 % is 2 dB at any volume (over the raw gain it was 6 dB near the bottom and 0.4 dB near the top). With MPD the slider is MPD's own volume percent (`setvol`), because MPD's mixers (software, ALSA with dB data, PulseAudio, PipeWire) already turn it into a loudness curve. The internal player starts at full volume, as before.
 
@@ -100,7 +101,7 @@ Timer alerts work the same way: `TimerHandler` holds the alert (`RingingTimer`) 
 
 The alarm light belongs to the ringing alarm: `AlarmWakeLight` is owned by `AlarmHandler`, so the light also works when the Alarms page was never opened, and a dashboard replacement does not switch it off and on again. While the alarm rings, the app waits for the light sensor to report a dark room once, then sends the push-button "on" command or fades the dimmer in over 30 seconds (see below). Dismissing the alarm, by hand, by voice or by the alarm timeout, ends the wait and stops the fade before the dimmer "off" command is sent. The "off" command is only sent when the alarm switched the dimmer on, so a light that was already on stays on. While the light sensor is switched off there is no reading, so the light is not switched on.
 
-Both alarm fades are even in what is perceived, not in the raw value (`utils/FadeCurves.kt`); linear ramps seemed to jump up within seconds and then hardly change. The alarm sound fades in over 15 seconds from silence to the alarm volume. The player volume is a linear gain, but loudness follows decibels, so the level rises by the same number of decibels per 100 ms step, starting 40 dB below the alarm volume (as AOSP DeskClock does): -30 dB after a quarter of the fade, -20 dB after half, -10 dB after three quarters (the linear ramp was at -12 dB after a quarter and -6 dB after half). The fade follows the time since the ring started, so a new dashboard continues it on the curve. The volume sliders in Settings (alarm, timer, message alert, voice chime) are even in loudness as well: they share one scale (`VOLUME_SETTING_SCALE`) that moves the level in equal dB steps from -20 dB (gain 0.1) to 0 dB. The settings still store the gain, so saved volumes sound the same; their thumb just sits further right (the alarm default 0.2 at 30 %, the old middle at about three quarters). The dimmer level follows CIE lightness (L*), which looks even: 1 % after 1.4 s, 4 % after 7.5 s, 18 % after 15 s, 48 % after 22.5 s, 100 % after 30 s. It is sent as an integer percent like the voice dimmer commands, and only when it changes. A dimmer whose firmware corrects brightness itself (Tasmota with its default `LedTable 1`, ESPHome `gamma_correct`) gets the correction twice and stays dim for most of the fade. To tell: at level 50 such a dimmer looks about half bright, an uncorrected one about three quarters.
+Both alarm fades are even in what is perceived, not in the raw value (`utils/FadeCurves.kt`); linear ramps seemed to jump up within seconds and then hardly change. The alarm sound and the wake-up light both fade in over 60 seconds; when the alarm timeout ends (1 minute by default), both fade out over 10 seconds before the ring ends, while a dismissal stops them at once. The player volume is a linear gain, but loudness follows decibels, so the level rises by the same number of decibels per 100 ms step, starting 40 dB below the alarm volume (as AOSP DeskClock does): -30 dB after a quarter of the fade, -20 dB after half, -10 dB after three quarters (the linear ramp was at -12 dB after a quarter and -6 dB after half). The fade follows the time since the ring started, so a new dashboard continues it on the curve. The volume sliders in Settings (alarm, timer, message alert, voice chime) are even in loudness as well: they share one scale (`VOLUME_SETTING_SCALE`) that moves the level in equal dB steps from -20 dB (gain 0.1) to 0 dB. The settings still store the gain, so saved volumes sound the same; their thumb just sits further right (the alarm default 0.2 at 30 %, the old middle at about three quarters). The dimmer level follows CIE lightness (L*), which looks even: 1 % after 1.4 s, 4 % after 7.5 s, 18 % after 15 s, 48 % after 22.5 s, 100 % after 30 s. It is sent as an integer percent like the voice dimmer commands, and only when it changes. A dimmer whose firmware corrects brightness itself (Tasmota with its default `LedTable 1`, ESPHome `gamma_correct`) gets the correction twice and stays dim for most of the fade. To tell: at level 50 such a dimmer looks about half bright, an uncorrected one about three quarters.
 
 ## Doorbell
 
@@ -114,9 +115,19 @@ The camera plays with libVLC 3.7.7, over RTSP (always TCP), HTTP (for example MJ
 
 The app is meant to be the panel's home screen. `MainActivity` uses the `singleTask` launch mode, so a launch from the app drawer, a notification or the system's next-alarm entry reaches the running dashboard. Android still creates a second activity for a HOME launch while the app runs in a normal task, for example when it was started from the app drawer and the home key is pressed. The new activity then closes the older one. Two dashboards would both ring alarms, show the doorbell and run every voice command.
 
+The app runs in full screen on every Android version (the status and navigation bars hidden until a swipe from the edge) and hides them again after the keyboard, a system dialog or a return from another app. So there is no home button that leads anywhere else: Settings, General, System, "Open home screen" lists Android's settings first, then the other home apps, such as the panel's own app or a launcher (`utils/HomeApps.kt`).
+
+There are no pop-up windows. Editors, lists, text fields, questions and alerts are full screens drawn inside the app's own window (`ui/common/FullScreen.kt`: `FullScreenHost` at the root of `MainActivity`, `FullScreen` to show one while it is in the composition, as a `Dialog` would be): a pop-up left little room on the 4 inch panel, its buttons went under the keyboard, and on Android 8 every pop-up window brought the system bars back. `BarScreen` puts the title between Cancel and Save/Add in a bar that stays above the keyboard (`adjustResize`, `imePadding`), with the rows scrolling below; `ChoiceScreen`, `TextEntryScreen`, `QuestionScreen`, `EditScreen` and `AlertScreen` are built on it. Every scrolling page and list has a scroll bar on the right (`ui/common/Scrollbar.kt`).
+
+On a small screen (under 720 px on its smaller side) the app scales its density so the screen is 360 dp wide (`ui/common/ScreenScale.kt`). It logs what the display reports at start: `MainActivity: Display: ...`.
+
 ## Sensors
 
 Bluetooth (BLE) sensors are read from advertisements. One scan serves both the sensor list and the device picker in the sensor editor; it stops when neither needs it any more. Android stops delivering results to a scan that runs longer than 30 minutes, so a running scan is restarted every 10 minutes. Sensor readings (MQTT and BLE) are kept in an immutable `MQTTData`, so every new value is shown immediately.
+
+Theme: every screen is dark, day and night (the light theme by day was removed). Clock colors picked in Settings are kept at a contrast of at least 3:1 with the background.
+
+The proximity sensor toggles the light on every wave. The toggle follows the voice light commands, and with the optional "Light status topic" also the light's own on/off reports (payload on/off, or ON/OFF, 1/0, true/false), so a light switched elsewhere no longer needs a second wave.
 
 The panel's own light and proximity sensors are read by `SensorService`, a `connectedDevice` foreground service that relays them to MQTT. It needs no runtime permission: on Android 14+ the install-time `CHANGE_NETWORK_STATE` permission satisfies the foreground-service prerequisite. If Android refuses the foreground start, the service keeps running as a normal service, so the sensors still report while the app is shown.
 
@@ -125,7 +136,7 @@ The light sensor switch and its reporting interval apply at once. While the swit
 ## MQTT
 
 - Each panel connects with its own client id, `SmartDisplay-` followed by the device's `ANDROID_ID` (23 characters). Brokers drop an existing connection when another client uses the same id, so panels must not share one.
-- On every connect and reconnect the dashboard subscribes to the doorbell, push-button status and message topics (from Settings, or their defaults) and to the topics of all MQTT sensors. A broker that lost its sessions (restart without persistence) is therefore handled.
+- On every connect and reconnect the dashboard subscribes to the doorbell, push-button status and message topics (from Settings) and to the topics of all MQTT sensors. A topic may contain MQTT wildcards (`+` for one level, `#` for the rest): `stat/+/POWER` follows every device. A blank topic is not subscribed and nothing is published to it; the push-button topics are blank by default, so the button does nothing until its topics are entered. A broker that lost its sessions (restart without persistence) is therefore handled.
 - When the broker cannot be reached at start, the connection is retried with backoff (10 s up to 5 min). After the first successful connection, paho's automatic reconnect takes over.
 - Retained messages on the doorbell and message topics are ignored: the broker replays them on every subscribe, so they are not new events. A retained push-button status is used.
 - A change of the broker host, port, login or password in Settings reconnects at once. A connected client disconnects without paho's quiesce wait; a client that is still in paho's reconnect cycle is reused with the new address. An address paho cannot use (for example `tcp://host` or `host/` in the host field) is logged, and nothing connects until it is corrected.
@@ -143,7 +154,7 @@ Latitude and longitude accept a decimal comma ("48,13"); an empty field means th
 
 The clock page shows one of ten clock types, chosen in Settings (General tab, Clock). Every clock is sized from the page it is drawn in, so it fits portrait panels as well as small (800x480) and large (2560x1600) ones. The time comes from one ticker in `ClockViewModel` that runs only while the clock is shown and is aligned to the wall clock, so the seconds change on time.
 
-- **Clock type**: the default is "Digital (Matrix)". A panel that already has a saved clock type keeps it.
+- **Clock type**: the default is "Analog (Nightdream)". A panel that already has a saved clock type keeps it.
 - **12/24-hour format**: the digital clocks follow the system setting "Use 24-hour format", also when it changes while the clock is shown. In 12-hour format the hour is 1-12 without a leading zero; Digital Clock adds a small AM/PM and keeps the place of the hour's tens, so nothing moves at 10:00 and 1:00.
 - **Random clock every day** (default on): every day at 00:00 the clock page switches to a random other clock type (`service/clock/DailyClockChanger.kt`). The day of the last switch is stored, so a panel that was off at midnight switches when the app starts again. After the setting is switched on, the first switch is at the next midnight; switched off, the clock type stays as it is. A clock type picked by hand stays until the next midnight.
 - **Matrix clock**:
@@ -157,23 +168,33 @@ The clock page shows one of ten clock types, chosen in Settings (General tab, Cl
 
 Speech is recognized offline by Vosk (Russian model). All command phrases are hardcoded Russian strings in `app/src/main/res/values/strings.xml` — there is no localization split (no `values-ru`, `values-en`, etc.).
 
+The recognizer's graph is reduced to 99 words for speed (`models/graph-rebuild/words.txt`). A phrase with a word outside that list is never recognized, so a new command either uses those words or needs a graph rebuild, described in `models/graph-rebuild/README.md`.
+
 ### Pipeline overview
 
 ```
 Vosk recognizer, fed by GuardedSpeechService (the microphone loop: an audio error, e.g. an
   audio service restart, ends the loop and the service restarts recognition instead of crashing)
-  -> SpeechRecognitionService (emits SpeechRecognitionState.Result(word) into the hot,
-     app-wide SpeechRecognitionHandler.speechRecognitionState flow, so restarting the
+  -> SpeechRecognitionService (finds the wake word and the command with interpretUtterance in
+     service/asr/CommandText.kt, a pure, unit-tested function: the best reading decides; in one
+     breath repeated wake words and one [unk] right after the wake word are left out, and
+     "<wake word> [unk]" counts as the wake word alone unless another reading is a command; the
+     wake word said again while listening keeps the panel listening; in the second step of a
+     two-step command a repeated wake word and one [unk] after it or at the start are left out,
+     and a best reading with nothing left stays as heard (no command); emits
+     SpeechRecognitionState.Result(word, alternatives), the command readings best first, into the
+     hot, app-wide
+     SpeechRecognitionHandler.speechRecognitionState flow, so restarting the
      service when ASR is switched off and on keeps voice control working)
   -> AsrController.onRecognitionState()  (ducks the radio while listening, calls processCommand(...))
-  -> ProcessCommand.kt processCommand()  (parses raw text -> AsrCommand + payload)
+  -> ProcessCommand.kt processCommand()  (command readings -> AsrCommand + payload)
   -> DashboardViewModel.processAsrCommand()  (when-block: AsrCommand -> action)
   -> action (MQTT publish, ViewModel call, page navigation, etc.)
 ```
 
 Two different dispatch tables are involved and are easy to confuse:
 
-- `ProcessCommand.kt` — parses the *raw recognized string* into an `AsrCommand` + payload. This is a chain of registry lookups, not a single map.
+- `ProcessCommand.kt` — parses the *command readings* (the recognized text after the wake word, best first) into an `AsrCommand` + payload. This is a chain of registry lookups, not a single map.
 - `DashboardViewModel.processAsrCommand()` — a `when` block on `AsrCommand` that performs the actual action.
 
 ### Key files
@@ -206,8 +227,8 @@ All phrases are Russian, defined in `app/src/main/res/values/strings.xml`. "Regi
 | "звонок" | `DOORBELL` | Navigate to Doorbell screen |
 | "включи радио" / "включить радио" | `INTERNET_RADIO_ON` | Navigate to Radio screen; the saved station starts (a playing station is not restarted) |
 | "выключи радио" / "выключить радио" | `INTERNET_RADIO_OFF` | Handled in `DashboardViewModel.switchRadioOff()`: stops the radio where it is and **never navigates**; also stops a ringing alarm that plays a radio station and cancels a radio command that has not reached the radio page yet |
-| "радио назад" | `INTERNET_RADIO_PREV_ITEM` | Navigate to Radio screen if needed, previous station (wraps around) |
-| "радио вперёд" | `INTERNET_RADIO_NEXT_ITEM` | Navigate to Radio screen if needed, next station (wraps around) |
+| "радио назад" / "назад" | `INTERNET_RADIO_PREV_ITEM` | Navigate to Radio screen if needed, previous station (wraps around) |
+| "радио вперёд" / "вперёд" | `INTERNET_RADIO_NEXT_ITEM` | Navigate to Radio screen if needed, next station (wraps around) |
 | "радио тише" | `INTERNET_RADIO_VOL_DOWN` | Navigate to Radio screen if needed (the radio starts), volume down 5 % (2 dB on the internal player) |
 | "радио громче" | `INTERNET_RADIO_VOL_UP` | Navigate to Radio screen if needed (the radio starts), volume up 5 % (2 dB on the internal player) |
 
@@ -220,6 +241,15 @@ All phrases are Russian, defined in `app/src/main/res/values/strings.xml`. "Regi
 | "включи свет" / "включить свет" | `LIGHT2` on | `sendProximityButtonEvent(true)` |
 | "выключи свет" / "выключить свет" | `LIGHT2` off | `sendProximityButtonEvent(false)` |
 
+**Cinema mode** (`LightCommandType.CINEMA_MODE`, dispatched as `AsrCommand.CINEMA_MODE`):
+
+| Phrase(s) | Payload | Action |
+|---|---|---|
+| "включи режим кино" / "включить режим кино" | `true` | `CinemaModeController.sendCommand(true)`: publishes the "on" payload (default `1`) |
+| "отключи режим кино" / "отключить режим кино" / "выключи режим кино" / "выключить режим кино" | `false` | `CinemaModeController.sendCommand(false)`: publishes the "off" payload (default `0`) |
+
+The topic and payloads are in Settings, Sensors, "Cinema mode MQTT settings". The topic is `ha_automations/cinema_mode` by default; nothing is sent with an empty topic or without a broker connection.
+
 **Dimmer light** (`LightCommandType.DIMMER_LIGHT`, demonstrates on/off + step + set-prefix):
 
 | Phrase(s) | AsrCommand | Payload | Action |
@@ -228,15 +258,19 @@ All phrases are Russian, defined in `app/src/main/res/values/strings.xml`. "Regi
 | "выключи подсветку" | `DIMMER_LIGHT` | `false` | `sendDimmerLightPowerEvent(false)` |
 | "подсветка ярче" | `DIMMER_LIGHT_STEP` | `+1` | `processDimmerLightStepCommand(1)` |
 | "подсветка темнее" | `DIMMER_LIGHT_STEP` | `-1` | `processDimmerLightStepCommand(-1)` |
-| "подсветка на " + one of the values below | `DIMMER_LIGHT_SET` | remainder string | `processDimmerLightSetCommand(...)`, resolved against `LightBrightnessType` |
+| "подсветка " + one of the values below | `DIMMER_LIGHT_SET` | remainder string | `processDimmerLightSetCommand(...)`, resolved against `LightBrightnessType` |
 
-`LightBrightnessType` values usable after the "подсветка на" prefix: "на десять процентов" (10%) ... "на двадцать процентов" (20%), "на тридцать процентов" (30%), "на сорок процентов" (40%), "на пятьдесят процентов" (50%), "на шестьдесят процентов" (60%), "на семьдесят процентов" (70%), "на восемьдесят процентов" (80%), "на девяносто процентов" (90%), "на сто процентов" (100%).
+`matchSetPrefix` matches only with one of these values after the prefix: "подсветка" alone or with another ending is no command, so the other readings of the utterance are tried and the error chime plays if none is a command (it used to count as a command that did nothing).
+
+`LightBrightnessType` values usable after the "подсветка" prefix: "на десять процентов" (10%) ... "на двадцать процентов" (20%), "на тридцать процентов" (30%), "на сорок процентов" (40%), "на пятьдесят процентов" (50%), "на шестьдесят процентов" (60%), "на семьдесят процентов" (70%), "на восемьдесят процентов" (80%), "на девяносто процентов" (90%), "на сто процентов" (100%).
 
 **Timers** (prefix loop in `ProcessCommand.kt` + `TimerDurationType`):
 
 | Phrase(s) | AsrCommand | Payload | Action |
 |---|---|---|---|
 | "поставь таймер" / "поставить таймер" + one of the durations below | `TIMER` | remainder string | `processAsrTimerCommand(...)`, resolved against `TimerDurationType` |
+
+The prefix matches only with one of these durations after it, as "таймер" + a duration does: alone or with another ending it is no command, so the other readings are tried and the error chime plays if none is a command (it used to count as a command that set nothing).
 
 `TimerDurationType` values usable after the "поставь(ть) таймер" prefix: "на одну минуту" (1 min), "на две минуты" (2 min), "на три минуты" (3 min), "на четыре минуты" (4 min), "на пять минут" (5 min), "на шесть минут" (6 min), "на семь минут" (7 min), "на восемь минут" (8 min), "на девять минут" (9 min), "на десять минут" (10 min), "на пятнадцать минут" (15 min, default), "на двадцать минут" (20 min), "на тридцать минут" (30 min), "на сорок пять минут" (45 min), "на шестьдесят минут" (60 min), "на девяносто минут" (90 min), "на сто двадцать минут" (120 min), "на сто пятьдесят минут" (150 min), "на сто восемьдесят минут" (180 min).
 

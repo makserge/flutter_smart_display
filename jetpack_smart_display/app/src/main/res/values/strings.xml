@@ -47,6 +47,12 @@
     <string name="primary_color">Color</string>
     <string name="secondary_color">Accent color</string>
     <string name="cancel">Cancel</string>
+    <string name="alarm_time">Alarm time</string>
+    <string name="open_home">Open home screen</string>
+    <string name="open_home_summary">Leaves this app for Android\'s settings or another home screen, such as the panel\'s own app (this app is the home app, and the full screen has no home button)</string>
+    <string name="open_home_android_settings">Android settings</string>
+    <string name="system">System</string>
+    <string name="permission_title">Permission</string>
     <string name="colors">Colors</string>
     <string name="analog_jetalarm">Analog (JetAlarm)</string>
     <string name="hand_length_seconds">Length seconds</string>
@@ -141,6 +147,7 @@
     <string name="mqtt_broker_username">Username</string>
     <string name="mqtt_broker_password">Password</string>
     <string name="icon">Icon</string>
+    <string name="no_icon">No icon</string>
     <string name="add_sensor_unit">Unit</string>
     <string name="weather_city">Weather city</string>
     <string name="weather_city_lat">Lat</string>
@@ -176,6 +183,7 @@
     <string name="doorbell_stream_url">RTSP stream URL</string>
     <string name="doorbell_stream_url_rtsps">rtsps:// (RTSP over TLS) is not supported, use rtsp://</string>
     <string name="push_button">Push button MQTT settings</string>
+    <string name="cinema_mode">Cinema mode MQTT settings (voice: "включи / отключи режим кино")</string>
     <string name="push_button_status_topic">Status topic</string>
     <string name="push_button_command_topic">Command topic</string>
     <string name="push_button_payload_on">Payload on</string>
@@ -184,6 +192,8 @@
     <string name="proximity_sensor_topic">Topic</string>
     <string name="proximity_sensor_payload_on">Payload on</string>
     <string name="proximity_sensor_payload_off">Payload off</string>
+    <string name="proximity_sensor_status_topic">Light status topic (optional)</string>
+    <string name="proximity_sensor_status_topic_summary">Where the light reports on/off; keeps the wave toggle in step when the light is switched elsewhere</string>
     <string name="doorbell_back_timer_delay">Back timer delay</string>
     <string name="no_sensors_items">No sensors items found. Click here to add item</string>
     <string name="asr_wake_word">Wake word</string>
@@ -208,7 +218,9 @@
     <string name="internet_radio_off_command">выключи радио</string>
     <string name="internet_radio_off2_command">выключить радио</string>
     <string name="internet_radio_prev_item_command">радио назад</string>
+    <string name="internet_radio_prev_item2_command">назад</string>
     <string name="internet_radio_prev_next_command">радио вперёд</string>
+    <string name="internet_radio_prev_next2_command">вперёд</string>
     <string name="internet_radio_vol_down_command">радио тише</string>
     <string name="internet_radio_vol_up_command">радио громче</string>
     <string name="light_on_command">включи бра</string>
@@ -219,6 +231,12 @@
     <string name="light2_on2_command">включить свет</string>
     <string name="light2_off_command">выключи свет</string>
     <string name="light2_off2_command">выключить свет</string>
+    <string name="cinema_mode_on_command">включи режим кино</string>
+    <string name="cinema_mode_on2_command">включить режим кино</string>
+    <string name="cinema_mode_off_command">отключи режим кино</string>
+    <string name="cinema_mode_off2_command">отключить режим кино</string>
+    <string name="cinema_mode_off3_command">выключи режим кино</string>
+    <string name="cinema_mode_off4_command">выключить режим кино</string>
     <string name="dimmer_light_on_command">включи подсветку</string>
     <string name="dimmer_light_on2_command">включить подсветку</string>
     <string name="dimmer_light_off_command">выключи подсветку</string>
@@ -267,6 +285,9 @@
     <string name="type">Type</string>
     <string name="bluetooth_permission_rationale">Bluetooth permissions are required for BLE sensors support to be available. Please grant the permission</string>
     <string name="bluetooth_permission">Bluetooth permissions are required for BLE sensors support. Please grant the permission</string>
+    <string name="location_for_ble_title">Location</string>
+    <string name="location_for_ble">On this Android version Bluetooth sensors are only found while Location is on. The app does not use the location. Please turn Location on.</string>
+    <string name="location_for_ble_confirm">Open settings</string>
     <string name="no_bluetooth_devices">No bluetooth devices found. Click here to restart scan</string>
     <string name="light_sensor">Light sensor</string>
     <string name="light_sensor_enabled">Enabled</string>
@@ -324,6 +345,7 @@
     <string name="timer_title">Title</string>
     <string name="save_button">Save</string>
     <string name="start_timer_button">Start timer</string>
+    <string name="pause_timer_button">Pause timer</string>
     <string name="reset_timer_button">Reset timer</string>
     <string name="alarm">Alarm</string>
     <string name="alarm_light_enabled">Light enabled</string>

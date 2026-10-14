@@ -16,6 +16,7 @@ import com.smsoft.smartdisplay.utils.observe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.smsoft.smartdisplay.utils.mqttTopicMatches
 
 class PushButtonController(
     private val dataStore: DataStore<Preferences>,
@@ -41,6 +42,10 @@ class PushButtonController(
     }
 
         fun toggle() {
+        // Only a command that can be sent changes the shown state (see DashboardMqttManager.canPublish).
+        if (!mqttManager.canPublish(commandTopic)) {
+            return
+        }
         val newState = !pushButtonStateInt.value
         pushButtonStateInt.value = newState
         publishCommand(newState)
@@ -51,7 +56,7 @@ class PushButtonController(
     }
 
     fun onMqttMessage(message: DashboardMqttMessage) {
-        if (message.topic == statusTopic) {
+        if (mqttTopicMatches(statusTopic, message.topic)) {
             pushButtonStateInt.value = (message.payload == PUSH_BUTTON_ON_PAYLOAD)
         }
     }
