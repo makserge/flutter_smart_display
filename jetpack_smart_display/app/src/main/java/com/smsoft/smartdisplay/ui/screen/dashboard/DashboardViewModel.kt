@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.smsoft.smartdisplay.data.AsrCommand
 import com.smsoft.smartdisplay.data.DashboardItem
+import com.smsoft.smartdisplay.data.RadioType
 import com.smsoft.smartdisplay.data.TimerDurationType
 import com.smsoft.smartdisplay.data.VoiceCommand
 import com.smsoft.smartdisplay.data.VoiceCommandType
@@ -20,6 +21,7 @@ import com.smsoft.smartdisplay.service.mqtt.MqttCallbackDispatcher
 import com.smsoft.smartdisplay.service.radio.ExoPlayerImpl
 import com.smsoft.smartdisplay.service.radio.RadioActiveState
 import com.smsoft.smartdisplay.service.radio.RadioMediaServiceHandler
+import com.smsoft.smartdisplay.service.radio.readRadioConfig
 import dagger.Lazy
 import com.smsoft.smartdisplay.service.sensor.SensorHandler
 import com.smsoft.smartdisplay.service.timer.TimerHandler
@@ -39,6 +41,7 @@ import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -304,6 +307,8 @@ class DashboardViewModel @Inject constructor(
         if (radioActiveState.isActive.value ||
             (settledPage == DashboardItem.INTERNET_RADIO.ordinal)) {
             radioMediaServiceHandler.get().stop()
+        } else {
+            stopMpdIfSelected()
         }
         alarmHandler.requestStopRadioAlarm()
         // A radio command that has not reached the radio page yet must not start it later.
@@ -313,6 +318,20 @@ class DashboardViewModel @Inject constructor(
         if ((currentPageStateInt.value == DashboardItem.INTERNET_RADIO.ordinal) &&
             (settledPage != DashboardItem.INTERNET_RADIO.ordinal)) {
             currentPageStateInt.value = settledPage
+        }
+    }
+
+    /**
+     * With MPD as the radio type, MPD may play although the app has the radio off and is not
+     * connected to it (started by another client; the radio page was left). The app's state says
+     * "off", so the stop has to be sent anyway. The handler is only created for MPD: creating it
+     * for the internal radio would build the ExoPlayer, which waits for the radio page.
+     */
+    private fun stopMpdIfSelected() {
+        viewModelScope.launch {
+            if (readRadioConfig(dataStore.data.first()).type == RadioType.MPD) {
+                radioMediaServiceHandler.get().stopMpdServer()
+            }
         }
     }
 

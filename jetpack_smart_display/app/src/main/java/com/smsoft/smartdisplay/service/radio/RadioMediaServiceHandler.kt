@@ -234,6 +234,15 @@ class RadioMediaServiceHandler @Inject constructor(
         mediaStateInt.value = MediaState.Playing(isPlaying = false)
     }
 
+    /**
+     * MPD only: stops MPD's playback although this app is not connected to it (the radio page
+     * was left with the radio off, and MPD was started by another client). stop() sends MPD
+     * nothing in that state. Does nothing with the internal player.
+     */
+    fun stopMpdServer() {
+        (player as? MPDPlayer)?.stopServer()
+    }
+
     /** Next station, wrapping around. [fallbackPreset] is the base station when the radio is off. */
     fun next(fallbackPreset: Int) = step(+1, fallbackPreset)
 

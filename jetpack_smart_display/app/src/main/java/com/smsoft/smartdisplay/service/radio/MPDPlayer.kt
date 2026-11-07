@@ -196,6 +196,30 @@ class MPDPlayer(
     }
 
     /**
+     * Stops MPD's playback although this player is not prepared: the radio page was left with the
+     * radio off ([disconnect]) and MPD plays on, started by another client or by an earlier
+     * session. [handleStop] sends no stop then (it is the page-leave path and must not touch an
+     * MPD it never connected to), so "radio off" by voice needs this. The stop goes over a new
+     * connection (MPDHelper connects on demand), which is closed again. Best effort and silent.
+     */
+    fun stopServer() {
+        isPrepared = false
+        isConnected = false
+        error = null
+        val gen = generation.incrementAndGet()
+        stopMonitor()
+        runOnMpd(gen, reportErrors = false) { mpd ->
+            try {
+                mpd.stop()
+            } finally {
+                mpd.disconnect()
+            }
+            null
+        }
+        invalidateState()
+    }
+
+    /**
      * Closes the connection without a command, unlike stop(): the radio page was left with the
      * radio off, and MPD stays as it is, also when another client paused it. The queue is kept,
      * so the page can name the saved station before the next prepare.
